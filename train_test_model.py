@@ -5,7 +5,7 @@ import os
 
 from models.lrcn.lrcn_model import LRCN
 from models.vgg16.vgg16_model import VGG16
-from models.resnet.resnet_model_orig import ResNet
+from models.resnet.resnet_model import ResNet
 
 from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import control_flow_ops
