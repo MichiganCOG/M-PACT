@@ -21,7 +21,7 @@ from tensorflow.python.ops import clip_ops
 from Queue import Queue
 from utils import *
 
-def _average_gradients(tower_grads):
+def _average_gradients(tower_grads, clips_to_average, numGpus):
   """Calculate the average gradient for each shared variable across all towers.
   Note that this function provides a synchronization point across all towers.
   Args:
@@ -44,9 +44,11 @@ def _average_gradients(tower_grads):
       # Append on a 'tower' dimension which we will average over below.
       grads.append(expanded_g)
 
-    # Average over the 'tower' dimension.
-    grad = tf.concat(axis=0, values=grads)
-    grad = tf.reduce_mean(grad, 0)
+    if tf.gather(clips_to_average) != numGpus:
+  TODO########################################################## Figure out how to split up the gradient averaging
+        # Average over the 'tower' dimension.
+        grad = tf.concat(axis=0, values=grads)
+        grad = tf.reduce_mean(grad, 0)
 
     # Keep in mind that the Variables are redundant because they are shared
     # across towers. So .. we will just return the first tower's pointer to
@@ -65,7 +67,7 @@ def load_video_list(dataset, modelName, experiment_name, fName, split, numVids):
         print "loaded vidlist"
         print vidList
     except:
-        vidFile = open(os.path.join('datasets',dataset,'trainlist0'+str(split)+'.txt'),'r')
+        vidFile = open(os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'),'r')
         lines = vidFile.readlines()
         num_vids = len(lines)
         vidFile.close()
@@ -92,13 +94,9 @@ def gen_video_list(dataset, modelName, experiment_name, fName, split, numVids, s
         np.random.shuffle(vidList)
     return vidList
 
-def save_video_list(modelName, videoList, iterated_list, dataset, split, experiment_name):
-    if not np.array_equal(iterated_list,videoList):
-        lastVidUsed = iterated_list[-1]
-        lastVidInd = np.where(videoList == iterated_list[-1])[0][0]
-        vidFile = videoList[lastVidInd+1:]
-        if len(vidFile) != 0:
-            np.save(os.path.join('results',modelName, experiment_name+'_'+dataset, 'checkpoints/vidList.npy'), vidFile)
+def save_video_list(modelName, vidFile, dataset, split, experiment_name):
+    if len(vidFile) != 0:
+        np.save(os.path.join('results',modelName, experiment_name+'_'+dataset, 'checkpoints/vidList.npy'), vidFile)
 
 
 
@@ -140,18 +138,53 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims,
             acc += 1
 
         print "validation acc: ", acc/float(count)
-        logger.add_scalar_value('test/gs'+str(gs)+'_step_acc',acc/float(count), step=count)
-    logger.add_scalar_value('test/acc',acc/float(count), step=gs)
+        logger.add_scalar_value('validation/gs'+str(gs)+'_step_acc',acc/float(count), step=count)
+    logger.add_scalar_value('validation/acc',acc/float(count), step=gs)
+
+
+def load_video_into_queue(x_q, y_q, model, vidList, numGpus):
+    time_pre_load = time.time()
+    #fName = 'trainlist'
+    if model.name == 'lrcn':
+        numVidsToLoad = 1
+    for gpuCount in range(numVidsToLoad):
+        vidNum = vidList[vids+gpuCount]
+        loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+        labels = np.repeat(labels, inputDims)
+
+
+        time_post_load = time.time()
+
+        tot_load_time.append((time_post_load - time_pre_load))
+        shape = np.array(loaded_data).shape
+
+        print "vidNum: ", vidNum
+        print "label: ", labels[0]
+        if len(shape) ==4:
+            loaded_data = np.array([loaded_data])
+            numClips = 1
+        else:
+            numClips = len(loaded_data)
+        output_predictions = np.zeros((numClips, outputDims))
+        for clip in range(numClips):
+            x_q.put(loaded_data[clip])
+            y_q.put(labels)
+
+        # ignoreClipsInd = numGpus
+        # if vidList == [] and x_q.qsize()%numGpus != 0:
+        #     for emptyVid in range(numGpus - x_q.qsize()%numGpus):
+        #         x_q.put(np.zeros(inputDims, size[0], size[1], 3))
+        #         y_q.put(np.ones(inputDims)-1)
+        # ignoreClipsInd = numGpus - x_q.qsize()%numGpus
+    return x_q, y_q, vidList, ignoreClipsInd
 
 
 
-
-
-
-def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, learning_rate_init=0.001, wd=0.0):
+def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=0.001, wd=0.0):
     with tf.name_scope("my_scope") as scope:
         isTraining = True
         global_step = tf.Variable(0, name='global_step', trainable=False)
+        clips_to_average = tf.Placeholder(tf.int64, name = 'clips_to_average')
         reuse_variables = None
         if model.name == "resnet" or model.name == 'vgg16':
             seqLength = 2*seqLength
@@ -161,6 +194,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         y_placeholder = tf.placeholder(tf.int64, shape=[numGpus, inputDims], name='y_placeholder')
         tower_losses = []
         tower_grads = []
+        tower_slogits = []
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
         for gpuIdx in range(numGpus):
             with tf.device('/gpu:'+str(gpuIdx)):
@@ -179,11 +213,17 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 total_loss = model.loss(logits, y_placeholder[gpuIdx, :])
                 opt = optimizer(lr)
                 gradients = opt.compute_gradients(total_loss, vars_.trainable_variables())
+                tower_losses.append(total_loss)
+                tower_grads.append(gradients)
+                tower_slogits.append(slogits)
+
+        gradients = _average_gradients(tower_grads, clips_to_average, numGpus)
         gradients, variables = zip(*gradients)
         clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 5.0)
         gradients = list(zip(clipped_gradients, variables))
+
         grad_updates = opt.apply_gradients(gradients, global_step=global_step, name="train")
-        train_op = control_flow_ops.with_dependencies([grad_updates], total_loss)
+    #    train_op = control_flow_ops.with_dependencies([grad_updates], total_loss)
 
 
 
@@ -200,13 +240,13 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         sess.run(init)
         split = 1
-        vidList = []
+        epochVidList = []
         if loadModel:
             ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name,   experiment_name+ '_'+dataset, 'checkpoints/checkpoint')))
             if ckpt and ckpt.model_checkpoint_path:
                 saver.restore(sess, ckpt.model_checkpoint_path)
                 print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
-                vidList = load_video_list(dataset, model.name, experiment_name, 'trainlist', split, numVids)
+                epochVidList = load_video_list(dataset, model.name, experiment_name, fName, split, numVids)
 
 
 
@@ -224,48 +264,76 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         x_q = Queue()#tf.FIFOQueue(capacity=100, shapes = [inputDims, size[0], size[1] ,3], dtypes=tf.float32)
         y_q = Queue()#tf.FIFOQueue(capacity=100, shapes = [inputDims], dtypes=tf.int64)
-
+        vidNum_q = Queue()
         iterated_list=[]
         for epoch in range(nEpochs):
             epoch_count = 0
             epoch_acc = 0
 
 
-            if len(vidList) == 0 or epoch != 0:
-                vidList = gen_video_list(dataset, model.name, experiment_name, 'trainlist', split, numVids, True)
-            for vidNum in vidList:
+            if len(epochVidList) == 0 or epoch != 0:
+                epochVidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, True)
+            vidList = epochVidList
+    #need to be able to add multiple videos at the same time some kind of  for x in range(0, len(vidList), numGpus)      vidNumGpu0 = vidList[x] vidNumGpuCount = vidList[x+gpuCount]
+    # check that vidlist[x+numGpus] exists, could be end of vidlist  aka len(vidlist)!%numGpus
+
+            finished = False
+            while not finshed:#len(vidList) != 0:
+
+                while x_q.qsize() < numGpus and vidList != []:
+                    x_q, y_q, vidList, vidNum_q, currVidNum = load_video_into_queue(x_q, y_q, model, vidList, numGpus)
+
+
+
+    # x_q holds only clips
+    # go through the queue and take out numGpus clips and concatenate them into the same list
+    # Alternative is to concatenate the clips if loaded_data%numGpus is something, then do something else with remaining clips
+
                 mean_loss=[]
-                time_pre_load = time.time()
-                fName = 'trainlist'
-                loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,'trainlist0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
 
-
-                time_post_load = time.time()
-
-                tot_load_time.append((time_post_load - time_pre_load))
-                shape = np.array(loaded_data).shape
-                labels = np.repeat(labels, inputDims)
-                print "vidNum: ", vidNum
-                print "label: ", labels[0]
-                if len(shape) ==4:
-                    loaded_data = np.array([loaded_data])
-                    numClips = 1
+                # ExcessClips are the number of clips that will be loaded into the model in the last step during which the current video finishes
+                # Aka, a videos number of clips does not divide evenly into numGpus so in the last iteration of numGpus there will be the last clip(s) of one video being trained on and the first clip(s) of the next video
+                # In this scenario, the predicitons for these clips have to be kept separate so that the clip predictions correspond to the correct video
+                # Currently the only model that uses this is LRCN (It loads ceil(totalCurrentVideoFrames/16) number of clips)
+                if numClips != 1:
+                    excessClips = numClips%numGpus
                 else:
-                    numClips = len(loaded_data)
-                output_predictions = np.zeros((numClips, outputDims))
-                for clip in range(numClips):
-                    input_data= np.reshape(loaded_data[clip], (1, -1, size[0], size[1], 3))
-                    labels = np.reshape(labels, (1, -1))
+                    # There can only be excessClips if the entire video is not loaded into the model at a time (Ex. ResNet and VGG16)
+                    excessClips = 0
 
-                    time_pre_train = time.time()
-
-                    _, loss_val, pred, gs = sess.run([train_op, total_loss, slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels})#, learning_rate: lr})
+                # Each element of x_q and y_q contains int(numGpus) clips that will get trained on
+# check that if a clip has been in excessclips that the next loop will still calculate the next numclips properly
+            #    for clipBatch in range(numClips):
 
 
-                    output_predictions[clip] = np.mean(pred, 0)
+                input_data = np.zeros((numGpus, inputDims, size[0], size[1], 3))
+                labels = np.zeros((numGpus, inputDims))
+                excessClips = 0
+                for gpuCount in range(numGpus):
+                    if x_q.qsize() >= numGpus:
+                        input_data[gpuCount] = x_q.get()
+                        labels[gpuCount] = y_q.get()
+                    else:
+                        # Other option is to create variable that says there are excess values and to eval that above and make if then statement for _average_gradients?
+                        # If there are not enough clips to fill each gpu, then just train the last clip multiple time_post_train
+                        excessClips+=1
+                #        input_data[gpuCount] = input_data[gpuCount-1]
+                #        labels[gpuCount] = labels[gpuCount-1]
+                clipsAvail = numGpus - excessClips
+
+                _, loss_val, pred, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, clips_to_average: clipsAvail})#, learning_rate: lr})
+                # lrcn pred = [2,16,101]  resnet pred = [2,50,51]
+                if excessClips != 0:
+                    gs = gs-excessClips
+                    pred = pred[:-excessClips]
+                    loss_val = loss_val[:-excessClips]
+                    sess.run(global_step.assign(gs)) #See if global step can be forced to not increment outside of clips_to_average somewhere around the def of train_op
+
+                for pred in predictions:
+                    output_predictions[clipBatch] = np.mean(pred, 0)
                     tot_step+=1
 
-                    mean_loss.append(loss_val)
+                    mean_loss.append(np.mean(loss_val))
                     pred = np.mean(pred, 0).argmax()
                     print "pred: ", pred
                     if pred == labels[0][0]:
@@ -274,9 +342,65 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     time_post_train = time.time()
                     count+=1
                     curr_logger.add_scalar_value('train/total_acc', acc/float(count), step=gs)
-                    print "step  loss  acc: ", gs, loss_val, acc/float(count)
+                    print "step  loss  acc: ", gs, np.mean(loss_val), acc/float(count)
 
                     tot_train_time.append((time_post_train - time_pre_train))
+
+
+                iterated_list.append(vidNum)
+                epoch_count+=1
+
+                guess = np.mean(output_predictions, 0).argmax()
+
+                if int(guess) == int(labels[0][0]):
+                    epoch_acc += 1
+
+                curr_logger.add_scalar_value('train/loss', float(np.mean(mean_loss)), step=gs)
+                curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(epoch_count), step=gs)
+                curr_logger.add_scalar_value('train_time',time_post_train - time_pre_train, step=gs)
+                curr_logger.add_scalar_value('load_time',time_post_load - time_pre_load, step=gs)
+
+                for clip in range(numClips - excessClips):
+
+
+
+                for clip in range(excessClips):
+
+
+
+
+
+
+
+                for clip in range(x_q.qsize()):
+            #        input_data= np.reshape(loaded_data[clip], (1, -1, size[0], size[1], 3))
+            #        labels = np.reshape(labels, (1, -1))
+                    input_data = x_q.get()
+                    labels = y_q.get()
+
+                    if not np.all(labels==labels[0][0]):
+                        endOfVid = True
+
+                    time_pre_train = time.time()
+
+                    _, loss_val, pred, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels})#, learning_rate: lr})
+
+                    for pred in predictions:
+                        output_predictions[clip] = np.mean(pred, 0)
+                        tot_step+=1
+
+                        mean_loss.append(np.mean(loss_val))
+                        pred = np.mean(pred, 0).argmax()
+                        print "pred: ", pred
+                        if pred == labels[0][0]:
+                            acc +=1
+
+                        time_post_train = time.time()
+                        count+=1
+                        curr_logger.add_scalar_value('train/total_acc', acc/float(count), step=gs)
+                        print "step  loss  acc: ", gs, np.mean(loss_val), acc/float(count)
+
+                        tot_train_time.append((time_post_train - time_pre_train))
 
                 iterated_list.append(vidNum)
                 epoch_count+=1
@@ -311,7 +435,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
 
 
-def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, numVids, split, baseDataPath):#, dataSet, params):
+def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, numVids, split, baseDataPath, fName):#, dataSet, params):
     with tf.name_scope("my_scope") as scope:
         isTraining = False
         x_placeholder = tf.placeholder(tf.float32, shape=[inputDims, size[0], size[1] ,3], name='x_placeholder')# shape=[numGpus, inputDims, 224,224,3], name='x_placeholder')
@@ -349,11 +473,11 @@ def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experi
         acc = 0
         count = 0
         total_pred = []
-        vidList = gen_video_list(dataset, model.name, experiment_name, 'testlist', split, numVids, False)
+        vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False)
         for vidNum in vidList:
 
             count +=1
-            fName = 'testlist'
+        #    fName = 'testlist'
             loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB', 'Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
 
             labels = np.repeat(labels, inputDims)
@@ -502,8 +626,8 @@ if __name__=="__main__":
 
     print 'outputDims: ', outputDims
     if args.train:
-        train(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, learning_rate_init=lr, wd=wd)
+        train(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, 'trainlist',learning_rate_init=lr, wd=wd)
 
     else:
 
-        test(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, numVids, split, baseDataPath)
+        test(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, numVids, split, baseDataPath, 'testlist')

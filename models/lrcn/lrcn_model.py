@@ -239,9 +239,9 @@ class LRCN():
             print isTraining
             with tf.device('/gpu:'+str(cpuId)):
                 if isTraining:
-                    layers['fc6'] = tf.reshape(layers['fc6'], shape = [1, 16, 4096])
+                    layers['fc6'] = tf.reshape(layers['fc6'], shape = [1, seqLength, 4096])
                 else:
-                    layers['fc6'] = tf.reshape(layers['fc6'], shape=[10,16,4096])
+                    layers['fc6'] = tf.reshape(layers['fc6'], shape=[10,seqLength,4096])
 
             #    print('11', layers['11'].shape)
                 lstm_cell = LSTMCell(256, forget_bias=0.0, weights_initializer=dataDict['lstm1_0'], bias_initializer=dataDict['lstm1_1'])#, initializer = (dataDict['lstm1_0'], dataDict['lstm1_1']))
