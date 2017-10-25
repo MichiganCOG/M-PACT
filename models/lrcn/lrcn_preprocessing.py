@@ -1,8 +1,6 @@
 
-#import cv2
 import os
 import h5py
-#import '../../preprocessing' as preprocess_lrcn
 import numpy as np
 
 
@@ -11,7 +9,9 @@ from scipy.ndimage import zoom
 
 def oversample(images, crop_dims):
     """
+    This code is taken from:
     https://github.com/LisaAnne/lisa-caffe-public/blob/lstm_video_deploy/python/caffe/io.py
+
     Crop images into the four corners, center, and their mirrored versions.
     Take
     image: iterable of (H x W x K) ndarrays
@@ -87,12 +87,11 @@ def resize_image(im, new_dims, interp_order=1):
 
 
 
-def preprocess(index, data, label, size, isTraining):#index, fName, baseDataPath, vidFile, classIndFile, isTraining, size, chunk=100):
-    #baseDataPath = '/z/home/madantrg/Datasets/UCF101HDF5RGB/Split1/'
-    #testFile = 'results/lrcn/testlist01.txt'
+def preprocess(index, data, label, size, isTraining):
+
     clip_length = 16
     offset = 8
-
+    size = size[0]
 
     data_mean = np.array((103.939, 116.779, 128.68)).reshape(1, 1, 1, 3)
     data = data - data_mean
@@ -110,7 +109,6 @@ def preprocess(index, data, label, size, isTraining):#index, fName, baseDataPath
         else:  # video may not be divisible by clip_length
             input_data.extend(data[-clip_length:])
     input_data = np.array(input_data)
-    # output_predictions = np.zeros((len(input_data), 101))
     vid_clips = []
     if isTraining:
         for i in range(0,len(input_data),clip_length):
@@ -126,8 +124,6 @@ def preprocess(index, data, label, size, isTraining):#index, fName, baseDataPath
             clip_input = input_data[i:i+clip_length]
             clip_input = oversample(clip_input,[size, size])
             vid_clips.append(clip_input)
-
-#    import pdb;pdb.set_trace()
 
 
     return vid_clips

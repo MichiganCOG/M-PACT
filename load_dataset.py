@@ -35,7 +35,7 @@ def load_dataset(model, index, fName, baseDataPath, vidFile, classIndFile, size,
 
     if dataset =='HMDB51':
         data = np.delete(data,np.where(np.arange(1,data.shape[0])%6==0)[0].astype('int32'), axis=0)
-
+        
     vid_clips = model.preprocess(index, data, label, size, isTraining)
 
 

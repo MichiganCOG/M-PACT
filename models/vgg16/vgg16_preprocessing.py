@@ -275,15 +275,16 @@ def preprocess(index, Data, labels, size, isTraining):
 
 
 
+    # Sample 25 frames from the 125 frame clip
     tempData = []
-
     for i in range(0, tFootprint, 5):
         tempData.append(Data[i])
-    #    print "footprint: ", i
 
     Data = np.array(tempData)
+
+    # Add 25 zero frames to training because the inputDims are only 25 but the
+    # LSTM needs a consistent input of 50 frames since that is the inputDim for testing
     if isTraining:
-
-
         Data = np.vstack([Data, np.zeros(Data.shape)])
+
     return Data

@@ -16,13 +16,14 @@ This README will walk you through the process of installing dependencies, downlo
 	*  [Examples of Common Uses](#examples-of-common-uses)
 * [Add Custom Components](#add-custom-components)
 	* [Adding a Model](#adding-a-model)
-	* [Adding a Dataset](#adding-a-dataset)
+	* [Adding a Dataset](#adding-a-dataset-currently-unavailable)
 * [Results](#expected-results)
+* [Version History](#version-history)
 
 ## Requirements
 
 #### Python Dependencies:
-* Tensorflow
+* Tensorflow 1.2.1
 * Numpy
 * OpenCV
 * Cudnn
@@ -94,12 +95,13 @@ python  train_test_model.py \
 
 --baseDataPath  The path to where all datasets are stored (Ex. This directory should then contain "UCF101HDF5RGB/Split1/trainlist_[0]_.hdf5" and "HMDB51HDF5RGB/Split2/testlist_[0]_.hdf5")
 
+--fName			Which dataset list to use (trainlist, testlist, vallist)
 ```
 
-Ex. Train ResNet on HMDB51 using 2 GPUs
+Ex. Train ResNet on HMDB51 using 1 GPU
 
 ```
-python train_test_model.py  --model resnet  --dataset HMDB51  --numGpus 2  --train 1  --load 1  --size 224  --inputDims 25  --outputDims 51  --seqLength 25  --expName example_1  --numVids 3570  --lr 0.001  --wd 0.0  --nEpochs 100  --split 1  --baseDataPath /z/home/madantrg/Datasets
+python train_test_model.py  --model resnet  --dataset HMDB51  --numGpus 1  --train 1  --load 1  --size 224  --inputDims 25  --outputDims 51  --seqLength 25  --expName example_1  --numVids 3570  --lr 0.001  --wd 0.0  --nEpochs 30  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist
 ```
 
 The parameters to test are:
@@ -131,12 +133,13 @@ python  train_test_model.py \
 
 --baseDataPath  The path to where all datasets are stored (Ex. This directory should then contain "UCF101HDF5RGB/Split1/trainlist_[0]_.hdf5" and "HMDB51HDF5RGB/Split2/testlist_[0]_.hdf5")
 
+--fName			Which dataset list to use (trainlist, testlist, vallist)
 ```
 
 Ex. Test LRCN on UCF101 split 1
 
 ```
-python train_test_model.py  --model lrcn  --dataset UCF101  --numGpus 1  --train 0  --size 227  --inputDims 160  --outputDims 101  --seqLength 16  --expName example_2  --numVids 3783  --split 1  --baseDataPath /z/home/madantrg/Datasets
+python train_test_model.py  --model lrcn  --dataset UCF101  --train 0  --size 227  --inputDims 160  --outputDims 101  --seqLength 16  --expName example_2  --numVids 3783  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName testlist
 ```
 
 ### Framework File Structure
@@ -292,9 +295,9 @@ from models.model.name_model import ModelClass
 ```
 
 
-### Adding a dataset
+### Adding a dataset (Currently Unavailable)
 
-The file structure of the
+
 
 
 
@@ -303,9 +306,36 @@ The file structure of the
 ### Accuracies of Models
 The install of this framework can be tested by comparing the output with these expected testing results of the various models trained on the datasets.
 
-|  Model Architecture  |      Dataset      |  Testing Accuracy |
+|  Model Architecture  |      Dataset      |  Testing Accuracy |  
 |----------|:-------------:|------:|
 | LRCN |  UCF101 | 71.72% |
-| ResNet |   HMDB51   |   38.95% |
+| ResNet |   HMDB51   |   44.97% |
 | VGG16 | HMDB51 |    28.10% |
-    
+
+
+
+
+
+
+
+
+
+
+
+## Version History
+
+
+### Current Version: 1.0
+
+#### Version 1.0
+Initial release. Using pre generated HDF5 files, test LRCN model on UCF101 dataset and train ResNet and VGG16 models on HMDB51 dataset.  Tensorboard supported, single processor and single GPU implementation.  Documentation includes basic overview and example of training and testing commands.
+
+Future features:
+
+* Generate HDF5 files for new datasets
+* Train and test ResNet and VGG16 on UCF101
+* Implement parallel processing for data loading
+* Support training on multiple GPUs
+* Implement TSN and C3D models
+* Implement Kinetics Database
+* Expand documentation

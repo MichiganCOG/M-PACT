@@ -20,8 +20,7 @@ from layers_utils import *
 
 from load_dataset import load_dataset as load_data
 
-# Import bnLSTM
-#from TrialLSTM import BasicLSTMCell
+
 
 class ResNet():
 
@@ -38,8 +37,7 @@ class ResNet():
         inputs = tf.unstack(inputs, seqLength, axis=0)
 
         # LSTM cell definition
-        #lstm_cell = tf.contrib.rnn.LSTMCell(cellSize, cell_clip=5.0)#, training=isTraining)
-        lstm_cell = tf.contrib.rnn.BasicLSTMCell(cellSize)#, training=isTraining)
+        lstm_cell = tf.contrib.rnn.BasicLSTMCell(cellSize)
         outputs, states = static_rnn(lstm_cell, inputs, dtype=tf.float32)
 
         # Condense output shape from:
@@ -183,7 +181,6 @@ class ResNet():
         ############################################################################
 
         print('Generating RESNET network layers')
-    #    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
         dataDict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
         layers = {}
 

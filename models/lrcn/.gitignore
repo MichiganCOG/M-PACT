@@ -1,2 +1,5 @@
 Numpy_from_Caffe/
 *.pyc
+lrcn.npy
+format_weights.py
+lrcn_old.npy

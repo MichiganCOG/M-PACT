@@ -12,8 +12,6 @@ import sys
 sys.path.append('../..')
 from layers_utils import *
 
-from load_dataset import load_dataset as load_data
-
 
 
 class VGG16():

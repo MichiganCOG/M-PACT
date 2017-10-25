@@ -102,7 +102,7 @@ def save_video_list(modelName, videoList, iterated_list, dataset, split, experim
 
 
 
-def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder):
+def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder, baseDataPath):
     if dataset == 'HMDB51':
         fName = 'vallist'
     else:
@@ -114,7 +114,7 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims,
 
         count +=1
 
-        loaded_data, labels= model.load_dataset( model, vidNum, fName, False, size, split, dataset)
+        loaded_data, labels= load_dataset( model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, False, dataset)
         shape = np.array(loaded_data).shape
         labels = np.repeat(labels, inputDims)
 
@@ -140,15 +140,15 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims,
             acc += 1
 
         print "validation acc: ", acc/float(count)
-        logger.add_scalar_value('test/gs'+str(gs)+'_step_acc',acc/float(count), step=count)
-    logger.add_scalar_value('test/acc',acc/float(count), step=gs)
+        logger.add_scalar_value('val/gs'+str(gs)+'_step_acc',acc/float(count), step=count)
+    logger.add_scalar_value('val/acc',acc/float(count), step=gs)
 
 
 
 
 
 
-def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, learning_rate_init=0.001, wd=0.0):
+def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, fName, learning_rate_init=0.001, wd=0.0):
     with tf.name_scope("my_scope") as scope:
         isTraining = True
         global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -206,7 +206,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
             if ckpt and ckpt.model_checkpoint_path:
                 saver.restore(sess, ckpt.model_checkpoint_path)
                 print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
-                vidList = load_video_list(dataset, model.name, experiment_name, 'trainlist', split, numVids)
+                vidList = load_video_list(dataset, model.name, experiment_name, fName, split, numVids)
 
 
 
@@ -222,8 +222,6 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         tot_train_time = []
         tot_load_time = []
 
-        x_q = Queue()#tf.FIFOQueue(capacity=100, shapes = [inputDims, size[0], size[1] ,3], dtypes=tf.float32)
-        y_q = Queue()#tf.FIFOQueue(capacity=100, shapes = [inputDims], dtypes=tf.int64)
 
         iterated_list=[]
         for epoch in range(nEpochs):
@@ -232,12 +230,12 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
 
             if len(vidList) == 0 or epoch != 0:
-                vidList = gen_video_list(dataset, model.name, experiment_name, 'trainlist', split, numVids, True)
+                vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, True)
             for vidNum in vidList:
                 mean_loss=[]
                 time_pre_load = time.time()
-                fName = 'trainlist'
-                loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,'trainlist0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+            #    fName = 'trainlist'
+                loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
 
 
                 time_post_load = time.time()
@@ -299,7 +297,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     print "Tot train time: ", np.sum(np.array(tot_train_time))
                     save_video_list(model.name, vidList, np.array(iterated_list), dataset, split, experiment_name)
             if epoch%3==0:
-                _validate(model, slogits, sess, experiment_name, curr_logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder)
+                _validate(model, slogits, sess, experiment_name, curr_logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder, baseDataPath)
 
             print "Tot load time: ", np.sum(np.array(tot_load_time))
 
@@ -311,15 +309,14 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
 
 
-def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, numVids, split, baseDataPath):#, dataSet, params):
+def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name, numVids, split, baseDataPath, fName):#, dataSet, params):
     with tf.name_scope("my_scope") as scope:
         isTraining = False
-        x_placeholder = tf.placeholder(tf.float32, shape=[inputDims, size[0], size[1] ,3], name='x_placeholder')# shape=[numGpus, inputDims, 224,224,3], name='x_placeholder')
+        x_placeholder = tf.placeholder(tf.float32, shape=[inputDims, size[0], size[1] ,3], name='x_placeholder')
         y_placeholder = tf.placeholder(tf.int64, shape=[inputDims], name='y_placeholder')
         global_step = tf.Variable(0, name='global_step', trainable=False)
         # Model Inference
-        logits = model.inference(x_placeholder, y_placeholder, False, inputDims, outputDims, seqLength, scope)
-
+        logits = model.inference(x_placeholder, y_placeholder, False, inputDims, outputDims, scope, seqLength=seqLength)
         # Logits
         softmax = tf.nn.softmax(logits)
         log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
@@ -349,7 +346,7 @@ def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experi
         acc = 0
         count = 0
         total_pred = []
-        vidList = gen_video_list(dataset, model.name, experiment_name, 'testlist', split, numVids, False)
+        vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False)
         for vidNum in vidList:
 
             count +=1
@@ -427,23 +424,25 @@ if __name__=="__main__":
     parser.add_argument('--numVids', action='store', required=True, type=int,
             help = 'Unique name of experiment being run')
 
-    parser.add_argument('--lr', action='store', required=True, type=float,
+    parser.add_argument('--lr', action='store', type=float,
             help = 'Learning Rate')
 
-    parser.add_argument('--wd', action='store', required=True, type=float,
+    parser.add_argument('--wd', action='store', type=float,
             help = 'Weight Decay')
 
-    parser.add_argument('--nEpochs', action='store', required=True, type=int,
+    parser.add_argument('--nEpochs', action='store', type=int,
             help = 'Number of Epochs')
 
     parser.add_argument('--split', action='store', type=int,
             help = 'Dataset split to use')
 
-    parser.add_argument('--baseDataPath', action='store',
+    parser.add_argument('--baseDataPath', action='store', required=True,
             help = 'Path to datasets')
 
+    parser.add_argument('--fName', action='store',
+            help = 'Which dataset list to use (trainlist, testlist, vallist)')
+
     args = parser.parse_args()
-#    import pdb;pdb.set_trace()
     loadModel = 1
     modelName = args.model
     numGpus = args.numGpus
@@ -459,9 +458,10 @@ if __name__=="__main__":
     lr = args.lr
     split = args.split
     nEpochs = args.nEpochs
-
+    baseDataPath = args.baseDataPath
+    fName = args.fName
     print args
-    baseDataPath = '/z/home/madantrg/Datasets'
+#    baseDataPath = '/z/home/madantrg/Datasets'
 
     if modelName=='lrcn':
         model = LRCN()
@@ -502,8 +502,9 @@ if __name__=="__main__":
 
     print 'outputDims: ', outputDims
     if args.train:
-        train(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, learning_rate_init=lr, wd=wd)
+        #fName = 'trainlist'
+        train(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, fName, learning_rate_init=lr, wd=wd)
 
     else:
-
-        test(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, numVids, split, baseDataPath)
+        #fName = 'testlist'
+        test(model, inputDims, outputDims, seqLength, [size, size], dataset, experiment_name, numVids, split, baseDataPath, fName)

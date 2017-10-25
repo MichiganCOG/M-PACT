@@ -109,21 +109,3 @@ def fully_connected_layer(input_tensor,
         if non_linear_fn is not None:
             fc1 = non_linear_fn(fc1)
         return fc1
-#
-# def batch_normalization_layer(input_tensor,
-#                               name,
-#                               moving_mean_initializer=tf.zeros_initializer(),
-#                               moving_variance_initializer=tf.ones_initializer(),
-#                               beta_initializer=tf.zeros_initializer(),
-#                               gamma_initializer=tf.ones_initializer()):
-#     """
-#     :param input_tensor:
-#     :param out_dim:
-#     :param name:
-#     :param non_linear_fn:
-#     :param weight_init:
-#     :param bias_init:
-#     :return:
-#     """
-#     with tf.variable_scope(name) as scope:
-#

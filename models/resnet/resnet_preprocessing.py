@@ -110,10 +110,8 @@ def _mean_image_subtraction(image, means):
       number of values in `means`.
   """
   num_channels = image.shape[-1]
- # import pdb;pdb.set_trace()
   for i in range(num_channels):
     image[:,:,i] -= means[i]
- # import pdb;pdb.set_trace()
   return image
 
 
@@ -172,15 +170,11 @@ def preprocess_for_train(image,
     A preprocessed image.
   """
   image = _aspect_preserving_resize(image, resize_side_min)
- # import pdb;pdb.set_trace()
   image = _random_crop([image], output_height, output_width)[0]
-  #import pdb;pdb.set_trace()
   image = image.reshape((output_height, output_width,3))
-  #import pdb;pdb.set_trace()
   image = image.astype('float32')
   if np.random.randint(low=0, high=1, size=1) > 0:
     image = image[:,::-1,:]
- # import pdb;pdb.set_trace()
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
@@ -280,16 +274,15 @@ def preprocess(index, Data, labels, size, isTraining):
             tempData.append(_preprocess_for_eval_new(im, size[1], size[0], min(size)))
     Data = np.array(tempData)
 
+    # Sample 25 frames from the 125 frame clip
     tempData = []
     for i in range(0, tFootprint, 5):
         tempData.append(Data[i])
-    #    print "footprint: ", i
 
     Data = np.array(tempData)
-#    import pdb;pdb.set_trace()
+
+    # Add 25 zero frames to training because the inputDims are only 25 but the
+    # LSTM needs a consistent input of 50 frames since that is the inputDim for testing
     if isTraining:
-
-
         Data = np.vstack([Data, np.zeros(Data.shape)])
-    #import pdb;pdb.set_trace()
     return Data
