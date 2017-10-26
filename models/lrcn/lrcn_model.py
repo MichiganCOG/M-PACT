@@ -30,7 +30,7 @@ class LRCN():
             dataDict = self.get_dataDict(weight_decay, isTraining)
 
     #    import pdb;pdb.set_trace()
-        with tf.name_scope("my_scope"):#, values=inputs): #scope, 'lrcn', [inputs]):
+        with tf.name_scope(scope, 'lrcn', [inputs]):#with tf.name_scope("my_scope"):#, values=inputs): #scope, 'lrcn', [inputs]):
 
             layers = {}
 

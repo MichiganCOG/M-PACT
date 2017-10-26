@@ -185,88 +185,89 @@ class ResNet():
         print('Generating RESNET network layers')
     #    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
         dataDict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
-        layers = {}
+        with tf.name_scope(scope, 'resnet', [x]):
+            layers = {}
 
-        layers['1'] = conv_layer(input_tensor=x,
-                filter_dims=[7, 7, 64], stride_dims=[2,2],
-                padding = 'VALID',
-                name='conv1',
-                kernel_init=tf.constant_initializer(dataDict['conv1']['conv1_W:0'].value),
-                bias_init=tf.constant_initializer(dataDict['conv1']['conv1_b:0'].value),
-                weight_decay = weight_decay, non_linear_fn=None)
+            layers['1'] = conv_layer(input_tensor=x,
+                    filter_dims=[7, 7, 64], stride_dims=[2,2],
+                    padding = 'VALID',
+                    name='conv1',
+                    kernel_init=tf.constant_initializer(dataDict['conv1']['conv1_W:0'].value),
+                    bias_init=tf.constant_initializer(dataDict['conv1']['conv1_b:0'].value),
+                    weight_decay = weight_decay, non_linear_fn=None)
 
-        layers['2'] = tf.layers.batch_normalization(layers['1'],
-                name='bn_conv1',
-                moving_mean_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_gamma:0'].value))
+            layers['2'] = tf.layers.batch_normalization(layers['1'],
+                    name='bn_conv1',
+                    moving_mean_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_running_mean:0'].value),
+                    moving_variance_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_running_std:0'].value),
+                    beta_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_beta:0'].value),
+                    gamma_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_gamma:0'].value))
 
-        layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
-                filter_dims=[3, 3], stride_dims=[2,2], name='pool1', padding='VALID')
+            layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
+                    filter_dims=[3, 3], stride_dims=[2,2], name='pool1', padding='VALID')
 
 
-        layers.update(self._conv_block([64,64,256], kernelSize=3, name='2a', layerNumbers=['4','5','6','7','8','9','10','11','12'],
-                        inputLayer=layers['3'], strides=1, dataDict=dataDict))
+            layers.update(self._conv_block([64,64,256], kernelSize=3, name='2a', layerNumbers=['4','5','6','7','8','9','10','11','12'],
+                            inputLayer=layers['3'], strides=1, dataDict=dataDict))
 
-        layers.update(self._identity_block([64,64,256], kernelSize=3, name='2b', layerNumbers=['13','14','15','16','17','18','19'],
-                        inputLayer=layers['12'], dataDict=dataDict))
+            layers.update(self._identity_block([64,64,256], kernelSize=3, name='2b', layerNumbers=['13','14','15','16','17','18','19'],
+                            inputLayer=layers['12'], dataDict=dataDict))
 
-        layers.update(self._identity_block([64,64,256], kernelSize=3, name='2c', layerNumbers=['20','21','22','23','24','25','26'],
-                        inputLayer=layers['19'], dataDict=dataDict))
+            layers.update(self._identity_block([64,64,256], kernelSize=3, name='2c', layerNumbers=['20','21','22','23','24','25','26'],
+                            inputLayer=layers['19'], dataDict=dataDict))
 
-        #########
-        layers.update(self._conv_block([128,128,512], kernelSize=3, name='3a', layerNumbers=['27','28','29','30','31','32','33','34','35'],
-                        inputLayer=layers['26'], dataDict=dataDict))
+            #########
+            layers.update(self._conv_block([128,128,512], kernelSize=3, name='3a', layerNumbers=['27','28','29','30','31','32','33','34','35'],
+                            inputLayer=layers['26'], dataDict=dataDict))
 
-        layers.update(self._identity_block([128,128,512], kernelSize=3, name='3b', layerNumbers=['36','37','38','39','40','41','42'],
-                        inputLayer=layers['35'], dataDict=dataDict))
+            layers.update(self._identity_block([128,128,512], kernelSize=3, name='3b', layerNumbers=['36','37','38','39','40','41','42'],
+                            inputLayer=layers['35'], dataDict=dataDict))
 
-        layers.update(self._identity_block([128,128,512], kernelSize=3, name='3c', layerNumbers=['43','44','45','46','47','48','49'],
-                        inputLayer=layers['42'], dataDict=dataDict))
+            layers.update(self._identity_block([128,128,512], kernelSize=3, name='3c', layerNumbers=['43','44','45','46','47','48','49'],
+                            inputLayer=layers['42'], dataDict=dataDict))
 
-        layers.update(self._identity_block([128,128,512], kernelSize=3, name='3d', layerNumbers=['50','51','52','53','54','55','56'],
-                        inputLayer=layers['49'], dataDict=dataDict))
+            layers.update(self._identity_block([128,128,512], kernelSize=3, name='3d', layerNumbers=['50','51','52','53','54','55','56'],
+                            inputLayer=layers['49'], dataDict=dataDict))
 
-        #########
-        layers.update(self._conv_block([256,256,1024], kernelSize=3, name='4a', layerNumbers=['57','58','59','60','61','62','63','64','65'],
-                        inputLayer=layers['56'], dataDict=dataDict))
+            #########
+            layers.update(self._conv_block([256,256,1024], kernelSize=3, name='4a', layerNumbers=['57','58','59','60','61','62','63','64','65'],
+                            inputLayer=layers['56'], dataDict=dataDict))
 
-        layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4b', layerNumbers=['66','67','68','69','70','71','72'],
-                        inputLayer=layers['65'], dataDict=dataDict))
+            layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4b', layerNumbers=['66','67','68','69','70','71','72'],
+                            inputLayer=layers['65'], dataDict=dataDict))
 
-        layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4c', layerNumbers=['73','74','75','76','77','78','79'],
-                        inputLayer=layers['72'], dataDict=dataDict))
+            layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4c', layerNumbers=['73','74','75','76','77','78','79'],
+                            inputLayer=layers['72'], dataDict=dataDict))
 
-        layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4d', layerNumbers=['80','81','82','83','84','85','86'],
-                        inputLayer=layers['79'], dataDict=dataDict))
+            layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4d', layerNumbers=['80','81','82','83','84','85','86'],
+                            inputLayer=layers['79'], dataDict=dataDict))
 
-        layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4e', layerNumbers=['87','88','89','90','91','92','93'],
-                        inputLayer=layers['86'], dataDict=dataDict))
+            layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4e', layerNumbers=['87','88','89','90','91','92','93'],
+                            inputLayer=layers['86'], dataDict=dataDict))
 
-        layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4f', layerNumbers=['94','95','96','97','98','99','100'],
-                        inputLayer=layers['93'], dataDict=dataDict))
+            layers.update(self._identity_block([256,256,1024], kernelSize=3, name='4f', layerNumbers=['94','95','96','97','98','99','100'],
+                            inputLayer=layers['93'], dataDict=dataDict))
 
-        #########
-        layers.update(self._conv_block([512,512,2048], kernelSize=3, name='5a', layerNumbers=['101','102','103','104','105','106','107','108','109'],
-                        inputLayer=layers['100'], dataDict=dataDict))
+            #########
+            layers.update(self._conv_block([512,512,2048], kernelSize=3, name='5a', layerNumbers=['101','102','103','104','105','106','107','108','109'],
+                            inputLayer=layers['100'], dataDict=dataDict))
 
-        layers.update(self._identity_block([512,512,2048], kernelSize=3, name='5b', layerNumbers=['110','111','112','113','114','115','116'],
-                        inputLayer=layers['109'], dataDict=dataDict))
+            layers.update(self._identity_block([512,512,2048], kernelSize=3, name='5b', layerNumbers=['110','111','112','113','114','115','116'],
+                            inputLayer=layers['109'], dataDict=dataDict))
 
-        layers.update(self._identity_block([512,512,2048], kernelSize=3, name='5c', layerNumbers=['117','118','119','120','121','122','123'],
-                        inputLayer=layers['116'], dataDict=dataDict))
+            layers.update(self._identity_block([512,512,2048], kernelSize=3, name='5c', layerNumbers=['117','118','119','120','121','122','123'],
+                            inputLayer=layers['116'], dataDict=dataDict))
 
-        layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
-        layers['125'] = self._LSTM(layers['124'], seqLength, featSize=2048, cellSize=512, isTraining=isTraining)
+            layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
+            layers['125'] = self._LSTM(layers['124'], seqLength, featSize=2048, cellSize=512, isTraining=isTraining)
 
-        layers['126'] = tf.layers.dropout(layers['125'], training=isTraining, rate=0.5)
+            layers['126'] = tf.layers.dropout(layers['125'], training=isTraining, rate=0.5)
 
-        layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
-                out_dim=outputDims, non_linear_fn=None,
-                name='logits', weight_decay=weight_decay)
+            layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
+                    out_dim=outputDims, non_linear_fn=None,
+                    name='logits', weight_decay=weight_decay)
 
-        return layers[return_layer]
+            return layers[return_layer]
 
 
 
