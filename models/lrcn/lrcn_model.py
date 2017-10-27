@@ -19,20 +19,17 @@ class LRCN():
 
     def _LSTM(self, inputs, isTraining, inputDims, seqLength, dataDict, featSize=4096, cellSize=256, cpuId=0):
 
-        with tf.device('/cpu:'+str(cpuId)):
+        with tf.device('/gpu:'+str(cpuId)):
 
             inputs = tf.reshape(inputs, shape=[inputDims/seqLength,seqLength,featSize])
 
-        #    print('11', layers['11'].shape)
             wi = tf.get_variable('rnn/lstm_cell/kernel', [4352, 1024], initializer=tf.constant_initializer(dataDict['lstm1'][0]))
             bi = tf.get_variable('rnn/lstm_cell/bias', [1024], initializer=tf.constant_initializer(dataDict['lstm1'][1]))
-            lstm_cell = LSTMCell(cellSize, forget_bias=0.0, weights_initializer=wi, bias_initializer=bi)#, initializer = (dataDict['lstm1_0'], dataDict['lstm1_1']))
-#            import pdb;pdb.set_trace()
-    #        print(lstm_cell.state_size)
-            rnn_outputs, states = tf.nn.dynamic_rnn(lstm_cell, inputs, dtype=tf.float32)#, initial_state=dataDict['lstm1_2'])#, dtype=tf.float32)#[tf.reshape(layers['11'], [16,10,4096])], dtype=tf.float32)#, initial_state=dataDict['lstm1_2'])
-        return tf.reshape(rnn_outputs, shape=[-1,cellSize])
-
-    def inference(self, inputs, labels, isTraining, inputDims, outputDims, scope, seqLength=16, dropoutRate = 0.5, return_layer='logits', cpuId = 0, weight_decay=0.0):
+            lstm_cell = LSTMCell(cellSize, forget_bias=0.0, weights_initializer=wi, bias_initializer=bi)
+            rnn_outputs, states = tf.nn.dynamic_rnn(lstm_cell, inputs, dtype=tf.float32)
+            rnn_outputs = tf.reshape(rnn_outputs, shape=[-1,256])
+            return rnn_outputs
+    def inference(self, inputs, isTraining, inputDims, outputDims, seqLength, scope, dropoutRate = 0.5, return_layer='logits', cpuId = 0, weight_decay=0.0):
 
         ############################################################################
         #                        Creating LRCN Network Layers                      #
@@ -161,7 +158,7 @@ class LRCN():
 
             layers['logits'] = fully_connected_layer(input_tensor=layers['rnn_outputs_rs'],
                                       out_dim=outputDims,
-                                      name='fc8',
+                                      name='logits',
                                       weight_decay=weight_decay,
                                       non_linear_fn=None,
                                       weight_init=tf.constant_initializer(dataDict['fc8'][0]),

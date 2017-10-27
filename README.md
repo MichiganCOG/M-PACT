@@ -27,6 +27,7 @@ This README will walk you through the process of installing dependencies, downlo
 * Numpy
 * OpenCV
 * Cudnn
+* Cuda
 * h5py
 
 
@@ -42,7 +43,7 @@ This README will walk you through the process of installing dependencies, downlo
 
 ### Implemented Datasets:
 
-* HMDB15
+* HMDB51
 * UCF101
 
 ### Future Models:
@@ -217,10 +218,41 @@ python genHDF5.py \
 
 #### Testing using existing models
 
+Must download the saved checkpoints for the trained models with experiment names: resnet_test, vgg16_test, lrcn_test
+
+Test ResNet on HMDB51:
+```
+python train_test_model.py  --model resnet  --dataset HMDB51  --train 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName resnet_test  --numVids 1530  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName testlist
+```
+
+Test VGG16 on HMDB51:
+```
+python train_test_model.py  --model vgg16  --dataset HMDB51  --train 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName vgg16_test  --numVids 1530  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName testlist
+```
+
+Test LRCN on UCF101:
+```
+python train_test_model.py  --model lrcn  --dataset UCF101  --train 0  --size 227  --inputDims 160  --outputDims 101  --seqLength 16  --expName lrcn_test  --numVids 3783  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName testlist
+```
+
+
 #### Training models from scratch
+Train ResNet on HMDB51:
+```
+python train_test_model.py  --model resnet  --dataset HMDB51  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName resnet_train  --numVids 3570  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
+```
 
+Train VGG16 on HMDB51:
+```
+python train_test_model.py  --model vgg16  --dataset HMDB51  --train 1  --load 0  --size 224  --inputDims 25  --outputDims 51  --seqLength 25  --expName vgg16_train  --numVids 3570  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
+```
+
+Train LRCN on UCF101:
+```
+python train_test_model.py  --model lrcn  --dataset UCF101  --train 1  --load 0  --size 227  --inputDims 160  --outputDims 101  --seqLength 16  --expName lrcn_train  --numVids 9537  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
+```
 #### Finetuning model
-
+(Currently Unavailable)
 
 
 
@@ -296,7 +328,7 @@ from models.model.name_model import ModelClass
 
 
 ### Adding a dataset (Currently Unavailable)
-
+HDF5 files are structured such that
 
 
 
@@ -306,11 +338,11 @@ from models.model.name_model import ModelClass
 ### Accuracies of Models
 The install of this framework can be tested by comparing the output with these expected testing results of the various models trained on the datasets.
 
-|  Model Architecture  |      Dataset      |  Testing Accuracy |  
-|----------|:-------------:|------:|
-| LRCN |  UCF101 | 71.72% |
-| ResNet |   HMDB51   |   44.97% |
-| VGG16 | HMDB51 |    28.10% |
+|  Model Architecture  |      Dataset      |  Accepted Accuracy |  Framework Testing Accuracy |  
+|----------|:----------:|:------:| :----:|
+| LRCN |  UCF101 | 71.12% | 71.72% |
+| ResNet |   HMDB51   |  43.90%  |  44.97% |
+| VGG16 | HMDB51 |  --   |  28.10% |
 
 
 

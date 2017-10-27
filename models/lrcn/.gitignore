@@ -3,3 +3,4 @@ Numpy_from_Caffe/
 lrcn.npy
 format_weights.py
 lrcn_old.npy
+test_v1.py

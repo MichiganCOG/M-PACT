@@ -148,7 +148,7 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims,
 
 
 
-def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, fName, learning_rate_init=0.001, wd=0.0):
+def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=0.001, wd=0.0):
     with tf.name_scope("my_scope") as scope:
         isTraining = True
         global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -168,10 +168,10 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
 
                     if model.name=='resnet' or model.name == 'vgg16':
-                        logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], y_placeholder[gpuIdx,:], True, inputDims*2, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
+                        logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], True, inputDims*2, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
                         logits = logits[:25]
                     else:
-                        logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], y_placeholder[gpuIdx,:], True, inputDims, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
+                        logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], True, inputDims, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
                     slogits = tf.nn.softmax(logits)
                     lr = vs.get_variable("learning_rate", [],trainable=False,initializer=init_ops.constant_initializer(learning_rate_init))
 
@@ -199,7 +199,6 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         init = tf.global_variables_initializer()
 
         sess.run(init)
-        split = 1
         vidList = []
         if loadModel:
             ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name,   experiment_name+ '_'+dataset, 'checkpoints/checkpoint')))
@@ -316,7 +315,7 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
         y_placeholder = tf.placeholder(tf.int64, shape=[inputDims], name='y_placeholder')
         global_step = tf.Variable(0, name='global_step', trainable=False)
         # Model Inference
-        logits = model.inference(x_placeholder, y_placeholder, False, inputDims, outputDims, scope, seqLength=seqLength)
+        logits = model.inference(x_placeholder, False, inputDims, outputDims, seqLength, scope)
         # Logits
         softmax = tf.nn.softmax(logits)
         log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
@@ -340,8 +339,6 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
         total_pred = []
         acc = 0
         count = 0
-        splits = [3783,3734,3696]
-        split = 1
 
         acc = 0
         count = 0
@@ -503,7 +500,7 @@ if __name__=="__main__":
     print 'outputDims: ', outputDims
     if args.train:
         #fName = 'trainlist'
-        train(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, baseDataPath, fName, learning_rate_init=lr, wd=wd)
+        train(model, inputDims, outputDims, seqLength, [size, size], numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=lr, wd=wd)
 
     else:
         #fName = 'testlist'
