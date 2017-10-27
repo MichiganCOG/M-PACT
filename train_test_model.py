@@ -248,9 +248,9 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                            dataset, #args.dataset,
                                                            experiment_name) )#args.experiment_name)
-    #    make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset))
-    #    make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset, 'checkpoints'))
-    #    curr_logger = Logger(os.path.join('Logs',model.name,dataset, log_name))
+        make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset))
+        make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset, 'checkpoints'))
+        curr_logger = Logger(os.path.join('Logs',model.name,dataset, log_name))
         sess = tf.Session(config=config)
         saver = tf.train.Saver()
         init = tf.global_variables_initializer()
@@ -351,13 +351,14 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         #        print "Predictions shape ", np.array(predictions).shape
         #        print "input data shape ", input_data.shape
         #        print "x placeholder shape ", x_placeholder.shape
+                mean_loss.append(np.mean(loss_val))
                 for pred in predictions:
                     # numClips = 1
                     # output_predictions = np.zeros((numClips, outputDims))
                     # output_predictions[numClips] = np.mean(pred, 0)
                     tot_step+=1
 
-                    mean_loss.append(np.mean(loss_val))
+
                     pred = np.mean(pred, 0).argmax()
         #            print "pred: ", pred
                     if pred == labels[0][0]:
@@ -370,8 +371,8 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
             #        time_post_train = time.time()
                     count+=1
             #        curr_logger.add_scalar_value('train/total_acc', acc/float(count), step=gs)
-                    print "step  loss  acc: ", gs, np.mean(loss_val), acc/float(count)
-                    np.save('timing_gpus2_1_'+log_name+'.npy', np.array([tot_load_time, tot_train_time]))
+                    print "gs count  loss  acc: ", gs, count, np.mean(loss_val), acc/float(count)
+                #    np.save('timing_gpus2_1_'+log_name+'.npy', np.array([tot_load_time, tot_train_time]))
                     print
                     print
             #        tot_train_time.append((time_post_train - time_pre_train))
@@ -385,7 +386,8 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     # if int(guess) == int(labels[0][0]):
                     #     epoch_acc += 1
 
-            #        curr_logger.add_scalar_value('train/loss', float(np.mean(mean_loss)), step=gs)
+                curr_logger.add_scalar_value('train/loss', np.mean(loss_val), step=gs)
+
             #        curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(epoch_count), step=gs)
             #        curr_logger.add_scalar_value('train_time',time_post_train - time_pre_train, step=gs)
             #        curr_logger.add_scalar_value('load_time',time_post_load - time_pre_load, step=gs)
@@ -444,15 +446,15 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
             #     curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(epoch_count), step=gs)
             #     curr_logger.add_scalar_value('train_time',time_post_train - time_pre_train, step=gs)
             #     curr_logger.add_scalar_value('load_time',time_post_load - time_pre_load, step=gs)
+                epoch_count+=1
+                if epoch_count%50 == 0:
 
-                # if epoch_count%50 == 0:
-                #
-                # #    saver.save(sess, os.path.join('results',model.name, experiment_name + '_'+dataset,'checkpoints/checkpoint'), global_step.eval(session=sess))
-                # #    print "Saving..."
-                #     print "Curr time: ", time.time()-time_init
-                #     print "Tot load time: ", np.sum(np.array(tot_load_time))
-                #     print "Tot train time: ", np.sum(np.array(tot_train_time))
-                #    save_video_list(model.name, vidList, np.array(iterated_list), dataset, split, experiment_name)
+                    saver.save(sess, os.path.join('results',model.name, experiment_name + '_'+dataset,'checkpoints/checkpoint'), global_step.eval(session=sess))
+                    print "Saving..."
+                #    print "Curr time: ", time.time()-time_init
+                #    print "Tot load time: ", np.sum(np.array(tot_load_time))
+                #    print "Tot train time: ", np.sum(np.array(tot_train_time))
+                #   save_video_list(model.name, vidList, np.array(iterated_list), dataset, split, experiment_name)
     #        if epoch%3==0:
     #            _validate(model, slogits, sess, experiment_name, curr_logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder)
 
