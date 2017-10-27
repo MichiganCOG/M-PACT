@@ -258,7 +258,7 @@ Train LRCN on UCF101:
 ```
 python train_test_model.py  --model lrcn  --dataset UCF101  --train 1  --load 0  --size 227  --inputDims 160  --outputDims 101  --seqLength 16  --expName lrcn_train  --numVids 9537  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
 ```
-[comment]: <> (#### Finetuning model)
+
 
 
 
