@@ -189,8 +189,8 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         config = tf.ConfigProto(allow_soft_placement=True)
         log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                                           dataset, #args.dataset,
-                                                           experiment_name) )#args.experiment_name)
+                                                           dataset,
+                                                           experiment_name) )
         make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset))
         make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset, 'checkpoints'))
         curr_logger = Logger(os.path.join('Logs',model.name,dataset, log_name))
@@ -233,7 +233,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
             for vidNum in vidList:
                 mean_loss=[]
                 time_pre_load = time.time()
-            #    fName = 'trainlist'
+
                 loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
 
 
@@ -256,7 +256,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                     time_pre_train = time.time()
 
-                    _, loss_val, pred, gs = sess.run([train_op, total_loss, slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels})#, learning_rate: lr})
+                    _, loss_val, pred, gs = sess.run([train_op, total_loss, slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels})
 
 
                     output_predictions[clip] = np.mean(pred, 0)
@@ -308,7 +308,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
 
 
-def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name, numVids, split, baseDataPath, fName):#, dataSet, params):
+def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name, numVids, split, baseDataPath, fName):
     with tf.name_scope("my_scope") as scope:
         isTraining = False
         x_placeholder = tf.placeholder(tf.float32, shape=[inputDims, size[0], size[1] ,3], name='x_placeholder')
