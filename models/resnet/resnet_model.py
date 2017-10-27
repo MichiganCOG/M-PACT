@@ -181,7 +181,7 @@ class ResNet():
         ############################################################################
 
         print('Generating RESNET network layers')
-        dataDict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
+        dataDict = h5py.File('/z/home/erichof/TF_Activity_Recognition_Framework/models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
         layers = {}
 
         layers['1'] = conv_layer(input_tensor=inputs,

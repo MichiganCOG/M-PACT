@@ -40,7 +40,7 @@ class LRCN():
             print('Generating LRCN Network Layers')
 
 
-        dataDict = np.load('models/lrcn/lrcn.npy').tolist()
+        dataDict = np.load('/z/home/erichof/TF_Activity_Recognition_Framework/models/lrcn/lrcn.npy').tolist()
 
         with tf.name_scope("my_scope"):
 

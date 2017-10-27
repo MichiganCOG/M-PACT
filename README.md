@@ -28,6 +28,7 @@ This README will walk you through the process of installing dependencies, downlo
 * OpenCV
 * Cudnn
 * Cuda
+* gflags
 * h5py
 
 
@@ -206,10 +207,16 @@ In order to run any of this code, the datasets will need to be downloaded and fo
 
 The datasets incorporated into this framework are UCF101 and HMDB51, however, they do not exist in this repository and must be downloaded.  These datasets have scripts associated with them to easily format them correctly.  Custom datasets can also be added as described in the next section.
 
-```
-python genHDF5.py \
+The current genHDF5 program will make use of a pool of 30 processors to generate the files in parallel.
 
---vidsFile File containing the paths to the videos
+```
+python scripts/dataset_formatting/genHDF5.py \
+
+--vidsFile		File containing the paths to the videos
+--baseDataPath	Original dataset directory
+--baseDestPath	Destination directory
+--chunk			Number of videos to aggregate together into a single HDF5 file (Ex. 100)
+--fName			Name of HDF5 file, prefix (testlist, trainlist, vallist)
 ```
 
 
@@ -251,8 +258,8 @@ Train LRCN on UCF101:
 ```
 python train_test_model.py  --model lrcn  --dataset UCF101  --train 1  --load 0  --size 227  --inputDims 160  --outputDims 101  --seqLength 16  --expName lrcn_train  --numVids 9537  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
 ```
-#### Finetuning model
-(Currently Unavailable)
+[comment]: <> (#### Finetuning model)
+
 
 
 
@@ -286,6 +293,9 @@ Create the file model file:
 
 File Structure:
 ```
+from model_preprocessing import preprocess
+
+
 class ModelName():
 	def __init__(self, verbose):
         self.verbose=verbose
@@ -295,7 +305,7 @@ class ModelName():
     	return
 
     def preprocess(self, index, data, labels, size, isTraining):
-        return
+        return preprocess(index, data,labels, size, isTraining)
 
     def loss(self, logits, labels):
         return
@@ -326,9 +336,17 @@ from models.model.name_model import ModelClass
 
 ```
 
+In the main of train_test_model.py add:
 
-### Adding a dataset (Currently Unavailable)
-HDF5 files are structured such that
+```
+elif modelName == 'name_model':
+    model = ModelClass()
+
+```
+
+
+### Adding a dataset
+Adding a new dataset requires that the videos are structured in the expected directory structure and that there exist the necessary supplemental text files for the HDF5 file generation like the vidsFile
 
 
 
@@ -360,7 +378,7 @@ The install of this framework can be tested by comparing the output with these e
 ### Current Version: 1.0
 
 #### Version 1.0
-Initial release. Using pre generated HDF5 files, test LRCN model on UCF101 dataset and train ResNet and VGG16 models on HMDB51 dataset.  Tensorboard supported, single processor and single GPU implementation.  Documentation includes basic overview and example of training and testing commands.
+Initial release. Using pre generated HDF5 files, test LRCN model on UCF101 dataset and train ResNet and VGG16 models on HMDB51 dataset.  Tensorboard supported, single processor and single GPU implementation with the ability to cancel and resume training every 50 steps.  Documentation includes basic overview and example of training and testing commands.
 
 Future features:
 
