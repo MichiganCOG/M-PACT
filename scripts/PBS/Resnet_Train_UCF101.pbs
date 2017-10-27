@@ -109,7 +109,7 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
 
-cd /z/home/erichof/TensorflowCV_Framework/
+cd /z/home/erichof/TF_Activity_Recognition_Framework/
 echo "Train Resnet"
 
 python train_test_model.py \

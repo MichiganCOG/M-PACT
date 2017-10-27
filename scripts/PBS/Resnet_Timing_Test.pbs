@@ -128,7 +128,8 @@ python train_test_model.py \
 --wd 0.0 \
 --lr 0.001 \
 --nEpochs 1 \
---baseDataPath /z/home/madantrg/Datasets
+--baseDataPath /z/home/madantrg/Datasets \
+--fName trainlist
 
 
 
