@@ -15,9 +15,9 @@ def load_dataset(model, index, fName, baseDataPath, vidFile, classIndFile, size,
     fHDF5 = h5py.File(os.path.join(baseDataPath, fName)+'_['+str(int(index/chunk))+']_.hdf5', 'r')
 
     data =fHDF5[os.path.split(lines[index].split('.avi')[0])[1]]['Data'].value
-
+#    data =fHDF5[os.path.split(ps.path.splitext(lines[index])[0])[1]]['Data'].value
     label = fHDF5[os.path.split(lines[index].split('.avi')[0])[1]]['Label'].value
-
+    #label = fHDF5[os.path.split(os.path.splitext(lines[index])[0])[1]]['Label'].value
     if dataset=='UCF101' and label != -1:
         label = label-1
 

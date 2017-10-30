@@ -58,7 +58,7 @@ def _average_gradients(tower_grads, clips_to_average, numGpus):
         #import pdb;pdb.set_trace()
     #    grad = tf.cond(tf.equal(clips_to_average , numGpusC), lambda: tf.concat(axis=0, values=grads[:clips_to_average]), lambda: tf.concat(axis=0, values=grads))
         grad = tf.concat(axis=0, values=grads)
-        grad = tf.gather(grad,tf.range(clips_to_average))
+    #    grad = tf.gather(grad,tf.range(clips_to_average))
         grad = tf.reduce_mean(grad, 0)
         #import pdb;pdb.set_trace()
         # Keep in mind that the Variables are redundant because they are shared
@@ -92,6 +92,7 @@ def load_video_list(dataset, modelName, experiment_name, fName, split, numVids):
 
 
 def gen_video_list(dataset, modelName, experiment_name, fName, split, numVids, shuffle):
+
 
     vidFile = open(os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'),'r')
     lines = vidFile.readlines()
@@ -166,9 +167,12 @@ def load_video_into_queue(x_q, y_q, model, vidList, numGpus):
         if vidList != []:
         #    import pdb;pdb.set_trace()
             vidNum = vidList[gpuCount]
-            vidList = vidList[1:]
+        #    vidList = vidList[1:]
             print "Load vid ", vidNum
-            loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+            if dataset == "Kinetics":
+                loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB'), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+            else:
+                loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
             labels = np.repeat(labels, inputDims)
         #    import pdb;pdb.set_trace()
 
@@ -185,7 +189,10 @@ def load_video_into_queue(x_q, y_q, model, vidList, numGpus):
             for clip in range(numClips):
                 x_q.put(loaded_data[clip])
                 y_q.put(labels)
-
+    if len(vidList) >= numVidsToLoad:
+        vidList = vidList[numVidsToLoad:]
+    else:
+        vidList = []
         # ignoreClipsInd = numGpus
         # if vidList == [] and x_q.qsize()%numGpus != 0:
         #     for emptyVid in range(numGpus - x_q.qsize()%numGpus):
@@ -324,15 +331,19 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                 labels = np.zeros((numGpus, inputDims))
                 excessClips = 0
+                lastVidIndex = 0
                 for gpuCount in range(numGpus):
                     if x_q.qsize() > 0:
                         input_data[gpuCount] = x_q.get()
                         labels[gpuCount] = y_q.get()
+                        lastVidIndex = gpuCount
                     else:
                         # Other option is to create variable that says there are excess values and to eval that above and make if then statement for _average_gradients?
                         # If there are not enough clips to fill each gpu, then just train the last clip multiple time_post_train
-                        excessClips+=1
+                        #excessClips+=1
                         finished = True
+                        input_data[lastVidIndex] = input_data[gpuCount]
+                        labels[lastVidIndex] = labels[gpuCount]
                 #        input_data[gpuCount] = input_data[gpuCount-1]
                 #        labels[gpuCount] = labels[gpuCount-1]
                 clipsAvail = numGpus - excessClips
@@ -367,12 +378,12 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     train_time = post_train-pre_train
         #            print "numGpus, Train time: ", numGpus, train_time
                     tot_train_time.append(train_time/float(numGpus))
-                    print "Total Train Time: ", np.sum(np.array(tot_train_time))
+                    print "Train Time: ", np.sum(np.array(train_time))
             #        time_post_train = time.time()
                     count+=1
-            #        curr_logger.add_scalar_value('train/total_acc', acc/float(count), step=gs)
+                    curr_logger.add_scalar_value('train/total_acc', acc/float(count), step=gs)
                     print "gs count  loss  acc: ", gs, count, np.mean(loss_val), acc/float(count)
-                    np.save('timing_gpus3_2_'+log_name+'.npy', np.array([tot_load_time, tot_train_time]))
+                    np.save('timing_4gpuloss_'+str(numGpus)+'_'+log_name+'.npy', np.array([tot_load_time, tot_train_time]))
                     print
                     print
             #        tot_train_time.append((time_post_train - time_pre_train))
@@ -386,7 +397,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     # if int(guess) == int(labels[0][0]):
                     #     epoch_acc += 1
 
-        #        curr_logger.add_scalar_value('train/loss', np.mean(loss_val), step=gs)
+                curr_logger.add_scalar_value('train/loss', np.mean(loss_val), step=gs)
 
             #        curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(epoch_count), step=gs)
             #        curr_logger.add_scalar_value('train_time',time_post_train - time_pre_train, step=gs)
