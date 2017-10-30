@@ -178,8 +178,9 @@ class LRCN():
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels):
-
+        labels = tf.tile(labels, logits.shape[0].value/labels.shape[0].value)
         labels = tf.cast(labels, tf.int64)
+        
         crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
                         logits=logits)
 
