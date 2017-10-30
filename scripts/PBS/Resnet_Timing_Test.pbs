@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=0:05:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=1:ppn=1:gpus=2    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=1:ppn=1:gpus=3    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -114,7 +114,7 @@ echo "Train Resnet"
 
 python train_test_model.py \
 --model resnet \
---numGpus 2 \
+--numGpus 3 \
 --dataset HMDB51 \
 --train 1 \
 --load 1 \

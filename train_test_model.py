@@ -372,7 +372,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     count+=1
             #        curr_logger.add_scalar_value('train/total_acc', acc/float(count), step=gs)
                     print "gs count  loss  acc: ", gs, count, np.mean(loss_val), acc/float(count)
-                #    np.save('timing_gpus2_1_'+log_name+'.npy', np.array([tot_load_time, tot_train_time]))
+                    np.save('timing_gpus3_2_'+log_name+'.npy', np.array([tot_load_time, tot_train_time]))
                     print
                     print
             #        tot_train_time.append((time_post_train - time_pre_train))
@@ -386,7 +386,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                     # if int(guess) == int(labels[0][0]):
                     #     epoch_acc += 1
 
-                curr_logger.add_scalar_value('train/loss', np.mean(loss_val), step=gs)
+        #        curr_logger.add_scalar_value('train/loss', np.mean(loss_val), step=gs)
 
             #        curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(epoch_count), step=gs)
             #        curr_logger.add_scalar_value('train_time',time_post_train - time_pre_train, step=gs)
