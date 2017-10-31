@@ -130,8 +130,8 @@ python train_test_model.py \
 --split 1 \
 --baseDataPath /z/home/madantrg/Datasets \
 --fName trainlist \
---save_freq 1 \
---val_freq 5
+--saveFreq 1 \
+--valFreq 5
 
 
 
