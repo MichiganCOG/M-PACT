@@ -323,8 +323,8 @@ class VGG16():
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels):
         labels = tf.cast(labels, tf.int64)
-        crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
-                        logits=logits[logits.shape[0].value/2,:])
+        crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
+                        logits=logits[:logits.shape[0].value/2,:])
         return crossEntropyLoss
 
 

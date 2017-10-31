@@ -118,9 +118,9 @@ python train_test_model.py \
 --dataset UCF101 \
 --train 1 \
 --load 0 \
---inputDims 25 \
+--inputDims 50 \
 --outputDims 101 \
---seqLength 25 \
+--seqLength 50 \
 --size 224  \
 --expName resnet_UCF101  \
 --numVids 9537 \

@@ -170,7 +170,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         tower_losses = []
         tower_grads = []
-        
+
         # Define Optimizer
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
 
@@ -180,7 +180,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
 
                     logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], True, inputDims, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
-                   
+
                     # Calculating Softmax for probability outcomes : Can be modified
                     # Make function internal to model
                     slogits = tf.nn.softmax(logits)
@@ -190,15 +190,15 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                 reuse_variables = True
 
-                """ Within GPU mini-batch: 1) Calculate loss, 
-                                           2) Initialize optimizer with required learning rate and 
-                                           3) Compute gradients                                        
+                """ Within GPU mini-batch: 1) Calculate loss,
+                                           2) Initialize optimizer with required learning rate and
+                                           3) Compute gradients
                 """
                 total_loss = model.loss(logits, y_placeholder[gpuIdx, :])
                 opt = optimizer(lr)
                 gradients = opt.compute_gradients(total_loss, vars_.trainable_variables())
 
-        """  After: 1) Computing gradients and losses need to be stored and averaged   
+        """  After: 1) Computing gradients and losses need to be stored and averaged
                     2) Clip gradients by norm to required value
                     3) Apply mean gradient updates
         """
@@ -360,7 +360,7 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
                                                            dataset,
                                                            experiment_name) )
         curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
-        
+
         # Session setup
         sess  = tf.Session()
         saver = tf.train.Saver()
@@ -490,11 +490,11 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     print "Setup of current experiment: ", args
-
+    modelName = args.model
     # Associating Models
     if modelName=='lrcn':
         model = LRCN()
-        
+
     elif modelName == 'vgg16':
         model = VGG16()
 
@@ -504,38 +504,38 @@ if __name__=="__main__":
     else:
         print("Model not found")
 
-    print args.train
-    print 'outputDims: ', outputDims
+
+
 
     if args.train:
-        train(  model              = model, 
-                inputDims          = args.inputDims, 
-                outputDims         = args.outputDims, 
-                seqLength          = args.seqLength, 
-                size               = [args.size, args.size], 
-                numGpus            = args.numGpus, 
-                dataset            = args.dataset, 
-                experiment_name    = args.expName, 
-                loadModel          = args.load, 
-                numVids            = args.numVids, 
-                nEpochs            = args.nEpochs, 
-                split              = args.split, 
-                baseDataPath       = args.baseDataPath, 
-                fName              = args.fName, 
-                learning_rate_init = args.lr, 
+        train(  model              = model,
+                inputDims          = args.inputDims,
+                outputDims         = args.outputDims,
+                seqLength          = args.seqLength,
+                size               = [args.size, args.size],
+                numGpus            = args.numGpus,
+                dataset            = args.dataset,
+                experiment_name    = args.expName,
+                loadModel          = args.load,
+                numVids            = args.numVids,
+                nEpochs            = args.nEpochs,
+                split              = args.split,
+                baseDataPath       = args.baseDataPath,
+                fName              = args.fName,
+                learning_rate_init = args.lr,
                 wd                 = args.wd,
                 save_freq          = args.saveFreq,
                 val_freq           = args.valFreq)
 
     else:
-        test(   model = model, 
-                inputDims       = args.inputDims, 
-                outputDims      = args.outputDims, 
-                seqLength       = args.seqLength, 
-                size            = [args.size, args.size], 
-                dataset         = args.dataset, 
-                experiment_name = args.expName, 
-                numVids         = args.numVids, 
-                split           = args.split, 
-                baseDataPath    = args.baseDataPath, 
+        test(   model = model,
+                inputDims       = args.inputDims,
+                outputDims      = args.outputDims,
+                seqLength       = args.seqLength,
+                size            = [args.size, args.size],
+                dataset         = args.dataset,
+                experiment_name = args.expName,
+                numVids         = args.numVids,
+                split           = args.split,
+                baseDataPath    = args.baseDataPath,
                 fName           = args.fName)
