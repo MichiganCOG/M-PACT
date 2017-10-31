@@ -129,8 +129,9 @@ python train_test_model.py \
 --nEpochs 2 \
 --split 1 \
 --baseDataPath /z/home/madantrg/Datasets \
---fName trainlist
-
+--fName trainlist \
+--save_freq 1 \
+--val_freq 5
 
 
 
