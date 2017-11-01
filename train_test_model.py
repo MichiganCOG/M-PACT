@@ -110,7 +110,7 @@ def save_video_list(modelName, videoList, iterated_list, dataset, split, experim
 
 def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder, baseDataPath):
 
-    if dataset == 'HMDB51':
+    if dataset == 'HMDB51' or dataset == "HMDB51Rate":
         fName = 'vallist'
     else:
         fName = 'testlist'
