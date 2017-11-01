@@ -436,7 +436,7 @@ if __name__=="__main__":
     parser.add_argument('--dataset', action= 'store', required=True,
             help= 'Dataset (UCF101, HMDB51)')
 
-    parser.add_argument('--numGpus', action= 'store', required=True, type=int,
+    parser.add_argument('--numGpus', action= 'store', type=int,
             help = 'Number of Gpus used for calculation')
 
     parser.add_argument('--train', action= 'store', required=True, type=int,
