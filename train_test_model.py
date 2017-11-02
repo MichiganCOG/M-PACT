@@ -346,7 +346,6 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
         isTraining = False
 
         x_placeholder = tf.placeholder(tf.float32, shape=[inputDims, size[0], size[1] ,3], name='x_placeholder')
-        y_placeholder = tf.placeholder(tf.int64, shape=[inputDims], name='y_placeholder')
         global_step   = tf.Variable(0, name='global_step', trainable=False)
 
         # Model Inference
@@ -379,9 +378,6 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
         acc        = 0
         count      = 0
 
-        acc        = 0
-        count      = 0
-        total_pred = []
 
         vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False, 0)
 
@@ -399,7 +395,7 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
                 numClips = 1
             else:
                 numClips = len(loaded_data)
-            output_predictions = np.zeros((len(loaded_data), outputDims))
+            output_predictions = np.zeros((numClips, outputDims))
 
             for ldata in range(numClips):
 
