@@ -176,7 +176,7 @@ class ResNet():
 
         return layers
 
-    def inference(self, inputs, labels, isTraining, inputDims, outputDims, seqLength, scope, dropoutRate = 0.5, return_layer='logits', dataDict=None, cpuId = 0, weight_decay=0.0):#x, isTraining, dataDict, seqLength, outputDims):#gen_resnet50_baseline1_network(x, isTraining, dataDict, seqLength, outputDims):
+    def inference(self, inputs, isTraining, inputDims, outputDims, seqLength, scope, dropoutRate = 0.5, return_layer='logits', dataDict=None, cpuId = 0, weight_decay=0.0):
 
         ############################################################################
         #                       Creating ResNet50 Network Layers                   #
@@ -184,7 +184,7 @@ class ResNet():
 
         print('Generating RESNET network layers')
     #    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
-        dataDict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
+        dataDict = h5py.File('/z/home/erichof/TF_Activity_Recognition_Framework/models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
 
