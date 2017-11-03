@@ -380,7 +380,8 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
 
 
         vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False, 0)
-
+        #all_labels = []
+        #all_predictions = []
         for vidNum in vidList:
             count +=1
             loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB', 'Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
@@ -406,7 +407,9 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
 
             guess = np.mean(output_predictions, 0).argmax()
             print "prediction: ", guess
-
+        #    all_predictions.append(int(guess))
+        #    all_labels.append(int(labels[0]))
+        #    np.save('resnet_orig_pred.npy', np.array([all_labels, all_predictions]))
             total_pred.append((guess, labels[0]))
             if int(guess) == int(labels[0]):
                 acc += 1
