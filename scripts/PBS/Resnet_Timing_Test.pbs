@@ -1,9 +1,15 @@
 #!/bin/bash -f
 #PBS -N Resnet_Timing_Test     # Name of the job
 #PBS -j oe                             # Join output and error in single file
+<<<<<<< HEAD
 #PBS -l walltime=0:05:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
 #PBS -l nodes=1:ppn=1:gpus=2    # nodes requested: Processor per node: gpus requested
+=======
+#PBS -l walltime=0:30:00             # walltime requested
+#PBS -l mem=10Gb                       # memory requested
+#PBS -l nodes=1:ppn=1:gpus=4    # nodes requested: Processor per node: gpus requested
+>>>>>>> eric-dev
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -114,7 +120,11 @@ echo "Train Resnet"
 
 python train_test_model.py \
 --model resnet \
+<<<<<<< HEAD
 --numGpus 2 \
+=======
+--numGpus 3 \
+>>>>>>> eric-dev
 --dataset HMDB51 \
 --train 1 \
 --load 1 \
@@ -128,8 +138,12 @@ python train_test_model.py \
 --wd 0.0 \
 --lr 0.001 \
 --nEpochs 1 \
+<<<<<<< HEAD
 --baseDataPath /z/home/madantrg/Datasets \
 --fName trainlist
+=======
+--baseDataPath /z/home/madantrg/Datasets
+>>>>>>> eric-dev
 
 
 

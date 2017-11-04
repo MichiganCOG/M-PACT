@@ -1,3 +1,7 @@
 *.pyc
 *.npy
+<<<<<<< HEAD
 Logs
+=======
+logs/
+>>>>>>> eric-dev
