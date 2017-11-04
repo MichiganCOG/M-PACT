@@ -290,12 +290,6 @@ class VGG16():
 
                 print layers['drop7'].shape
 
-<<<<<<< HEAD
-            layers['rnn_outputs'] = self._LSTM(rnn_inputs, seqLength, weight_decay=0.0, featSize=4096, cellSize=1024)
-=======
-                featSize=4096
-                rnn_inputs = tf.reshape(layers['drop7'], [seqLength, inputDims/seqLength,  featSize])
->>>>>>> eric-dev
 
                 layers['rnn_outputs'] = self._LSTM(rnn_inputs, seqLength, weight_decay=0.0, featSize=4096, cellSize=1024)#, cpuId=cpuId)
 

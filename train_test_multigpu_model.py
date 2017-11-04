@@ -181,6 +181,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
                 labels[lastVidIndex]     = labels[gpuCount]
     
         predictions = sess.run([tower_slogits], feed_dict={x_placeholder: input_data})
+
         # For ResNet and VGG16 based setup only : Need to add support for LRCN multi-GPU validation
         # ------------------------------------------------
         for accCount in range(numGpus):
@@ -371,7 +372,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                 batch_count+=1
 
-            curr_logger.add_scalar_value('train/loss', np.mean(mean_loss), step=gs)
+            curr_logger.add_scalar_value('train/loss', float(np.mean(mean_loss)), step=gs)
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
             if epoch % save_freq == 0:

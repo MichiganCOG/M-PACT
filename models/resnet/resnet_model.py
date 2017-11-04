@@ -181,20 +181,8 @@ class ResNet():
         ############################################################################
 
         print('Generating RESNET network layers')
-<<<<<<< HEAD
         dataDict = h5py.File('/z/home/erichof/TF_Activity_Recognition_Framework/models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
-        layers = {}
 
-        layers['1'] = conv_layer(input_tensor=inputs,
-                filter_dims=[7, 7, 64], stride_dims=[2,2],
-                padding = 'VALID',
-                name='conv1',
-                kernel_init=tf.constant_initializer(dataDict['conv1']['conv1_W:0'].value),
-                bias_init=tf.constant_initializer(dataDict['conv1']['conv1_b:0'].value),
-                weight_decay = weight_decay, non_linear_fn=None)
-=======
-    #    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
-        dataDict = h5py.File('/z/home/erichof/TF_Activity_Recognition_Framework/models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
 
@@ -205,7 +193,6 @@ class ResNet():
                     kernel_init=tf.constant_initializer(dataDict['conv1']['conv1_W:0'].value),
                     bias_init=tf.constant_initializer(dataDict['conv1']['conv1_b:0'].value),
                     weight_decay = weight_decay, non_linear_fn=None)
->>>>>>> eric-dev
 
             layers['2'] = tf.layers.batch_normalization(layers['1'],
                     name='bn_conv1',
