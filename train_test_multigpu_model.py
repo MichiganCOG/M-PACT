@@ -313,6 +313,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         # Timing test setup
         time_init = time.time()
 
+
         for epoch in range(nEpochs):
             batch_count = 0
             epoch_acc   = 0
