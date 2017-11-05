@@ -121,7 +121,7 @@ python train_test_multigpu_model.py \
 --numGpus 1 \
 --dataset HMDB51 \
 --train 1 \
---expName resnet_multigpu_test  \
+--expName resnet_multigpu_test \
 --load 0 \
 --numVids 9 \
 --nEpochs 2 \
