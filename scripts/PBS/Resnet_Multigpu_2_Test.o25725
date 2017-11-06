@@ -1,0 +1,104 @@
+------------------------------------------------------
+Job is running on node lgn4
+------------------------------------------------------
+PBS_ARRAYID :
+PBS_ENVIRONMENT : PBS_BATCH
+PBS_GPUFILE : /var/spool/torque/aux//25725.blindspotgpu
+PBS_JOBCOOKIE : DD668414CC0A5BB23FAF3E8C3AD55940
+PBS_JOBID : 25725.blindspot
+PBS_JOBNAME : Resnet_Multigpu_2_Test
+PBS_MOMPORT : 15003
+PBS_NODEFILE : /var/spool/torque/aux//25725.blindspot
+PBS_NODENUM : 0
+PBS_NP : 1
+PBS_NUM_NODES : 1
+PBS_NUM_PPN : 1
+PBS_O_HOME : /home/madantrg
+PBS_O_HOST : hyaloidcanal
+PBS_O_LANG : en_US.UTF-8
+PBS_O_LOGNAME : madantrg
+PBS_O_PATH : /z/sw/packages/16.04/opencv/2.4.13/lib/python2.7/dist-packages:/z/sw/packages/16.04/opencv/2.4.13/bin:/z/sw/packages/libav/9.20/bin:/z/sw/packages/tensorflow/1.2.1/bin:/z/sw/packages/scipy/0.18.1/bin:/z/sw/packages/gflags/2.2.1/bin:/z/sw/packages/cuda/8.0.61/bin:/z/sw/packages/numpy/1.13.1/bin:/z/sw/bin/:/z/sw/sbin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+PBS_O_SHELL : /bin/bash
+PBS_O_WORKDIR : /z/home/madantrg/tf-activity-recognition-framework/scripts/PBS
+PBS_QUEUE : batch
+PBS_TASKNUM : 1
+The contents of gpu file are:
+lgn4-gpu1
+lgn4-gpu0
+----------End of GPU file------
+I got allocated the following gpus
+gpu: 1
+gpu: 0
+PBS: qsub is running on hyaloidcanal
+PBS: originating queue is batch
+PBS: executing queue is batch
+PBS: working directory is /z/home/madantrg/tf-activity-recognition-framework/scripts/PBS
+PBS: execution mode is PBS_BATCH
+PBS: job identifier is 25725.blindspot
+PBS: job name is Resnet_Multigpu_2_Test
+PBS: node file is /var/spool/torque/aux//25725.blindspot
+PBS: current home directory is /home/madantrg
+PBS: PATH = /z/sw/packages/16.04/opencv/2.4.13/lib/python2.7/dist-packages:/z/sw/packages/16.04/opencv/2.4.13/bin:/z/sw/packages/libav/9.20/bin:/z/sw/packages/tensorflow/1.2.1/bin:/z/sw/packages/scipy/0.18.1/bin:/z/sw/packages/gflags/2.2.1/bin:/z/sw/packages/cuda/8.0.61/bin:/z/sw/packages/numpy/1.13.1/bin:/z/sw/bin/:/z/sw/sbin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+------------------------------------------------------
+start
+lgn4
+Sun Nov  5 20:52:56 2017       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.90                 Driver Version: 384.90                    |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  TITAN Xp            On   | 00000000:02:00.0 Off |                  N/A |
+| 38%   63C    P2    65W / 250W |      2MiB / 12189MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   1  TITAN Xp            On   | 00000000:03:00.0 Off |                  N/A |
+| 41%   67C    P0    65W / 250W |      2MiB / 12189MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   2  TITAN Xp            On   | 00000000:82:00.0 Off |                  N/A |
+| 41%   68C    P0    66W / 250W |      2MiB / 12189MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   3  TITAN Xp            On   | 00000000:83:00.0 Off |                  N/A |
+| 42%   68C    P0    73W / 250W |      2MiB / 12189MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+Train Resnet : 2 GPU test
+2017-11-05 20:53:14.931030: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.1 instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-05 20:53:14.931092: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.2 instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-05 20:53:14.931106: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-05 20:53:14.931116: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX2 instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-05 20:53:14.931127: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use FMA instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-05 20:53:15.428494: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 0 with properties: 
+name: TITAN Xp
+major: 6 minor: 1 memoryClockRate (GHz) 1.911
+pciBusID 0000:03:00.0
+Total memory: 11.90GiB
+Free memory: 11.74GiB
+2017-11-05 20:53:15.838918: W tensorflow/stream_executor/cuda/cuda_driver.cc:523] A non-primary context 0x11c859f0 exists before initializing the StreamExecutor. We haven't verified StreamExecutor works with that.
+2017-11-05 20:53:15.840174: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 1 with properties: 
+name: TITAN Xp
+major: 6 minor: 1 memoryClockRate (GHz) 1.911
+pciBusID 0000:02:00.0
+Total memory: 11.90GiB
+Free memory: 11.73GiB
+2017-11-05 20:53:15.841336: I tensorflow/core/common_runtime/gpu/gpu_device.cc:961] DMA: 0 1 
+2017-11-05 20:53:15.841355: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   Y Y 
+2017-11-05 20:53:15.841363: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 1:   Y Y 
+2017-11-05 20:53:15.841378: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:0) -> (device: 0, name: TITAN Xp, pci bus id: 0000:03:00.0)
+2017-11-05 20:53:15.841387: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:1) -> (device: 1, name: TITAN Xp, pci bus id: 0000:02:00.0)
+Setup of current experiments:  Namespace(baseDataPath='/z/home/madantrg/Datasets', dataset='HMDB51', expName='resnet_multigpu_test', fName='trainlist', inputDims=50, load=0, lr=0.001, model='resnet', nEpochs=1, numGpus=2, numVids=3570, outputDims=51, saveFreq=1, seqLength=50, size=224, split=1, train=1, valFreq=1, wd=0.0)
+resnet initialized
+Generating RESNET network layers
+Generating RESNET network layers
+Saving...
+validation acc:  0.00539568345324
+Tot load time:  1452.88349199
+Tot train time:  720.346681595
+Tot time:  3975.13271403
+end

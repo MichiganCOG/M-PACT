@@ -321,19 +321,15 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 curr_logger.add_scalar_value('load_time',time_post_load - time_pre_load, step=gs)
 
             if epoch % save_freq == 0:
-                saver.save(sess, os.path.join('results',model.name, experiment_name + '_'+dataset,'checkpoints/checkpoint'), global_step.eval(session=sess))
                 print "Saving..."
-                print "Curr time: ", time.time()-time_init
-                print "Tot load time: ", np.sum(np.array(tot_load_time))
-                print "Tot train time: ", np.sum(np.array(tot_train_time))
+                saver.save(sess, os.path.join('results',model.name, experiment_name + '_'+dataset,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
             if epoch % val_freq == 0:
                 _validate(model, slogits, sess, experiment_name, curr_logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder, baseDataPath)
 
-            print "Tot load time: ", np.sum(np.array(tot_load_time))
-
-            print "Tot train time: ", np.sum(np.array(tot_train_time))
-            print "Tot time: ", (time.time()-time_init)
+        print "Tot load time: ", np.sum(np.array(tot_load_time))
+        print "Tot train time: ", np.sum(np.array(tot_train_time))
+        print "Tot time: ", (time.time()-time_init)
 
 
 
@@ -380,8 +376,7 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
 
 
         vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False, 0)
-        #all_labels = []
-        #all_predictions = []
+
         for vidNum in vidList:
             count +=1
             loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB', 'Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
@@ -407,23 +402,15 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
 
             guess = np.mean(output_predictions, 0).argmax()
             print "prediction: ", guess
-        #    all_predictions.append(int(guess))
-        #    all_labels.append(int(labels[0]))
-        #    np.save('resnet_orig_pred.npy', np.array([all_labels, all_predictions]))
+
             total_pred.append((guess, labels[0]))
             if int(guess) == int(labels[0]):
                 acc += 1
-            print "acc val: ", acc
-            print "count val: ", count
-            print "acc: ", acc/float(count)
-            curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
+        curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
+        print "Total accuracy : ", acc/float(count)
         print total_pred
-
-
-
-
 
 
 if __name__=="__main__":

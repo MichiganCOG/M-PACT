@@ -119,6 +119,9 @@ def load_video_into_queue(x_q, y_q, model, vidList, numGpus, fName, size, baseDa
         if vidList != []:
            vidNum = vidList[gpuCount]
 
+        else:
+            break
+
         loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
 
         labels = np.repeat(labels, inputDims)
@@ -151,7 +154,6 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
         fName = 'testlist'
 
     vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, None, False, 0)
-
     count   = 0
     acc     = 0
 
@@ -377,18 +379,15 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
             if epoch % save_freq == 0:
-                saver.save(sess, os.path.join('results',model.name, experiment_name + '_'+dataset,'checkpoints/checkpoint'), global_step.eval(session=sess))
                 print "Saving..."
-                print "Curr time: ", time.time()-time_init
-                print "Tot load time: ", np.sum(np.array(tot_load_time))
-                print "Tot train time: ", np.sum(np.array(tot_train_time))
+                saver.save(sess, os.path.join('results',model.name, experiment_name + '_'+dataset,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
             if epoch % val_freq == 0:
                 _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder, baseDataPath, numGpus)
 
-            print "Tot load time: ", np.sum(np.array(tot_load_time))
-            print "Tot train time: ", np.sum(np.array(tot_train_time))
-            print "Tot time: ", (time.time()-time_init)
+        print "Tot load time: ", np.sum(np.array(tot_load_time))
+        print "Tot train time: ", np.sum(np.array(tot_train_time))
+        print "Tot time: ", (time.time()-time_init)
 
 
 
