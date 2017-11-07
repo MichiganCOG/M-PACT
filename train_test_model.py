@@ -6,6 +6,7 @@ import os
 from models.lrcn.lrcn_model import LRCN
 from models.vgg16.vgg16_model import VGG16
 from models.resnet.resnet_model import ResNet
+from models.resnet_RIL.resnet_RIL_model import ResNet_RIL
 
 from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import control_flow_ops
@@ -157,7 +158,7 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, inputDims,
 
 
 
-def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=0.001, wd=0.0, save_freq = 5, val_freq = 1):
+def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=0.001, wd=0.0, save_freq = 5, val_freq = 1, k=25):
 
     with tf.name_scope("my_scope") as scope:
         isTraining = True
@@ -167,7 +168,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         # Setting up placeholders for models
         x_placeholder = tf.placeholder(tf.float32, shape=[numGpus, inputDims, size[0], size[1] ,3], name='x_placeholder')
         y_placeholder = tf.placeholder(tf.int64, shape=[numGpus, seqLength], name='y_placeholder')
-
+        j_placeholder = tf.placeholder(tf.int32, shape=[1], name='j_placeholder')
         tower_losses = []
         tower_grads = []
 
@@ -179,7 +180,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                 with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
 
-                    logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], True, inputDims, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
+                    logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], True, inputDims, outputDims, seqLength, scope, k, j_placeholder, weight_decay=wd, cpuId = gpuIdx)
 
                     # Calculating Softmax for probability outcomes : Can be modified
                     # Make function internal to model
@@ -290,7 +291,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                     time_pre_train = time.time()
 
-                    _, loss_train, pred, gs = sess.run([train_op, total_loss, slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels})
+                    _, loss_train, pred, gs = sess.run([train_op, total_loss, slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, j_placeholder: [input_data.shape[1]/k]})
 
                     output_predictions[clip] = np.mean(pred, 0)
                     tot_step+=1
@@ -377,6 +378,8 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
 
         vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False, 0)
 
+        all_labels = []
+        all_preds = []
         for vidNum in vidList:
             count +=1
             loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB', 'Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
@@ -406,8 +409,10 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
             total_pred.append((guess, labels[0]))
             if int(guess) == int(labels[0]):
                 acc += 1
-
-        curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
+            all_labels.append(labels[0])
+            all_preds.append(guess)
+        #    np.save(experiment_name+'_rate_pred.npy', np.array([all_labels, all_preds]))
+            curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
         print "Total accuracy : ", acc/float(count)
         print total_pred
@@ -486,6 +491,9 @@ if __name__=="__main__":
 
     elif modelName == 'resnet':
         model = ResNet()
+
+    elif modelName == 'resnet_RIL':
+        model = ResNet_RIL()
 
     else:
         print("Model not found")
