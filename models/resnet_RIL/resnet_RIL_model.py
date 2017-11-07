@@ -34,42 +34,90 @@ class ResNet_RIL():
 
     def _rate_invariance_layer(self, inputs, params, sets, K, minVidFrames):
 
-        # Parameter definitions are taken as mean of input estimates
+    #     # Parameter definitions are taken as mean of input estimates
+    #     samplePred   = tf.reduce_mean(params[:,0])
+    #     sampleOffset = tf.reduce_mean(params[:,1])
+    #
+    #     frames_, shpH_, shpW_, chnl_ = inputs.get_shape().as_list()
+    #
+    #     # Pred control
+    #     samplePred = samplePred * tf.cast((sets*K), tf.float32)
+    #
+    #     # Offset control
+    #     sampleOffset = sampleOffset * tf.cast((sets*K), tf.float32)
+    #     Offset = tf.tile(sampleOffset, [sets[0]*K])
+    #
+    #     # Generate indices for output (between 1 to N)
+    #     outputIdx = tf.range(start=1., limit=tf.cast(sets[0]*K, tf.float32)+1., delta=1., dtype=tf.float32)
+    #
+    #     # Add offset to the output indices
+    #     outputIdx = outputIdx + Offset
+    #
+    #     Pred = tf.tile(samplePred, [minVidFrames])
+    #     tempIdx = tf.range(start=1., limit=float(minVidFrames)+1., delta=1., dtype=tf.float32)
+    #     tempIdx = tf.cast(tf.multiply(tf.slice(tempIdx, [0], [minVidFrames]), Pred), tf.int32)  # Why slice? Wasn't range specified to be len(minVidFrames)
+    #
+    #     outputIdx = tf.gather(outputIdx, tempIdx)
+    #
+    #     # Include sampling parameter to correct output indices
+    # #    outputIdx = tf.clip_by_value(outputIdx, 1., tf.reduce_max(outputIdx))           # The max of outputIdx gets clipped to be the max of outputIdx?  Is this like only to clip the min value to 1?
+    #
+    #     # Mould to match indices of 4d input tensor
+    #     outputIdx = tf.cast(outputIdx, tf.int32, name="indices")
+    #     #import pdb; pdb.set_trace()
+    # #    outputIdx = tf.mod(outputIdx, tf.tile(tf.cast(sets*K, tf.int32), [minVidFrames]))  # Taking the mod will make the frames wrap around if the outputIdx is longer than total frames (aka sets*K)?
+    #
+    #     output = tf.gather(inputs, outputIdx)
+    #
+    #     output = tf.reshape(output, (minVidFrames, shpH_, shpW_, chnl_), name='RIlayeroutput')
+
+      # Parameter definitions are taken as mean of input estimates
         samplePred   = tf.reduce_mean(params[:,0])
         sampleOffset = tf.reduce_mean(params[:,1])
 
         frames_, shpH_, shpW_, chnl_ = inputs.get_shape().as_list()
 
-        # Pred control
-        samplePred = samplePred * tf.cast((sets*K), tf.float32)
-
         # Offset control
-        sampleOffset = sampleOffset * tf.cast((sets*K), tf.float32)
-        Offset = tf.tile(sampleOffset, [sets[0]*K])
+        sampleOffset = sampleOffset * tf.cast((sets*K) - minVidFrames, tf.float32)
+        Offset = tf.tile(sampleOffset, [minVidFrames])
 
-        # Generate indices for output (between 1 to N)
-        outputIdx = tf.range(start=1., limit=tf.cast(sets[0]*K, tf.float32)+1., delta=1., dtype=tf.float32)
+        # Generate indices for output
+        outputIdx = tf.range(start=1., limit=float(minVidFrames)+1., delta=1., dtype=tf.float32)
+        outputIdx = tf.slice(outputIdx, [0],[minVidFrames])
 
         # Add offset to the output indices
         outputIdx = outputIdx + Offset
-
-        Pred = tf.tile(samplePred, [minVidFrames])
-        tempIdx = tf.range(start=1., limit=float(minVidFrames)+1., delta=1., dtype=tf.float32)
-        tempIdx = tf.cast(tf.multiply(tf.slice(tempIdx, [0], [minVidFrames]), Pred), tf.int32)  # Why slice? Wasn't range specified to be len(minVidFrames)
-
-        outputIdx = tf.gather(outputIdx, tempIdx)
+        const = samplePred * tf.cast(K * sets, tf.float32) / (float(minVidFrames) + sampleOffset)
 
         # Include sampling parameter to correct output indices
-        outputIdx = tf.clip_by_value(outputIdx, 1., tf.reduce_max(outputIdx))           # The max of outputIdx gets clipped to be the max of outputIdx?  Is this like only to clip the min value to 1?
+        outputIdx = tf.multiply(tf.tile(const, [minVidFrames]), outputIdx)
+        outputIdx = tf.clip_by_value(outputIdx, 1., tf.cast(sets*K, tf.float32))
 
         # Mould to match indices of 4d input tensor
         outputIdx = tf.cast(outputIdx, tf.int32, name="indices")
-        #import pdb; pdb.set_trace()
-        outputIdx = tf.mod(outputIdx, tf.tile(tf.cast(sets*K, tf.int32), [minVidFrames]))  # Taking the mod will make the frames wrap around if the outputIdx is longer than total frames (aka sets*K)?
 
-        output = tf.gather(inputs, outputIdx)
+        #outputIdx = tf.tile(tf.reshape(outputIdx, [minVidFrames]), [shpH_*shpW_*chnl_])
+        #outputIdx = tf.reshape(outputIdx, [minVidFrames, shpH_, shpW_, chnl_])
 
+        ## Input indices
+        #x0 = tf.cast(outputIdx, tf.int32)
+        #x1 = outputIdx + 1
+
+        ## H, W and Channel definitions
+        #H = tf.reshape(tf.range(start=0, limit=shpH_, delta=1), [-1])
+        #W = tf.reshape(tf.range(start=0, limit=shpW_, delta=1), [-1])
+        #C = tf.reshape(tf.range(start=0, limit=chnl_, delta=1), [-1])
+
+        ## Generate 4D tensors to hold new sampling indices
+        #H = tf.transpose(tf.reshape(tf.tile(H, [minVidFrames * chnl_ * shpW_]), [shpH_, shpW_, chnl_, minVidFrames]), (3,0,1,2))
+        #W = tf.transpose(tf.reshape(tf.tile(W, [minVidFrames * chnl_ * shpH_]), [shpW_, shpH_, chnl_, minVidFrames]), (3,1,0,2))
+        #C = tf.transpose(tf.reshape(tf.tile(C, [minVidFrames * shpW_ * shpH_]), [chnl_, shpH_, shpW_, minVidFrames]), (3,1,2,0))
+
+        output = tf.gather(inputs, outputIdx-1)     #output = inputs[outputIdx-1, H, W, C]
+
+        #output = _linear_input(outputIdx, outputIdx, x1, output, output)
         output = tf.reshape(output, (minVidFrames, shpH_, shpW_, chnl_), name='RIlayeroutput')
+
 
         return output
 

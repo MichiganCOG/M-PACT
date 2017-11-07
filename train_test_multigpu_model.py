@@ -7,6 +7,7 @@ import multiprocessing as mp
 from models.lrcn.lrcn_model import LRCN
 from models.vgg16.vgg16_model import VGG16
 from models.resnet.resnet_model import ResNet
+from models.resnet_RIL.resnet_RIL_model import ResNet_RIL
 
 from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import control_flow_ops
@@ -93,7 +94,7 @@ def gen_video_list(dataset, modelName, experiment_name, fName, split, numVids, s
         if numVids != None:
             if numVids != num_vids:
                 vidList=vidList[:numVids]
-    
+
     else:
         vidList = np.arange(numVids).tolist()
 
@@ -109,12 +110,12 @@ def load_video_into_queue(x_q, y_q, model, vidList, numGpus, fName, size, baseDa
         numVidsToLoad = 1
     else:
         numVidsToLoad = numGpus
-    
+
     # Internal check to ensure only valid number of videos are loaded
     if numVidsToLoad > len(vidList):
         numVidsToLoad = len(vidList)
-    
-    # Legacy load setup : Can be modified 
+
+    # Legacy load setup : Can be modified
     for gpuCount in range(numVidsToLoad):
         if len(vidList) != 0:
            vidNum = vidList[gpuCount]
@@ -147,7 +148,7 @@ def load_video_into_queue(x_q, y_q, model, vidList, numGpus, fName, size, baseDa
 
 
 def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inputDims, outputDims, split, gs, size, x_placeholder, istraining_placeholder, baseDataPath, numGpus, x_q, y_q):
- 
+
     if dataset == 'HMDB51' or dataset == "HMDB51Rate":
         fName = 'vallist'
     else:
@@ -168,7 +169,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
 
         input_data = np.zeros((numGpus, inputDims, size[0], size[1], 3))
         labels     = np.zeros((numGpus, inputDims))
-        
+
         excessClips  = 0
         lastVidIndex = 0
         intra_batch_count = 0
@@ -182,7 +183,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
                 input_data[gpuCount] = x_q.get()
                 labels[gpuCount]     = y_q.get()
                 lastVidIndex         = gpuCount
-                intra_batch_count   += 1 
+                intra_batch_count   += 1
             else:
                 finishVal                = True
                 input_data[lastVidIndex] = input_data[gpuCount]
@@ -198,8 +199,8 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
         for accCount in range(intra_batch_count):
             if (lastVidIndex > accCount) and finishVal:
                 break
-            guess = np.mean(predictions[0][accCount]).argmax() 
-            
+            guess = np.mean(predictions[0][accCount]).argmax()
+
             if int(guess) == int(labels[accCount][0]):
                 acc+=1
 
@@ -209,7 +210,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
     logger.add_scalar_value('val/acc',acc/float(count), step=gs)
 
 
-def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=0.001, wd=0.0, save_freq = 5, val_freq = 1):
+def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName,  learning_rate_init=0.001, wd=0.0, save_freq = 5, val_freq = 1, k=25):
 
     with tf.name_scope("my_scope") as scope:
         isTraining = True
@@ -221,7 +222,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         x_placeholder          = tf.placeholder(tf.float32, shape=[numGpus, inputDims,  size[0], size[1] ,3], name='x_placeholder')
         y_placeholder          = tf.placeholder(tf.int64,   shape=[numGpus, seqLength], name='y_placeholder')
         istraining_placeholder = tf.placeholder(tf.bool,    name='istraining_placeholder')
-
+        j_placeholder          = tf.placeholder(tf.int32,   shape=[1], name='j_placeholder')
         tower_losses  = []
         tower_grads   = []
         tower_slogits = []
@@ -235,7 +236,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 with tf.name_scope('%s_%d' % ('tower', gpuIdx)) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
 
-                        logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], istraining_placeholder, inputDims, outputDims, seqLength, scope, weight_decay=wd, cpuId = gpuIdx)
+                        logits = model.inference(x_placeholder[gpuIdx,:,:,:,:], istraining_placeholder, inputDims, outputDims, seqLength, scope, k, j_placeholder, weight_decay=wd, cpuId = gpuIdx)
 
                         # Calculating softmax for probability outcomes : Can be modified
                         # Make function internal to model
@@ -249,13 +250,11 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                         """ Within GPU mini-batch: 1) Calculate loss,
                                                    2) Initialize optimizer with required learning rate and
                                                    3) Compute gradients
-                                                   4) Aggregate losses, gradients and logits 
+                                                   4) Aggregate losses, gradients and logits
                         """
-
                         total_loss = model.loss(logits, y_placeholder[gpuIdx, :])
                         opt = optimizer(lr)
                         gradients = opt.compute_gradients(total_loss, vars_.trainable_variables())
-                        
                         tower_losses.append(total_loss)
                         tower_grads.append(gradients)
                         tower_slogits.append(slogits)
@@ -277,8 +276,9 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                            dataset, #args.dataset,
                                                            experiment_name) )#args.experiment_name)
-        make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset))
-        make_dir(os.path.join('results',model.name,   experiment_name+'_'+dataset, 'checkpoints'))
+        make_dir(os.path.join('results',model.name,   dataset))
+        make_dir(os.path.join('results',model.name,   dataset, experiment_name))
+        make_dir(os.path.join('results',model.name,   dataset, experiment_name, 'checkpoints'))
         curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
 
         # TF session setup
@@ -292,7 +292,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
         vidList = []
 
         if loadModel:
-            ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name,   experiment_name+ '_'+dataset, 'checkpoints/checkpoint')))
+            ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, dataset,  experiment_name, 'checkpoints/checkpoint')))
             if ckpt and ckpt.model_checkpoint_path:
                 saver.restore(sess, ckpt.model_checkpoint_path)
                 print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
@@ -314,7 +314,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         iterated_list = []
 
-        tot_train_time = 0.0 
+        tot_train_time = 0.0
         tot_load_time  = 0.0
 
         # Timing test setup
@@ -329,7 +329,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, True, epoch)
 
             vidList = vidList.tolist()
- 
+
             finishEpoch = False
             while not finishEpoch:
 
@@ -342,7 +342,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
                 input_data = np.zeros((numGpus, inputDims, size[0], size[1], 3))
                 labels     = np.zeros((numGpus, inputDims))
-        
+
                 excessClips  = 0
                 lastVidIndex = 0
 
@@ -357,18 +357,20 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                         input_data[gpuCount] = x_q.get()
                         labels[gpuCount]     = y_q.get()
                         lastVidIndex         = gpuCount
-                        intra_batch_count   += 1 
+                        intra_batch_count   += 1
                     else:
                         finishEpoch = True
                         input_data[lastVidIndex] = input_data[gpuCount]
                         labels[lastVidIndex] = labels[gpuCount]
 
                 batch_count+= intra_batch_count
-    
+
                 time_pre_train = time.time()
-                _, loss_train, predictions, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, istraining_placeholder: True})
+                import pdb; pdb.set_trace()
+                _, loss_train, predictions, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, istraining_placeholder: True, j_placeholder: [input_data.shape[1]/k]})
+
                 time_post_train = time.time()
-                
+
                 for predIdx in range(intra_batch_count):
                     pred = np.mean(predictions[predIdx], 0).argmax()
                     if pred == labels[predIdx][0]:
@@ -443,7 +445,7 @@ def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experi
 
         vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, False, 0)
 
-        
+
         for vidNum in vidList:
             count +=1
             loaded_data, labels= load_dataset(model, vidNum, fName, os.path.join(baseDataPath, dataset+'HDF5RGB', 'Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
@@ -475,7 +477,7 @@ def test(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experi
                 acc += 1
 
         curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
-        print "Total accuracy : ", acc/float(count) 
+        print "Total accuracy : ", acc/float(count)
         print total_pred
 
 if __name__=="__main__":
@@ -540,7 +542,7 @@ if __name__=="__main__":
 
     args = parser.parse_args()
     print "Setup of current experiments: ",args
-    modelName = args.model 
+    modelName = args.model
 
     # Associating models
     if modelName=='lrcn':
@@ -552,39 +554,42 @@ if __name__=="__main__":
     elif modelName == 'resnet':
         model = ResNet()
 
+    elif modelName == 'resnet_RIL':
+        model = ResNet_RIL()
+
     else:
         print("Model not found")
 
     if args.train:
-        train(  model              = model, 
-                inputDims          = args.inputDims, 
-                outputDims         = args.outputDims, 
-                seqLength          = args.seqLength, 
-                size               = [args.size, args.size], 
-                numGpus            = args.numGpus, 
-                dataset            = args.dataset, 
-                experiment_name    = args.expName, 
-                loadModel          = args.load, 
-                numVids            = args.numVids, 
-                nEpochs            = args.nEpochs, 
-                split              = args.split, 
-                baseDataPath       = args.baseDataPath, 
+        train(  model              = model,
+                inputDims          = args.inputDims,
+                outputDims         = args.outputDims,
+                seqLength          = args.seqLength,
+                size               = [args.size, args.size],
+                numGpus            = args.numGpus,
+                dataset            = args.dataset,
+                experiment_name    = args.expName,
+                loadModel          = args.load,
+                numVids            = args.numVids,
+                nEpochs            = args.nEpochs,
+                split              = args.split,
+                baseDataPath       = args.baseDataPath,
                 fName              = args.fName,
-                learning_rate_init = args.lr, 
+                learning_rate_init = args.lr,
                 wd                 = args.wd,
                 save_freq          = args.saveFreq,
                 val_freq           = args.valFreq)
 
     else:
-        test(   model           = model, 
-                inputDims       = args.inputDims, 
-                outputDims      = args.outputDims, 
-                seqLength       = args.seqLength, 
-                size            = [args.size, args.size], 
-                numGpus         = args.numGpus, 
-                dataset         = args.dataset, 
-                experiment_name = args.expName, 
-                numVids         = args.numVids, 
-                split           = args.split, 
-                baseDataPath    = args.baseDataPath, 
+        test(   model           = model,
+                inputDims       = args.inputDims,
+                outputDims      = args.outputDims,
+                seqLength       = args.seqLength,
+                size            = [args.size, args.size],
+                numGpus         = args.numGpus,
+                dataset         = args.dataset,
+                experiment_name = args.expName,
+                numVids         = args.numVids,
+                split           = args.split,
+                baseDataPath    = args.baseDataPath,
                 fName           = args.fName)

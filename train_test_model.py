@@ -346,7 +346,7 @@ def test(model, inputDims, outputDims, seqLength, size, dataset, experiment_name
         global_step   = tf.Variable(0, name='global_step', trainable=False)
 
         # Model Inference
-        logits = model.inference(x_placeholder, False, inputDims, outputDims, seqLength, scope)
+        logits = model.inference(x_placeholder, False, inputDims, outputDims, seqLength, scope, 0, 0)
 
         # Logits
         softmax  = tf.nn.softmax(logits)
