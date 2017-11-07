@@ -366,7 +366,7 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 batch_count+= intra_batch_count
 
                 time_pre_train = time.time()
-                import pdb; pdb.set_trace()
+
                 _, loss_train, predictions, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, istraining_placeholder: True, j_placeholder: [input_data.shape[1]/k]})
 
                 time_post_train = time.time()
