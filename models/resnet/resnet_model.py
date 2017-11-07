@@ -13,6 +13,7 @@ import numpy as np
 import h5py
 
 import os
+import time
 
 import sys
 sys.path.append('../..')
@@ -182,7 +183,7 @@ class ResNet():
 
         print('Generating RESNET network layers')
         dataDict = h5py.File('/z/home/erichof/TF_Activity_Recognition_Framework/models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
-
+        
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
 

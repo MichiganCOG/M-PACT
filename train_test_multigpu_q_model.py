@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 import numpy as np
 import os
@@ -21,6 +20,9 @@ import time
 from tensorflow.python.ops import clip_ops
 from utils import *
 from Queue import Queue
+import threading
+
+end_msg = False
 
 def _average_gradients(tower_grads, numGpus):
     """Calculate the average gradient for each shared variable across all towers.
@@ -209,6 +211,11 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
     logger.add_scalar_value('val/acc',acc/float(count), step=gs)
 
 
+
+
+
+
+
 def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, experiment_name, loadModel, numVids, nEpochs, split, baseDataPath, fName, learning_rate_init=0.001, wd=0.0, save_freq = 5, val_freq = 1):
 
     with tf.name_scope("my_scope") as scope:
@@ -218,9 +225,18 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         # Setting up placeholders for models
 
-        x_placeholder          = tf.placeholder(tf.float32, shape=[numGpus, inputDims,  size[0], size[1] ,3], name='x_placeholder')
-        y_placeholder          = tf.placeholder(tf.int64,   shape=[numGpus, seqLength], name='y_placeholder')
+        x_load_placeholder          = tf.placeholder(tf.float32, shape=[inputDims,  size[0], size[1] ,3], name='x_load_placeholder')
+        y_load_placeholder          = tf.placeholder(tf.int64,   shape=[seqLength], name='y_load_placeholder')
+
+        x_placeholder          = tf.placeholder(tf.float32, shape=[numGpus,inputDims,  size[0], size[1] ,3], name='x_placeholder')
+        y_placeholder          = tf.placeholder(tf.int64,   shape=[numGpus,seqLength], name='y_placeholder')
         istraining_placeholder = tf.placeholder(tf.bool,    name='istraining_placeholder')
+
+        Q                      = tf.FIFOQueue(numGpus, [tf.float32, tf.int64], shapes=[[inputDims, size[0], size[1], 3],[seqLength]])
+        
+        en_Q = Q.enqueue([x_load_placeholder, y_load_placeholder])
+
+        iData, iLabels  = Q.dequeue_many(numGpus)
 
         tower_losses  = []
         tower_grads   = []
@@ -283,13 +299,28 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
 
         # TF session setup
         config = tf.ConfigProto(allow_soft_placement=True)
-        sess = tf.Session(config=config)
-        saver = tf.train.Saver()
-        init = tf.global_variables_initializer()
+        sess   = tf.Session(config=config)
+        saver  = tf.train.Saver()
+        init   = tf.global_variables_initializer()
 
-        sess.run(init)
+
+
+        def load_and_enqueue(model, vidList, fName, baseDataPath, dataset, split, size, isTraining):
+            while True:
+                #if not end_msg:
+                print vidList
+                loaded_data, labels= load_dataset(model, vidList[0], fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+                vidList = vidList[1:]
+
+                sess.run(en_Q, feed_dict={x_load_placeholder: loaded_data, y_load_placeholder: np.repeat(labels, inputDims)})
+                #sess.run(en_Q, feed_dict={x_load_placeholder: loaded_data, y_load_placeholder: np.repeat(labels, inputDims)})
+
+        ss = iData
 
         vidList = []
+        import pdb; pdb.set_trace()
+
+        sess.run(init)
 
         if loadModel:
             ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name,   experiment_name+ '_'+dataset, 'checkpoints/checkpoint')))
@@ -329,44 +360,49 @@ def train(model, inputDims, outputDims, seqLength, size, numGpus, dataset, exper
                 vidList = gen_video_list(dataset, model.name, experiment_name, fName, split, numVids, True, epoch)
 
             vidList = vidList.tolist()
+
+            t = threading.Thread(target=load_and_enqueue, args=(model, vidList, fName, baseDataPath, dataset, split, size, isTraining))
+            t.start()
  
             finishEpoch = False
             while not finishEpoch:
 
-                # Load video into Q concurrently
-                time_pre_load = time.time()
-                x_q, y_q, vidList = load_video_into_queue(x_q, y_q, model, vidList, numGpus, fName, size, baseDataPath, dataset, split, inputDims, True)
-                time_post_load = time.time()
+                ## Load video into Q concurrently
+                #time_pre_load = time.time()
+                #x_q, y_q, vidList = load_video_into_queue(x_q, y_q, model, vidList, numGpus, fName, size, baseDataPath, dataset, split, inputDims, True)
+                #time_post_load = time.time()
 
 
 
-                input_data = np.zeros((numGpus, inputDims, size[0], size[1], 3))
-                labels     = np.zeros((numGpus, inputDims))
+                #input_data = np.zeros((numGpus, inputDims, size[0], size[1], 3))
+                #labels     = np.zeros((numGpus, inputDims))
         
-                excessClips  = 0
-                lastVidIndex = 0
+                #excessClips  = 0
+                #lastVidIndex = 0
 
-                intra_batch_count = 0
+                #intra_batch_count = 0
 
-                # To avoid doing an extra loop after data has been completely loaded and trained upon
-                if len(vidList) == 0 and x_q.qsize() == 0:
-                    break
+                ## To avoid doing an extra loop after data has been completely loaded and trained upon
+                #if len(vidList) == 0 and x_q.qsize() == 0:
+                #    break
 
-                for gpuCount in range(numGpus):
-                    if x_q.qsize() > 0:
-                        input_data[gpuCount] = x_q.get()
-                        labels[gpuCount]     = y_q.get()
-                        lastVidIndex         = gpuCount
-                        intra_batch_count   += 1 
-                    else:
-                        finishEpoch = True
-                        input_data[lastVidIndex] = input_data[gpuCount]
-                        labels[lastVidIndex] = labels[gpuCount]
+                #for gpuCount in range(numGpus):
+                #    if x_q.qsize() > 0:
+                #        input_data[gpuCount] = x_q.get()
+                #        labels[gpuCount]     = y_q.get()
+                #        lastVidIndex         = gpuCount
+                #        intra_batch_count   += 1 
+                #    else:
+                #        finishEpoch = True
+                #        input_data[lastVidIndex] = input_data[gpuCount]
+                #        labels[lastVidIndex] = labels[gpuCount]
 
-                batch_count+= intra_batch_count
+                #batch_count+= intra_batch_count
     
                 time_pre_train = time.time()
-                _, loss_train, predictions, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, istraining_placeholder: True})
+                #_, loss_train, predictions, gs = sess.run([train_op, tower_losses, tower_slogits, global_step], feed_dict={istraining_placeholder: True})
+                sss = sess.run(ss)
+                _ = sess.run(train_op, feed_dict={istraining_placeholder: True})
                 time_post_train = time.time()
                 
                 for predIdx in range(intra_batch_count):
