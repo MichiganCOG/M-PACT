@@ -34,68 +34,51 @@ class ResNet_RIL():
 
     def _rate_invariance_layer(self, inputs, params, sets, K, minVidFrames):
 
-    #     # Parameter definitions are taken as mean of input estimates
-    #     samplePred   = tf.reduce_mean(params[:,0])
-    #     sampleOffset = tf.reduce_mean(params[:,1])
-    #
-    #     frames_, shpH_, shpW_, chnl_ = inputs.get_shape().as_list()
-    #
-    #     # Pred control
-    #     samplePred = samplePred * tf.cast((sets*K), tf.float32)
-    #
-    #     # Offset control
-    #     sampleOffset = sampleOffset * tf.cast((sets*K), tf.float32)
-    #     Offset = tf.tile(sampleOffset, [sets[0]*K])
-    #
-    #     # Generate indices for output (between 1 to N)
-    #     outputIdx = tf.range(start=1., limit=tf.cast(sets[0]*K, tf.float32)+1., delta=1., dtype=tf.float32)
-    #
-    #     # Add offset to the output indices
-    #     outputIdx = outputIdx + Offset
-    #
-    #     Pred = tf.tile(samplePred, [minVidFrames])
-    #     tempIdx = tf.range(start=1., limit=float(minVidFrames)+1., delta=1., dtype=tf.float32)
-    #     tempIdx = tf.cast(tf.multiply(tf.slice(tempIdx, [0], [minVidFrames]), Pred), tf.int32)  # Why slice? Wasn't range specified to be len(minVidFrames)
-    #
-    #     outputIdx = tf.gather(outputIdx, tempIdx)
-    #
-    #     # Include sampling parameter to correct output indices
-    # #    outputIdx = tf.clip_by_value(outputIdx, 1., tf.reduce_max(outputIdx))           # The max of outputIdx gets clipped to be the max of outputIdx?  Is this like only to clip the min value to 1?
-    #
-    #     # Mould to match indices of 4d input tensor
-    #     outputIdx = tf.cast(outputIdx, tf.int32, name="indices")
-    #     #import pdb; pdb.set_trace()
-    # #    outputIdx = tf.mod(outputIdx, tf.tile(tf.cast(sets*K, tf.int32), [minVidFrames]))  # Taking the mod will make the frames wrap around if the outputIdx is longer than total frames (aka sets*K)?
-    #
-    #     output = tf.gather(inputs, outputIdx)
-    #
-    #     output = tf.reshape(output, (minVidFrames, shpH_, shpW_, chnl_), name='RIlayeroutput')
-
       # Parameter definitions are taken as mean of input estimates
         samplePred   = tf.reduce_mean(params[:,0])
         sampleOffset = tf.reduce_mean(params[:,1])
-
+        #return tf.reshape(tf.tile([sampleOffset], [7526400]), (50,224,224,3))
         frames_, shpH_, shpW_, chnl_ = inputs.get_shape().as_list()
 
+        #return tf.reshape(tf.tile([tf.to_float(tf.to_int32(sampleOffset))], [7526400]), (50,224,224,3))
         # Offset control
         sampleOffset = sampleOffset * tf.cast((sets*K) - minVidFrames, tf.float32)
+
+        #return tf.reshape(tf.tile([sampleOffset], [7526400]), (50,224,224,3))
         Offset = tf.tile(sampleOffset, [minVidFrames])
 
         # Generate indices for output
         outputIdx = tf.range(start=1., limit=float(minVidFrames)+1., delta=1., dtype=tf.float32)
+        #return tf.reshape(tf.tile(sampleOffset, [7526400]), (50,224,224,3))
+        #return tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3))
+        #import pdb;pdb.set_trace()
+
         outputIdx = tf.slice(outputIdx, [0],[minVidFrames])
 
+        #return tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3))
         # Add offset to the output indices
         outputIdx = outputIdx + Offset
+
+        #return tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3))
         const = samplePred * tf.cast(K * sets, tf.float32) / (float(minVidFrames) + sampleOffset)
 
+        #return tf.reshape(tf.tile(const, [7526400]), (50,224,224,3))
         # Include sampling parameter to correct output indices
         outputIdx = tf.multiply(tf.tile(const, [minVidFrames]), outputIdx)
+
+       # return tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3))
+       # import pdb;pdb.set_trace()
+
         outputIdx = tf.clip_by_value(outputIdx, 1., tf.cast(sets*K, tf.float32))
 
+        newOutputIdx = tf.to_int32(outputIdx, name="indices")
+        #return tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3))
         # Mould to match indices of 4d input tensor
-        outputIdx = tf.cast(outputIdx, tf.int32, name="indices")
-
+        #outputIdx = tf.cast(outputIdx, tf.int32, name="indices")
+        #outputIdx = tf.to_int32(outputIdx, name="indices")
+        #outputIdx = tf.floor(outputIdx, name="indices")
+       # return tf.to_float(tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3)))
+        #outputIdxNew = tf.fill([[50, 224, 224, 3]], outputIdx)
         #outputIdx = tf.tile(tf.reshape(outputIdx, [minVidFrames]), [shpH_*shpW_*chnl_])
         #outputIdx = tf.reshape(outputIdx, [minVidFrames, shpH_, shpW_, chnl_])
 
@@ -112,14 +95,17 @@ class ResNet_RIL():
         #H = tf.transpose(tf.reshape(tf.tile(H, [minVidFrames * chnl_ * shpW_]), [shpH_, shpW_, chnl_, minVidFrames]), (3,0,1,2))
         #W = tf.transpose(tf.reshape(tf.tile(W, [minVidFrames * chnl_ * shpH_]), [shpW_, shpH_, chnl_, minVidFrames]), (3,1,0,2))
         #C = tf.transpose(tf.reshape(tf.tile(C, [minVidFrames * shpW_ * shpH_]), [chnl_, shpH_, shpW_, minVidFrames]), (3,1,2,0))
+        #import pdb;pdb.set_trace()
 
-        output = tf.gather(inputs, outputIdx-1)     #output = inputs[outputIdx-1, H, W, C]
-
+        output = tf.gather(inputs, newOutputIdx-1)     #output = inputs[outputIdx-1, H, W, C]
+        outputIdx = tf.reshape(tf.tile(outputIdx, [150528]), (50,224,224,3))
+        #return tf.to_float(output)
+        #import pdb;pdb.set_trace()
         #output = _linear_input(outputIdx, outputIdx, x1, output, output)
         output = tf.reshape(output, (minVidFrames, shpH_, shpW_, chnl_), name='RIlayeroutput')
+        #import pdb;pdb.set_trace()
 
-
-        return output
+        return output * outputIdx / outputIdx
 
 
 
@@ -305,7 +291,7 @@ class ResNet_RIL():
                     gamma_initializer=tf.constant_initializer(dataDict['bn_conv1']['bn_conv1_gamma:0'].value))
 
 
-            layers['Conv2'] = conv_layer(input_tensor=layers['Conv1'],
+            layers['Conv2'] = conv_layer(input_tensor=layers['Conv1_bn'],
                     filter_dims=[5, 5, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='Conv2',
@@ -339,8 +325,8 @@ class ResNet_RIL():
 
 
 
-
-
+ #           import pdb; pdb.set_trace()
+#            layers['RIlayer'] = tf.reshape(tf.tile(layers['FC2'][0], [3763200]), (50,224,224,3))
 
 
 
