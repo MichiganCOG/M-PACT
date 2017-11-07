@@ -104,6 +104,7 @@ echo ------------------------------------------------------
 echo "start"
 hostname
 nvidia-smi
+export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
@@ -112,7 +113,7 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 cd /z/home/erichof/TF_Activity_Recognition_Framework/
 echo "Test Resnet"
 
-python train_test_model.py \
+python train_test_multigpu_model.py \
 --model resnet \
 --dataset UCF101Rate \
 --train 0 \

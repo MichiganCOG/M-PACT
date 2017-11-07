@@ -390,7 +390,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, num_vids, split, base_data_path, f_name, k=25):
 
     with tf.name_scope("my_scope") as scope:
-        isTraining = False
+        is_training = False
 
         x_placeholder = tf.placeholder(tf.float32, shape=[input_dims, size[0], size[1] ,3], name='x_placeholder')
         j_placeholder = tf.placeholder(tf.int32, shape=[1], name='j_placeholder')
@@ -483,7 +483,7 @@ if __name__=="__main__":
     parser.add_argument('--dataset', action= 'store', required=True,
             help= 'Dataset (UCF101, HMDB51)')
 
-    parser.add_argument('--numGpus', action= 'store', required=True, type=int, default=1,
+    parser.add_argument('--numGpus', action= 'store', type=int, default=1,
             help = 'Number of Gpus used for calculation')
 
     parser.add_argument('--train', action= 'store', required=True, type=int,
@@ -510,13 +510,13 @@ if __name__=="__main__":
     parser.add_argument('--numVids', action='store', required=True, type=int,
             help = 'Unique name of experiment being run')
 
-    parser.add_argument('--lr', action='store', required=True, type=float,
+    parser.add_argument('--lr', action='store', type=float, default=0.001,
             help = 'Learning Rate')
 
-    parser.add_argument('--wd', action='store', required=True, type=float, default=0.0,
+    parser.add_argument('--wd', action='store', type=float, default=0.0,
             help = 'Weight Decay')
 
-    parser.add_argument('--nEpochs', action='store', required=True, type=int,
+    parser.add_argument('--nEpochs', action='store', type=int, default=1,
             help = 'Number of Epochs')
 
     parser.add_argument('--split', action='store', type=int, default=1,

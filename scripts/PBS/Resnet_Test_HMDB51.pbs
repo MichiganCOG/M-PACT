@@ -111,16 +111,15 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 cd /z/home/erichof/TF_Activity_Recognition_Framework/
 echo "Test ResNet"
-python train_test_model.py \
+python train_test_multigpu_model.py \
 --model resnet \
---dataset HMDB51 \
---numGpus 1 \
+--dataset HMDB51 
 --train 0 \
 --size 224 \
 --inputDims 50 \
 --outputDims 51 \
 --seqLength 50 \
---expName resnet_single_relu \
+--expName resnet_HMDB51 \
 --numVids 1530 \
 --split 1 \
 --baseDataPath /z/home/madantrg/Datasets \
