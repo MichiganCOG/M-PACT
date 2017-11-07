@@ -241,48 +241,61 @@ def preprocess_image(image, output_height, output_width, is_training=False,
                                     resize_side_min)
 
 
-def preprocess(index, Data, labels, size, isTraining):
-    np.random.seed(index)
-    tempOffset = np.random.randint(0, Data.shape[0]-1, 1)
-    if isTraining:
-        tFootprint = 125
-    else:
-        tFootprint = 250
-    # Check if total index number is > size of data
-    if tempOffset + tFootprint > Data.shape[0]-1:
-        # Check if looping over can be done in a single shot
-        if tempOffset + tFootprint - Data.shape[0]-1 < Data.shape[0]-1:
-            Data = np.vstack((Data[tempOffset[0]:,:,:,:],Data[:tempOffset[0]+tFootprint - Data.shape[0],:,:,:]))
-        else:
-            tempData = Data[tempOffset[0]:,:,:,:]
-            while(tempData.shape[0]<tFootprint):
-                if Data.shape[0] <= tFootprint - tempData.shape[0]:
-                    tempData = np.vstack((tempData, Data))
-                else:
-                    tempData = np.vstack((tempData, Data[:tFootprint - tempData.shape[0],:,:,:]))
-            Data = tempData
-            del tempData
-    else:
+def preprocess(index, data, labels, size, is_training):
 
-        Data = Data[tempOffset[0]:tempOffset[0]+tFootprint,:,:,:]
-    tempData = []
-    Data = Data.astype('float32')
-    for im in Data:
-        if isTraining:
-            tempData.append(preprocess_for_train(im, size[1], size[0]))
+    np.random.seed(index)
+    temp_offset = np.random.randint(0, data.shape[0]-1, 1)
+
+    if is_training:
+        tfootprint = 125
+
+    else:
+        tfootprint = 250
+
+    # Check if total index number is > size of data
+    if temp_offset + tfootprint > data.shape[0]-1:
+        # Check if looping over can be done in a single shot
+        if temp_offset + tfootprint - data.shape[0]-1 < data.shape[0]-1:
+            data = np.vstack((data[temp_offset[0]:,:,:,:],data[:temp_offset[0]+tfootprint - data.shape[0],:,:,:]))
+
         else:
-            tempData.append(_preprocess_for_eval_new(im, size[1], size[0], min(size)))
-    Data = np.array(tempData)
+            temp_data = data[temp_offset[0]:,:,:,:]
+
+            while(temp_data.shape[0]<tfootprint):
+                if data.shape[0] <= tfootprint - temp_data.shape[0]:
+                    temp_data = np.vstack((temp_data, data))
+
+                else:
+                    temp_data = np.vstack((temp_data, data[:tfootprint - temp_data.shape[0],:,:,:]))
+
+            data = temp_data
+            del temp_data
+
+    else:
+        data = data[temp_offset[0]:temp_offset[0]+tfootprint,:,:,:]
+
+    temp_data = []
+    data = data.astype('float32')
+
+    for im in data:
+        if is_training:
+            temp_data.append(preprocess_for_train(im, size[1], size[0]))
+
+        else:
+            temp_data.append(_preprocess_for_eval_new(im, size[1], size[0], min(size)))
+
+    data = np.array(temp_data)
 
     # Sample 25 frames from the 125 frame clip
-    tempData = []
-    for i in range(0, tFootprint, 5):
-        tempData.append(Data[i])
+    temp_data = []
+    for i in range(0, tfootprint, 5):
+        temp_data.append(data[i])
 
-    Data = np.array(tempData)
+    data = np.array(temp_data)
 
     # Add 25 zero frames to training because the inputDims are only 25 but the
     # LSTM needs a consistent input of 50 frames since that is the inputDim for testing
-    if isTraining:
-        Data = np.vstack([Data, np.zeros(Data.shape)])
-    return Data
+    if is_training:
+        data = np.vstack([data, np.zeros(data.shape)])
+
+    return data
