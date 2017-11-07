@@ -18,7 +18,7 @@ def load_dataset(model, index, fName, baseDataPath, vidFile, classIndFile, size,
 #    data =fHDF5[os.path.split(ps.path.splitext(lines[index])[0])[1]]['Data'].value
     label = fHDF5[os.path.split(lines[index].split('.avi')[0])[1]]['Label'].value
     #label = fHDF5[os.path.split(os.path.splitext(lines[index])[0])[1]]['Label'].value
-    if dataset=='UCF101' and label != -1:
+    if (dataset=='UCF101' or dataset =='UCF101Rate') and label != -1:
         label = label-1
 
     if label==-1:

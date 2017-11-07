@@ -46,7 +46,7 @@ class VGG16():
             return outputs
 
 
-    def inference(self, inputs, isTraining, inputDims, outputDims, seqLength, scope, weight_decay=0.0, return_layer='logits', cpuId=0):
+    def inference(self, inputs, isTraining, inputDims, outputDims, seqLength, scope, k, j, weight_decay=0.0, return_layer='logits', cpuId=0):
 
         ############################################################################
         #                       Creating VGG 16 Network Layers                     #
@@ -290,6 +290,8 @@ class VGG16():
 
                 print layers['drop7'].shape
 
+                featSize=4096
+                rnn_inputs = tf.reshape(layers['drop7'], [seqLength, inputDims/seqLength,  featSize])
 
                 layers['rnn_outputs'] = self._LSTM(rnn_inputs, seqLength, weight_decay=0.0, featSize=4096, cellSize=1024)#, cpuId=cpuId)
 
