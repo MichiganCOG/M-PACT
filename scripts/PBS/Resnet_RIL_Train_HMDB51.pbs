@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N Resnet_Train_HMDB51Rate     # Name of the job
+#PBS -N Resnet_RIL_Train_HMDB51     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=5000:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -114,21 +114,21 @@ cd /z/home/erichof/TF_Activity_Recognition_Framework/
 echo "Train Resnet"
 
 python train_test_multigpu_model.py \
---model resnet \
+--model resnet_RIL \
 --numGpus 2 \
---dataset HMDB51Rate \
+--dataset HMDB51 \
 --train 1 \
 --load 0 \
---inputDims 50 \
+--inputDims 250 \
 --outputDims 51 \
 --seqLength 50 \
 --size 224  \
---expName resnet_HMDB51Rate  \
---numVids 35700 \
+--expName resnet_RIL_HMDB51  \
+--numVids 3570 \
 --split 1 \
 --wd 0.0 \
 --lr 0.001 \
---nEpochs 7 \
+--nEpochs 40 \
 --baseDataPath /z/home/madantrg/Datasets \
 --fName trainlist \
 --saveFreq 1 \
