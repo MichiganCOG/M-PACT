@@ -387,7 +387,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         print "Tot time:       ", time.time()-time_init
 
 
-def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, num_vids, split, base_data_path, f_name, k=25):
+def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, k=25):
 
     with tf.name_scope("my_scope") as scope:
         is_training = False
@@ -421,12 +421,17 @@ def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, ex
         init  = tf.global_variables_initializer()
         sess.run(init)
 
+        # Need to add support to save in alternate folder: Can be modified
 
-        ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, dataset, experiment_name, 'checkpoints/checkpoint')))
+        ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
             print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
 
+        else:
+            print 'Invalid load dataset specified. Please check.'
+            exit()
+        #import pdb;pdb.set_trace()
         total_pred = []
         acc        = 0
         count      = 0
@@ -469,7 +474,7 @@ def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, ex
             if int(guess) == int(labels[0]):
                 acc += 1
 
-        curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
+            curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
         print "Total accuracy : ", acc/float(count)
         print total_pred
@@ -534,6 +539,9 @@ if __name__=="__main__":
     parser.add_argument('--valFreq', action='store', type=int, default=3,
             help = 'Frequency in epochs to validate')
 
+    parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
+            help= 'Dataset (UCF101, HMDB51)')
+
     args = parser.parse_args()
 
     print "Setup of current experiments: ",args
@@ -583,6 +591,7 @@ if __name__=="__main__":
                 size            = [args.size, args.size],
                 num_gpus        = args.numGpus,
                 dataset         = args.dataset,
+                loaded_dataset  = args.loadedDataset,
                 experiment_name = args.expName,
                 num_vids        = args.numVids,
                 split           = args.split,
