@@ -1,9 +1,9 @@
 #!/bin/bash -f
 #PBS -N Resnet_Train_HMDB51Rate     # Name of the job
 #PBS -j oe                             # Join output and error in single file
-#PBS -l walltime=500:00:00             # walltime requested
+#PBS -l walltime=5000:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn4:ppn=2:gpus=2    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn4:ppn=6:gpus=2    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -118,7 +118,7 @@ python train_test_multigpu_model.py \
 --numGpus 2 \
 --dataset HMDB51Rate \
 --train 1 \
---load 0 \
+--load 1 \
 --inputDims 50 \
 --outputDims 51 \
 --seqLength 50 \
@@ -128,11 +128,11 @@ python train_test_multigpu_model.py \
 --split 1 \
 --wd 0.0 \
 --lr 0.001 \
---nEpochs 7 \
+--nEpochs 4 \
 --baseDataPath /z/home/madantrg/Datasets \
 --fName trainlist \
 --saveFreq 1 \
---valFreq 3
+--valFreq 10
 
 
 

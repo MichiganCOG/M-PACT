@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N VGG16_Test_UCF101Rate     # Name of the job
+#PBS -N Resnet_HMDB51Rate_Test_HMDB51Rate     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=pulvinar:ppn=1:gpus=1    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn4:ppn=2:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -111,19 +111,19 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
 cd /z/home/erichof/TF_Activity_Recognition_Framework/
-echo "Test VGG16"
+echo "Test Resnet"
 
 python train_test_multigpu_model.py \
---model vgg16 \
---dataset UCF101Rate \
---loadedDataset UCF101 \
+--model resnet \
+--dataset HMDB51Rate \
+--loadedDataset HMDB51Rate \
 --train 0 \
 --size 224 \
 --inputDims 50 \
---outputDims 101 \
+--outputDims 51 \
 --seqLength 50 \
---expName vgg_UCF101  \
---numVids 37830 \
+--expName resnet_HMDB51Rate  \
+--numVids 15300 \
 --split 1 \
 --baseDataPath /z/home/madantrg/Datasets \
 --fName testlist
