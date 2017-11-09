@@ -99,6 +99,7 @@ def load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, bas
                              os.path.join("datasets",dataset,"classInd.txt"), size, is_training,
                              dataset)
 
+
         labels = np.repeat(labels, seq_length)
         shape  = np.array(loaded_data).shape
 
@@ -323,7 +324,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 # Load video into Q concurrently
                 time_pre_load = time.time()
                 x_q, y_q, vid_list = load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, True)
-                time_post_load = time.time()
 
 
                 input_data = np.zeros((num_gpus, input_dims, size[0], size[1], 3))
@@ -350,7 +350,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                         labels[gpu_count]     = labels[last_vid_index]
 
                 batch_count+= intra_batch_count
-
+                time_post_load = time.time()
                 time_pre_train = time.time()
                 _, loss_train, predictions, gs = sess.run([train_op, tower_losses,
                                                  tower_slogits, global_step],
@@ -359,21 +359,23 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                  istraining_placeholder: True,
                                                  j_placeholder         : [input_data.shape[1]/k]})
 
-                time_post_train = time.time()
+
 
                 for pred_idx in range(intra_batch_count):
                     pred = np.mean(predictions[pred_idx], 0).argmax()
                     if pred == labels[pred_idx][0]:
                         epoch_acc +=1
-
+                time_post_train = time.time()
                 tot_train_time += time_post_train - time_pre_train
                 tot_load_time  += time_post_load  - time_pre_load
 
+                print 'load_time, train_time: ', time_post_load-time_pre_load, time_post_train-time_pre_train
+                print 'step, loss: ', gs, loss_train
                 curr_logger.add_scalar_value('load_time',       time_post_load - time_pre_load, step=gs)
                 curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
                 curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
 
-            curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
+                curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
             if epoch % save_freq == 0:
                 print "Saving..."

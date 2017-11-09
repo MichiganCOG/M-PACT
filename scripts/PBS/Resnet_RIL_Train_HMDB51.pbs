@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=5000:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn4:ppn=2:gpus=2    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=pulvinar:ppn=2:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -104,7 +104,7 @@ echo ------------------------------------------------------
 echo "start"
 hostname
 nvidia-smi
-export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]}"
+export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
@@ -115,7 +115,7 @@ echo "Train Resnet"
 
 python train_test_multigpu_model.py \
 --model resnet_RIL \
---numGpus 2 \
+--numGpus 1 \
 --dataset HMDB51 \
 --train 1 \
 --load 0 \
@@ -128,11 +128,11 @@ python train_test_multigpu_model.py \
 --split 1 \
 --wd 0.0 \
 --lr 0.001 \
---nEpochs 40 \
+--nEpochs 30 \
 --baseDataPath /z/home/madantrg/Datasets \
 --fName trainlist \
 --saveFreq 1 \
---valFreq 3
+--valFreq 30
 
 
 

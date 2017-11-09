@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N Resnet_Train_HMDB51Rate     # Name of the job
+#PBS -N Resnet_HMDB51Rate_Test_HMDB51Rate     # Name of the job
 #PBS -j oe                             # Join output and error in single file
-#PBS -l walltime=5000:00:00             # walltime requested
+#PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn4:ppn=6:gpus=2    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn4:ppn=2:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -104,35 +104,29 @@ echo ------------------------------------------------------
 echo "start"
 hostname
 nvidia-smi
-export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]}"
+export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
 
 
 cd /z/home/erichof/TF_Activity_Recognition_Framework/
-echo "Train Resnet"
+echo "Test Resnet"
 
 python train_test_multigpu_model.py \
 --model resnet \
---numGpus 2 \
 --dataset HMDB51Rate \
---train 1 \
---load 1 \
+--loadedDataset HMDB51Rate \
+--train 0 \
+--size 224 \
 --inputDims 50 \
 --outputDims 51 \
 --seqLength 50 \
---size 224  \
 --expName resnet_HMDB51Rate  \
---numVids 35700 \
+--numVids 15300 \
 --split 1 \
---wd 0.0 \
---lr 0.001 \
---nEpochs 4 \
 --baseDataPath /z/home/madantrg/Datasets \
---fName trainlist \
---saveFreq 1 \
---valFreq 10
+--fName testlist
 
 
 
