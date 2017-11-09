@@ -22,28 +22,42 @@ from tensorflow.python.ops import clip_ops
 from utils import *
 from Queue import Queue
 
-sess = tf.Session()
-
-numGpus = 2 
+#sess = tf.Session()
+##init = tf.global_variables_initializer()
+numGpus = 3 
 inputDims = 50
 seqLength = 50
+#
+#end_msg = 0 
+#
+#def load_and_enqueue(model, vidList, fName, baseDataPath, dataset, split, size, isTraining):
+#    while True:
+#        if end_msg==401:
+#            print "Loading video: ",vidList[0]
+#            loaded_data, labels= load_dataset(model, vidList[0], fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+#            vidList = vidList[1:]
+#        elif end_msg == None:
+#            break
+#        else:
+#            pass
+#
+#        sess.run(en_Q, feed_dict={x_placeholder: loaded_data, y_placeholder: labels})
 
-end_msg = False
 
-def load_and_enqueue(model, vidList, fName, baseDataPath, dataset, split, size, isTraining):
-    while True:
-        if not end_msg:
-            print "Loading video: ",vidList[0]
-            loaded_data, labels= load_dataset(model, vidList[0], fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
-            vidList = vidList[1:]
-        else:
-            break
 
-        sess.run(en_Q, feed_dict={x_placeholder: loaded_data, y_placeholder: labels})
+def load_data(model, vidList, fName, baseDataPath, dataset, split, size, isTraining, X, Y, IDX):
+    loaded_data, labels= load_dataset(model, IDX, fName, os.path.join(baseDataPath, dataset+'HDF5RGB','Split'+str(split)), os.path.join('datasets',dataset,fName+'0'+str(split)+'.txt'), os.path.join("datasets",dataset,"classInd.txt"), size, isTraining, dataset)
+    print loaded_data.dtype
+    X.put(loaded_data)
+    Y.put(labels)
+    #X[IDX, :,:,:,:] = loaded_data.flat
+    #Y[IDX,:] = np.repeat(labels, 51) 
+
+
 
 if __name__=="__main__":
     model = ResNet()
-    vidNum = [1,2]
+    vidNum = [1,100,1000]
     fName = 'trainlist'
     baseDataPath = '/z/home/madantrg/Datasets'
     dataset = 'HMDB51'
@@ -51,25 +65,43 @@ if __name__=="__main__":
     size=  [224,224]
     isTraining =  False
 
-    x_placeholder          = tf.placeholder(tf.float32, shape=[inputDims,  size[0], size[1] ,3], name='x_placeholder')
-    y_placeholder          = tf.placeholder(tf.int64,   shape=[], name='y_placeholder')
-    istraining_placeholder = tf.placeholder(tf.bool,    name='istraining_placeholder')
+    #XX = mp.Array('d',np.zeros((4,50,224,224,3)).flat)
+    #import pdb; pdb.set_trace()
+    #YY = mp.Array('i', range(51))
+    input_data = np.zeros((numGpus,50,224,224,3))
+    input_labels = np.zeros((numGpus))
+    XX = mp.Queue()
+    YY = mp.Queue()
 
-    Q                      = tf.FIFOQueue(numGpus, [tf.float32, tf.int64], shapes=[[inputDims, size[0], size[1], 3], []])
+    p = [mp.Process(target=load_data, args=(model, vidNum, fName, baseDataPath, dataset, split, size, isTraining, XX, YY, vidNum[i])) for i in range(numGpus)]
+    for worker in p:
+        worker.start()
+    for i in range(numGpus):
+        input_data[i] = XX.get()
+        input_labels[i] = YY.get()
     
-    en_Q = Q.enqueue([x_placeholder, y_placeholder])
+    for worker in p:
+        worker.join()
 
-    Data, Labels  = Q.dequeue_many(numGpus)
+    #x_placeholder          = tf.placeholder(tf.float32, shape=[inputDims,  size[0], size[1] ,3], name='x_placeholder')
+    #y_placeholder          = tf.placeholder(tf.int64,   shape=[], name='y_placeholder')
+    #istraining_placeholder = tf.placeholder(tf.bool,    name='istraining_placeholder')
 
-    ss = Data
+    #Q                      = tf.FIFOQueue(numGpus, [tf.float32, tf.int64], shapes=[[inputDims, size[0], size[1], 3], []])
+    #
+    #en_Q = Q.enqueue([x_placeholder, y_placeholder])
 
-    t = threading.Thread(target=load_and_enqueue, args=(model, vidNum, fName, baseDataPath, dataset, split, size, isTraining))
-    t.start()
+    #Data, Labels  = Q.dequeue_many(numGpus)
 
+    ##ss = Data
 
-    start_ = time.time()
-    for runs  in range(1):
-        D = sess.run([ss])
-    end_msg = True
-    print "Time to load 5*2 videos is: ", time.time()-start_
+    #t = threading.Thread(target=load_and_enqueue, args=(model, vidNum, fName, baseDataPath, dataset, split, size, isTraining))
+    #t.start()
+
+    #start_ = time.time()
+    #end_msg = 401    
+    #for runs  in range(1):
+    #    D = sess.run([Data])
+    #end_msg = True
+    #print "Time to load 5*2 videos is: ", time.time()-start_
     import pdb;pdb.set_trace()
