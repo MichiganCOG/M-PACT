@@ -1,0 +1,136 @@
+------------------------------------------------------
+Job is running on node lgn1
+lgn1
+lgn1
+lgn1
+lgn1
+------------------------------------------------------
+PBS_ARRAYID :
+PBS_ENVIRONMENT : PBS_BATCH
+PBS_GPUFILE : /var/spool/torque/aux//26137.blindspotgpu
+PBS_JOBCOOKIE : F9E1834A1A90DC1EA51D49D101B46BA4
+PBS_JOBID : 26137.blindspot
+PBS_JOBNAME : Resnet_Multigpu_4_Threaded_Test
+PBS_MOMPORT : 15003
+PBS_NODEFILE : /var/spool/torque/aux//26137.blindspot
+PBS_NODENUM : 0
+PBS_NP : 5
+PBS_NUM_NODES : 1
+PBS_NUM_PPN : 5
+PBS_O_HOME : /home/madantrg
+PBS_O_HOST : hyaloidcanal
+PBS_O_LANG : en_US.UTF-8
+PBS_O_LOGNAME : madantrg
+PBS_O_PATH : /z/sw/bin/:/z/sw/sbin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+PBS_O_SHELL : /bin/bash
+PBS_O_WORKDIR : /z/home/madantrg/tf-activity-recognition-framework/scripts/PBS
+PBS_QUEUE : batch
+PBS_TASKNUM : 1
+The contents of gpu file are:
+lgn1-gpu3
+lgn1-gpu2
+lgn1-gpu1
+lgn1-gpu0
+----------End of GPU file------
+I got allocated the following gpus
+gpu: 3
+gpu: 2
+gpu: 1
+gpu: 0
+PBS: qsub is running on hyaloidcanal
+PBS: originating queue is batch
+PBS: executing queue is batch
+PBS: working directory is /z/home/madantrg/tf-activity-recognition-framework/scripts/PBS
+PBS: execution mode is PBS_BATCH
+PBS: job identifier is 26137.blindspot
+PBS: job name is Resnet_Multigpu_4_Threaded_Test
+PBS: node file is /var/spool/torque/aux//26137.blindspot
+PBS: current home directory is /home/madantrg
+PBS: PATH = /z/sw/bin/:/z/sw/sbin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+------------------------------------------------------
+start
+lgn1
+Thu Nov  9 14:51:42 2017       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 384.66                 Driver Version: 384.66                    |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  GeForce GTX TIT...  On   | 00000000:02:00.0  On |                  N/A |
+| 23%   65C    P0    86W / 250W |     39MiB / 12205MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   1  GeForce GTX TIT...  On   | 00000000:03:00.0 Off |                  N/A |
+| 30%   72C    P0    99W / 250W |      2MiB / 12207MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   2  GeForce GTX TIT...  On   | 00000000:82:00.0 Off |                  N/A |
+| 30%   72C    P0    98W / 250W |      2MiB / 12207MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   3  GeForce GTX TIT...  On   | 00000000:83:00.0 Off |                  N/A |
+| 25%   58C    P8    17W / 250W |      2MiB / 12207MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID  Type  Process name                               Usage      |
+|=============================================================================|
+|    0      2970    G   /usr/lib/xorg/Xorg                              37MiB |
++-----------------------------------------------------------------------------+
+Train Resnet : 4 GPU threaded test
+2017-11-09 14:52:09.570199: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.1 instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-09 14:52:09.570279: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use SSE4.2 instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-09 14:52:09.570307: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-09 14:52:09.570318: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use AVX2 instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-09 14:52:09.570328: W tensorflow/core/platform/cpu_feature_guard.cc:45] The TensorFlow library wasn't compiled to use FMA instructions, but these are available on your machine and could speed up CPU computations.
+2017-11-09 14:52:10.077638: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 0 with properties: 
+name: GeForce GTX TITAN X
+major: 5 minor: 2 memoryClockRate (GHz) 1.076
+pciBusID 0000:83:00.0
+Total memory: 11.92GiB
+Free memory: 11.80GiB
+2017-11-09 14:52:10.403334: W tensorflow/stream_executor/cuda/cuda_driver.cc:523] A non-primary context 0x18f67170 exists before initializing the StreamExecutor. We haven't verified StreamExecutor works with that.
+2017-11-09 14:52:10.404812: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 1 with properties: 
+name: GeForce GTX TITAN X
+major: 5 minor: 2 memoryClockRate (GHz) 1.076
+pciBusID 0000:82:00.0
+Total memory: 11.92GiB
+Free memory: 11.80GiB
+2017-11-09 14:52:10.737482: W tensorflow/stream_executor/cuda/cuda_driver.cc:523] A non-primary context 0x18f62ce0 exists before initializing the StreamExecutor. We haven't verified StreamExecutor works with that.
+2017-11-09 14:52:10.739216: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 2 with properties: 
+name: GeForce GTX TITAN X
+major: 5 minor: 2 memoryClockRate (GHz) 1.076
+pciBusID 0000:03:00.0
+Total memory: 11.92GiB
+Free memory: 11.80GiB
+2017-11-09 14:52:11.063032: W tensorflow/stream_executor/cuda/cuda_driver.cc:523] A non-primary context 0x18f5e850 exists before initializing the StreamExecutor. We haven't verified StreamExecutor works with that.
+2017-11-09 14:52:11.064181: I tensorflow/core/common_runtime/gpu/gpu_device.cc:940] Found device 3 with properties: 
+name: GeForce GTX TITAN X
+major: 5 minor: 2 memoryClockRate (GHz) 1.076
+pciBusID 0000:02:00.0
+Total memory: 11.92GiB
+Free memory: 11.77GiB
+2017-11-09 14:52:11.064493: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 0 and 2
+2017-11-09 14:52:11.064514: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 0 and 3
+2017-11-09 14:52:11.064551: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 1 and 2
+2017-11-09 14:52:11.064565: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 1 and 3
+2017-11-09 14:52:11.064578: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 2 and 0
+2017-11-09 14:52:11.064591: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 2 and 1
+2017-11-09 14:52:11.064794: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 3 and 0
+2017-11-09 14:52:11.064810: I tensorflow/core/common_runtime/gpu/gpu_device.cc:832] Peer access not supported between device ordinals 3 and 1
+2017-11-09 14:52:11.064903: I tensorflow/core/common_runtime/gpu/gpu_device.cc:961] DMA: 0 1 2 3 
+2017-11-09 14:52:11.064913: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 0:   Y Y N N 
+2017-11-09 14:52:11.064919: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 1:   Y Y N N 
+2017-11-09 14:52:11.064926: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 2:   N N Y Y 
+2017-11-09 14:52:11.064932: I tensorflow/core/common_runtime/gpu/gpu_device.cc:971] 3:   N N Y Y 
+2017-11-09 14:52:11.064949: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:0) -> (device: 0, name: GeForce GTX TITAN X, pci bus id: 0000:83:00.0)
+2017-11-09 14:52:11.064969: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:1) -> (device: 1, name: GeForce GTX TITAN X, pci bus id: 0000:82:00.0)
+2017-11-09 14:52:11.064977: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:2) -> (device: 2, name: GeForce GTX TITAN X, pci bus id: 0000:03:00.0)
+2017-11-09 14:52:11.064984: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Creating TensorFlow device (/gpu:3) -> (device: 3, name: GeForce GTX TITAN X, pci bus id: 0000:02:00.0)
+Setup of current experiments:  Namespace(baseDataPath='/z/home/madantrg/Datasets', dataset='HMDB51', expName='resnet_multigpu_4_threaded_test', fName='trainlist', inputDims=50, load=0, lr=0.001, model='resnet', nEpochs=1, numGpus=4, numVids=100, outputDims=51, saveFreq=1, seqLength=50, size=224, split=1, train=1, valFreq=1, wd=0.0)
+resnet initialized
+Generating RESNET network layers
+Generating RESNET network layers
+Generating RESNET network layers
+Generating RESNET network layers
+100
+Saving...

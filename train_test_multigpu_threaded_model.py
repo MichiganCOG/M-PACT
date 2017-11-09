@@ -73,18 +73,17 @@ def gen_video_list(dataset, model_name, experiment_name, f_name, split, num_vids
     return vid_list
 
 
-def load_dataset_consumer(x_q, y_q, model, vid_list, f_name, size, base_data_path, dataset, split, is_training=False):
+def load_dataset_consumer(model, vid_list, f_name, size, base_data_path, dataset, split, is_training=False):
     loaded_data, loaded_labels = load_dataset(model, vid_list, f_name, 
                              os.path.join(base_data_path,
                              dataset+'HDF5RGB','Split'+str(split)),
                              os.path.join('datasets',dataset,f_name+'0'+str(split)+'.txt'),
                              os.path.join("datasets",dataset,"classInd.txt"), size, is_training,
                              dataset)
-    x_q.put(loaded_data)
-    y_q.put(loaded_labels)
+    return [loaded_data, loaded_labels]
 
 
-def load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, is_training=False):
+def load_video_into_queue(model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, is_training=False):
 
     # New loading variables -----
     input_data = np.zeros((num_gpus, input_dims, size[0], size[1], 3))
@@ -106,33 +105,40 @@ def load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, bas
         num_vids_to_load = 0
         fin = True
 
+    if num_vids_to_load > 0:
+        pool = mp.Pool(processes=num_vids_to_load)
 
-    # New multi-process setup
-    processes = [mp.Process(target=load_dataset_consumer, args=(x_q, y_q, model, vid_list[gpu_count], 
-                                                                f_name, size, base_data_path, dataset, 
-                                                                split,is_training)) for gpu_count in range(num_vids_to_load)]
+        # New multi-process setup
+        processes = [pool.apply_async(load_dataset_consumer, (model, vid_list[gpu_count], 
+                                                             f_name, size, base_data_path, dataset, 
+                                                             split,is_training)) for gpu_count in range(num_vids_to_load)]
 
-    for process in processes:
-        process.start()
+    #for process in processes:
+    #    process.start()
     
-    while x_q.qsize() < num_vids_to_load:
-        time.sleep(0.1)
+    #while x_q.qsize() < num_vids_to_load:
+    #    time.sleep(0.1)
 
     fin = False
 
     for gpu_count in range(num_gpus):
         if gpu_count <= num_vids_to_load-1:
-            input_data[gpu_count] = x_q.get()
-            labels[gpu_count]     = np.repeat(y_q.get(), seq_length)
+            dnl                   = processes[gpu_count].get()
+            input_data[gpu_count] = dnl[0]
+            labels[gpu_count]     = np.repeat(dnl[1], seq_length)
             intra_batch_count    +=1
             last_vid_index        = gpu_count
 
         else:
             fin = True
             input_data[gpu_count] = input_data[last_vid_index]            
-   
-    for process in processes:
-        process.join() 
+  
+    if num_vids_to_load > 0:
+        pool.close()
+        pool.join()
+ 
+    #for process in processes:
+    #    process.join() 
 
     ## Legacy load setup : Can be modified
     #for gpu_count in range(num_vids_to_load):
@@ -171,10 +177,10 @@ def load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, bas
     else:
         vid_list = []
 
-    return x_q, y_q, vid_list, input_data, labels, intra_batch_count, fin
+    return vid_list, input_data, labels, intra_batch_count, fin
 
 
-def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, K, base_data_path, num_gpus, seq_length, x_q, y_q):
+def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, K, base_data_path, num_gpus, seq_length):
 
     if dataset == 'HMDB51' or dataset == "HMDB51Rate":
         f_name = 'vallist'
@@ -182,7 +188,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
     else:
         f_name = 'testlist'
 
-    vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, None, False, 0)
+    vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, 100, False, 0) # CHANGE!!
 
     count   = 0
     acc     = 0
@@ -193,7 +199,8 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
 
         intra_batch_count = 0
 
-        x_q, y_q, vid_list, input_data, labels, intra_batch_count, fin = load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, False)
+        #x_q, y_q, vid_list, input_data, labels, intra_batch_count, fin = load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, False)
+        vid_list, input_data, labels, intra_batch_count, fin = load_video_into_queue(model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, False)
 
         ## Load video into Q concurrently
         #x_q, y_q, vid_list = load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name,
@@ -227,7 +234,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
         # ------------------------------------------------
 
         for acc_count in range(intra_batch_count):
-            guess = np.mean(predictions[0][acc_count]).argmax()
+            guess = np.mean(predictions[0][acc_count], axis=0).argmax()
 
             if int(guess) == int(labels[acc_count][0]):
                 acc+=1
@@ -351,9 +358,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         total_pred = []
         save_data  = []
 
-        # Data loading setup
-        x_q = mp.Queue()
-        y_q = mp.Queue()
+        ## Data loading setup
+        #x_q = mp.Queue()
+        #y_q = mp.Queue()
 
         # Timing test setup
         time_init = time.time()
@@ -370,7 +377,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             while not fin:
 
                 time_pre_load = time.time()
-                x_q, y_q, vid_list, input_data, labels, intra_batch_count, fin = load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, True)
+                #x_q, y_q, vid_list, input_data, labels, intra_batch_count, fin = load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, True)
+                vid_list, input_data, labels, intra_batch_count, fin = load_video_into_queue(model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, True)
                 time_post_load = time.time()
 
 
@@ -435,7 +443,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
             if epoch % val_freq == 0:
-                _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, k, base_data_path, num_gpus, seq_length, x_q, y_q)
+                _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, k, base_data_path, num_gpus, seq_length)
 
         print "Tot load time:  ", tot_load_time
         print "Tot train time: ", tot_train_time
@@ -524,7 +532,7 @@ def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, ex
             if int(guess) == int(labels[0]):
                 acc += 1
 
-        curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
+            curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
         print "Total accuracy : ", acc/float(count)
         print total_pred
