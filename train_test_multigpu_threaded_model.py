@@ -17,11 +17,12 @@ from load_dataset import load_dataset
 from logger       import Logger
 from utils        import *
 
-from models.lrcn.lrcn_model             import LRCN
-from models.vgg16.vgg16_model           import VGG16
-from models.resnet.resnet_model         import ResNet
-from models.resnet_RIL.resnet_RIL_model import ResNet_RIL
-
+from models.lrcn.lrcn_model                           import LRCN
+from models.vgg16.vgg16_model                         import VGG16
+from models.resnet.resnet_model                       import ResNet
+from models.resnet_RIL.resnet_RIL_model               import ResNet_RIL
+from models.resnet_RIL.resnet_RIL_interp_model        import ResNet_RIL_Interp
+from models.resnet_RIL.resnet_RIL_interp_median_model import ResNet_RIL_Interp_Median
 
 def _average_gradients(tower_grads):
 
@@ -370,7 +371,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             epoch_acc   = 0
 
             if len(vid_list) == 0 or epoch != 0:
-                vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, num_vids, True, epoch)
+                vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, num_vids, False, epoch)
 
             fin = False
 
@@ -442,8 +443,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 print "Saving..."
                 saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
-            if epoch % val_freq == 0:
-                _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, k, base_data_path, num_gpus, seq_length)
+        #    if epoch % val_freq == 0:
+        #        _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, k, base_data_path, num_gpus, seq_length)
 
         print "Tot load time:  ", tot_load_time
         print "Tot train time: ", tot_train_time
@@ -614,6 +615,12 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL':
         model = ResNet_RIL()
+
+    elif model_name == 'resnet_RIL_interp':
+        model = ResNet_RIL_Interp()
+
+    elif model_name == 'resnet_RIL_interp_median':
+        model = ResNet_RIL_Interp_Median()
 
     else:
         print("Model not found")
