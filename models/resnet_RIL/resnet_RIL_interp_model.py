@@ -26,7 +26,7 @@ class ResNet_RIL_Interp():
 
     def __init__(self, verbose=True):
         self.verbose=verbose
-        self.name = 'resnet_RIL'
+        self.name = 'resnet_RIL_interp'
         print "resnet RIL interp initialized"
 
 
