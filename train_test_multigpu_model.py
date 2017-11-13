@@ -453,6 +453,7 @@ def test(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, lo
             print "vidNum: ", vid_num
             print "label:  ", labels[0]
 
+
             if len(np.array(loaded_data).shape) ==4:
                 loaded_data = np.array([loaded_data])
                 num_clips = 1

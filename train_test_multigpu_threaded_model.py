@@ -74,7 +74,7 @@ def gen_video_list(dataset, model_name, experiment_name, f_name, split, num_vids
 
 
 def load_dataset_consumer(model, vid_list, f_name, size, base_data_path, dataset, split, is_training=False):
-    loaded_data, loaded_labels = load_dataset(model, vid_list, f_name, 
+    loaded_data, loaded_labels = load_dataset(model, vid_list, f_name,
                              os.path.join(base_data_path,
                              dataset+'HDF5RGB','Split'+str(split)),
                              os.path.join('datasets',dataset,f_name+'0'+str(split)+'.txt'),
@@ -109,13 +109,13 @@ def load_video_into_queue(model, vid_list, num_gpus, f_name, size, base_data_pat
         pool = mp.Pool(processes=num_vids_to_load)
 
         # New multi-process setup
-        processes = [pool.apply_async(load_dataset_consumer, (model, vid_list[gpu_count], 
-                                                             f_name, size, base_data_path, dataset, 
+        processes = [pool.apply_async(load_dataset_consumer, (model, vid_list[gpu_count],
+                                                             f_name, size, base_data_path, dataset,
                                                              split,is_training)) for gpu_count in range(num_vids_to_load)]
 
     #for process in processes:
     #    process.start()
-    
+
     #while x_q.qsize() < num_vids_to_load:
     #    time.sleep(0.1)
 
@@ -131,14 +131,14 @@ def load_video_into_queue(model, vid_list, num_gpus, f_name, size, base_data_pat
 
         else:
             fin = True
-            input_data[gpu_count] = input_data[last_vid_index]            
-  
+            input_data[gpu_count] = input_data[last_vid_index]
+
     if num_vids_to_load > 0:
         pool.close()
         pool.join()
- 
+
     #for process in processes:
-    #    process.join() 
+    #    process.join()
 
     ## Legacy load setup : Can be modified
     #for gpu_count in range(num_vids_to_load):
@@ -188,7 +188,7 @@ def _validate(model, tower_slogits, sess, experiment_name, logger, dataset, inpu
     else:
         f_name = 'testlist'
 
-    vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, 100, False, 0) # CHANGE!!
+    vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, None, False, 0) # CHANGE!!
 
     count   = 0
     acc     = 0
