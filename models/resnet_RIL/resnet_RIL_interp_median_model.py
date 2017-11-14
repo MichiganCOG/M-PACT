@@ -4,7 +4,7 @@
 import tensorflow as tf
 from tensorflow.contrib.rnn import static_rnn
 
-from resnet_RIL_preprocessing import preprocess
+from resnet_RIL_interp_preprocessing import preprocess
 
 # Import math and numpy modules
 import numpy as np
@@ -75,7 +75,7 @@ class ResNet_RIL_Interp_Median():
 
         # Create x0 and x1 float
         x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
-        x1 = tf.clip_by_value(tf.ceil(output_idx), 2., tf.cast(sets*K, tf.float32))
+        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
 
 
         # Deltas :
@@ -98,7 +98,6 @@ class ResNet_RIL_Interp_Median():
         d3 = output_1 - output_0
 
         output = tf.add_n([(d1/d2)*d3, output_0])
-        # d2 is an unsafe operation since if it hits 0s we can easily get NaN
 
         output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
 

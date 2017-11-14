@@ -18,7 +18,7 @@ def load_dataset(model, index, fName, baseDataPath, vidFile, classIndFile, size,
 #    data =fHDF5[os.path.split(ps.path.splitext(lines[index])[0])[1]]['Data'].value
     label = fHDF5[os.path.split(lines[index].split('.avi')[0])[1]]['Label'].value
     #label = fHDF5[os.path.split(os.path.splitext(lines[index])[0])[1]]['Label'].value
-    if (dataset=='UCF101' or dataset =='UCF101Rate') and label != -1:
+    if ('UCF101' in dataset) and label != -1:
         label = label-1
 
     if label==-1:
@@ -33,7 +33,7 @@ def load_dataset(model, index, fName, baseDataPath, vidFile, classIndFile, size,
             classDict[line2] = int(line1)-1
         label = classDict[CLASS]
 
-    if dataset =='HMDB51' or dataset=="HMDB51Rate":
+    if 'HMDB51' in dataset:
         data = np.delete(data,np.where(np.arange(1,data.shape[0])%6==0)[0].astype('int32'), axis=0)
 
     vid_clips = model.preprocess(index, data, label, size, isTraining)

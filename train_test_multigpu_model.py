@@ -21,7 +21,8 @@ from models.lrcn.lrcn_model             import LRCN
 from models.vgg16.vgg16_model           import VGG16
 from models.resnet.resnet_model         import ResNet
 from models.resnet_RIL.resnet_RIL_model import ResNet_RIL
-
+from models.resnet_RIL.resnet_RIL_interp_model import ResNet_RIL_Interp
+from models.resnet_RIL.resnet_RIL_interp_median_model import ResNet_RIL_Interp_Median
 
 def _average_gradients(tower_grads):
 
@@ -55,7 +56,7 @@ def gen_video_list(dataset, model_name, experiment_name, f_name, split, num_vids
         vid_file.close()
 
         if num_total_vids != None:
-            vid_list = np.arange(num_total_vids).tolist()
+            vid_list = np.arange(num_total_vids)
 
             if num_total_vids != num_vids:
                 vid_list=vid_list[:num_vids]
@@ -65,12 +66,16 @@ def gen_video_list(dataset, model_name, experiment_name, f_name, split, num_vids
             exit()
 
     else:
-        vid_list = np.arange(num_vids).tolist()
+        vid_list = np.arange(num_vids)
 
     if shuffle:
-        np.random.shuffle(vid_list)
+	for idx in range(0, len(vid_list), 100):
+		if idx+100 <= len(vid_list):
+        		np.random.shuffle(vid_list[idx:idx+100])
+		else:
+			np.random.shuffle(vid_list[idx:])
 
-    return vid_list
+    return vid_list.tolist()
 
 
 def load_video_into_queue(x_q, y_q, model, vid_list, num_gpus, f_name, size, base_data_path, dataset, split, input_dims, seq_length, is_training=False):
@@ -316,7 +321,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             epoch_acc   = 0
 
             if len(vid_list) == 0 or epoch != 0:
-                vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, num_vids, True, epoch)
+                vid_list = gen_video_list(dataset, model.name, experiment_name, f_name, split, num_vids, False, epoch)
 
             finish_epoch = False
 
@@ -381,8 +386,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 print "Saving..."
                 saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
-            if epoch % val_freq == 0:
-                _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, k, base_data_path, num_gpus, seq_length, x_q, y_q)
+          #  if epoch % val_freq == 0:
+          #      _validate(model, tower_slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, k, base_data_path, num_gpus, seq_length, x_q, y_q)
 
         print "Tot load time:  ", tot_load_time
         print "Tot train time: ", tot_train_time
@@ -562,6 +567,12 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL':
         model = ResNet_RIL()
+
+    elif model_name == 'resnet_RIL_interp':
+	model = ResNet_RIL_Interp()
+
+    elif model_name == 'resnet_RIL_interp_median':
+	model = ResNet_RIL_Interp_Median()
 
     else:
         print("Model not found")
