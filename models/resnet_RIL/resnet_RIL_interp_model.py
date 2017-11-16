@@ -76,8 +76,8 @@ class ResNet_RIL_Interp():
         # Create x0 and x1 float
         x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
         x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
-	
-	
+
+
         # Deltas :
         d1 = (output_idx - x0)
         d2 = (x1 - x0)
@@ -89,7 +89,7 @@ class ResNet_RIL_Interp():
         output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
         output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
         output_idx   = tf.cast(output_idx, 'int32')
-        
+
 	# Create y0 and y1 outputs
         output_0 = tf.gather(inputs, output_idx_0-1)
         output_1 = tf.gather(inputs, output_idx_1-1)
@@ -414,8 +414,9 @@ class ResNet_RIL_Interp():
 
     def loss(self, logits, labels):
         labels = tf.cast(labels, tf.int64)
-        crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
-                        logits=logits[:logits.shape[0].value/2,:])
+        #crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
+        #                logits=logits[:logits.shape[0].value/2,:])
+        crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels,logits=logits)
         return crossEntropyLoss
 
 

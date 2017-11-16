@@ -1,7 +1,6 @@
 *.pyc
 *.npy
-<<<<<<< HEAD
 Logs
-=======
 logs/
->>>>>>> eric-dev
+*.gif
+*.mp4

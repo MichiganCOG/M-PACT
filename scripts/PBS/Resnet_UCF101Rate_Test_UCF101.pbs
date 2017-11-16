@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N Resnet_RIL_Interp_Train_UCF101SHUFFLED     # Name of the job
+#PBS -N Resnet_UCF101Rate_Test_UCF101     # Name of the job
 #PBS -j oe                             # Join output and error in single file
-#PBS -l walltime=5000:00:00             # walltime requested
+#PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn4:ppn=4:gpus=1    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn3:ppn=3:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -111,28 +111,22 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
 cd /z/home/erichof/TF_Activity_Recognition_Framework/
-echo "Train Resnet"
+echo "Test Resnet"
 
 python train_test_multigpu_model.py \
---model resnet_RIL_interp \
---numGpus 1 \
---dataset UCF101SHUFFLED \
---train 1 \
---load 0 \
---inputDims 250 \
+--model resnet \
+--dataset UCF101 \
+--loadedDataset UCF101Rate \
+--train 0 \
+--size 224 \
+--inputDims 50 \
 --outputDims 101 \
 --seqLength 50 \
---size 224  \
---expName resnet_RIL_interp_UCF101SHUFFLED  \
---numVids 9537 \
+--expName resnet_UCF101Rate  \
+--numVids 3783 \
 --split 1 \
---wd 0.0 \
---lr 0.001 \
---nEpochs 30 \
 --baseDataPath /z/home/madantrg/Datasets \
---fName trainlist \
---saveFreq 1 \
---valFreq 30
+--fName testlist
 
 
 

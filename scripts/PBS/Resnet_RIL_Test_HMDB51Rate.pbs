@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=retinene:ppn=3:gpus=1    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn2:ppn=4:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -114,14 +114,15 @@ cd /z/home/erichof/TF_Activity_Recognition_Framework/
 echo "Test ResNet"
 python train_test_multigpu_model.py \
 --model resnet_RIL \
+--numGpus 1 \
 --dataset HMDB51Rate \
---loadedDataset HMDB51 \
+--loadedDataset HMDB51SHUFFLED \
 --train 0 \
 --size 224 \
 --inputDims 250 \
 --outputDims 51 \
 --seqLength 50 \
---expName resnet_RIL_HMDB51 \
+--expName resnet_RIL_HMDB51SHUFFLED \
 --numVids 15300 \
 --split 1 \
 --baseDataPath /z/home/madantrg/Datasets \

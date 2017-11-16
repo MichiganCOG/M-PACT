@@ -415,8 +415,9 @@ class ResNet_RIL_Interp_Median():
 
     def loss(self, logits, labels):
         labels = tf.cast(labels, tf.int64)
-        crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
-                        logits=logits[:logits.shape[0].value/2,:])
+        #crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
+        #                logits=logits[:logits.shape[0].value/2,:])
+        crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels,logits=logits)
         return crossEntropyLoss
 
 

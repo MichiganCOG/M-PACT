@@ -274,6 +274,8 @@ def _window_function(Data, Type, k):
 
 def preprocess(index, data, labels, size, is_training):
 
+
+    is_training = False
     np.random.seed(index)
     temp_offset = np.random.randint(0, data.shape[0]-1, 1)
 

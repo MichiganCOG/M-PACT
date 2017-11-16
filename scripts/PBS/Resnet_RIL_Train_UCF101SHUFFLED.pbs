@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N Resnet_RIL_Interp_Train_UCF101SHUFFLED     # Name of the job
+#PBS -N Resnet_RIL_Train_UCF101SHUFFLED     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=5000:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -114,7 +114,7 @@ cd /z/home/erichof/TF_Activity_Recognition_Framework/
 echo "Train Resnet"
 
 python train_test_multigpu_model.py \
---model resnet_RIL_interp \
+--model resnet_RIL \
 --numGpus 1 \
 --dataset UCF101SHUFFLED \
 --train 1 \
@@ -123,7 +123,7 @@ python train_test_multigpu_model.py \
 --outputDims 101 \
 --seqLength 50 \
 --size 224  \
---expName resnet_RIL_interp_UCF101SHUFFLED  \
+--expName resnet_RIL_UCF101SHUFFLED  \
 --numVids 9537 \
 --split 1 \
 --wd 0.0 \

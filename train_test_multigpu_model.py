@@ -278,6 +278,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                            dataset,
                                                            experiment_name))
+        make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
