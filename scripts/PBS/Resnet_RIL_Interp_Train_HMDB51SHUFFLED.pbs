@@ -3,8 +3,8 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=5000:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn3:ppn=4:gpus=1    # nodes requested: Processor per node: gpus requested
-#PBS -M erichof@umich.edu      #  send email to user@umich.edu
+#PBS -l nodes=1:ppn=1:gpus=1    # nodes requested: Processor per node: gpus requested
+#PBS -M madantrg@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
 
@@ -110,10 +110,10 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 
 
-cd /z/home/erichof/TF_Activity_Recognition_Framework/
+cd /z/home/madantrg/tf-activity-recognition-framework/
 echo "Train Resnet"
 
-python train_test_multigpu_model.py \
+python train_test_model.py \
 --model resnet_RIL_interp \
 --numGpus 1 \
 --dataset HMDB51SHUFFLED \
@@ -124,11 +124,11 @@ python train_test_multigpu_model.py \
 --seqLength 50 \
 --size 224  \
 --expName resnet_RIL_interp_HMDB51SHUFFLED  \
---numVids 3570 \
+--numVids 10 \
 --split 1 \
 --wd 0.0 \
 --lr 0.001 \
---nEpochs 30 \
+--nEpochs 1 \
 --baseDataPath /z/home/madantrg/Datasets \
 --fName trainlist \
 --saveFreq 1 \

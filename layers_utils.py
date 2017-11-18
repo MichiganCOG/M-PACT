@@ -1,3 +1,5 @@
+""" FILE TO SUPPORT LAYER DEFINITIONS IN TENSORFLOW. ANY AND ALL LAYER DEFINITIONS USED TO MAKE NETWORKS MUST BE DERIVED FROM THIS DOCUMENT """
+
 import tensorflow as tf
 import numpy as np
 
@@ -12,42 +14,62 @@ def conv_layer(input_tensor,
                non_linear_fn=tf.nn.relu,
                kernel_init=tf.truncated_normal_initializer(stddev=0.01),
                bias_init=tf.constant_initializer(0.1)):
+
     """
-    :param input_tensor:
-    :param filter_dims:
-    :param stride_dims:
-    :param name:
-    :param padding:
-    :param non_linear_fn:
-    :param kernel_init:
-    :param bias_init:
-    :return:
+    Args:
+        :input_tensor:  Input tensor to the convolutional layer
+        :filter_dims:   A list detailing the height, width and number of channels for filters in the layer
+        :stride_dims:   A list detailing the height and width of the stride between filters
+        :name:          Scope name to be provided for current convolutional layer  
+        :padding:       Padding type definition (VALID or SAME)
+        :non_linear_fn: Activation function applied to the outcome of the layer
+        :kernel_init:   Tensorflow initialization function used to initialize the kernel
+        :bias_init:     Tensorflow initialization function used to initialize the bias
+
+    Return:
+        :conv_out:      Output of the convolutional layer
     """
+
     input_dims = input_tensor.get_shape().as_list()
+
+    # Ensure parameters match required shapes
     assert (len(input_dims) == 4)
     assert(len(filter_dims) == 3)
     assert(len(stride_dims) == 2)
 
-    num_channels_in = input_dims[-1]
+    num_channels_in                      = input_dims[-1]
     filter_h, filter_w, num_channels_out = filter_dims
-    stride_h, stride_w = stride_dims
+    stride_h, stride_w                   = stride_dims
+
     convolve = lambda i, k: tf.nn.conv2d(i, k, [1, stride_h, stride_w, 1], padding=padding)
+
     with tf.variable_scope(name) as scope:
         if groups == 1:
             w = tf.get_variable('kernel', shape=[filter_h, filter_w, num_channels_in, num_channels_out],
                                 initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
             output = convolve(input_tensor, w)
+
         else:
             w = tf.get_variable('kernel', shape=[filter_h, filter_w, int(num_channels_in/groups), num_channels_out],
                                 initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
-            input_groups = tf.split(input_tensor, groups, axis=3)
+
+            input_groups  = tf.split(input_tensor, groups, axis=3)
             kernel_groups = tf.split(w, groups, axis=3)
             output_groups = [convolve(i, k) for i, k in zip(input_groups, kernel_groups)]
-            output = tf.concat(output_groups, 3)
-        b = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
+            output        = tf.concat(output_groups, 3)
+        
+        # END IF
+
+        b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
         conv_out = output + b
+
         if non_linear_fn is not None:
             conv_out = non_linear_fn(conv_out, name=scope.name)
+
+        # END IF
+    
+    # END WITH
+
     return conv_out
 
 
@@ -56,24 +78,33 @@ def max_pool_layer(input_tensor,
                    stride_dims,
                    name,
                    padding='SAME'):
+
     """
-    :param input_tensor:
-    :param filter_dims:
-    :param stride_dims:
-    :param name:
-    :param padding:
-    :return:
+    Args:
+        :input_tensor: Input tensor to the max pooling layer 
+        :filter_dims:  A list detailing the height and width for filters in this layer
+        :stride_dims:  A list detailing the height and width of the stride between filters
+        :name:         Scope name to be provided for current max pooling layer
+        :padding:      Padding type definition (SAME or VALID)
+
+    Return:
+        :pool_out:     Output of max pooling layer  
     """
+
+    # Ensure parameters match required shapes
     assert(len(filter_dims) == 2)  # filter height and width
     assert(len(stride_dims) == 2)  # stride height and width
 
     filter_h, filter_w = filter_dims
     stride_h, stride_w = stride_dims
+
     with tf.variable_scope(name) as scope:
         # Define the max pool flow graph and return output
-        pool1 = tf.nn.max_pool(input_tensor, ksize=[1, filter_h, filter_w, 1],
+        pool_out = tf.nn.max_pool(input_tensor, ksize=[1, filter_h, filter_w, 1],
                                strides=[1, stride_h, stride_w, 1], padding=padding, name=scope.name)
-    return pool1
+    # END WITH
+
+    return pool_out
 
 
 def fully_connected_layer(input_tensor,
@@ -83,29 +114,46 @@ def fully_connected_layer(input_tensor,
                           non_linear_fn=tf.nn.relu,
                           weight_init=tf.truncated_normal_initializer(stddev=0.01),
                           bias_init=tf.constant_initializer(0.1)):
+
     """
-    :param input_tensor:
-    :param out_dim:
-    :param name:
-    :param non_linear_fn:
-    :param weight_init:
-    :param bias_init:
-    :return:
+    Args:
+        :input_tensor:  Input tensor to the fully connected layer
+        :out_dim:       Number of output dimensions
+        :name:          Scope name to be provided for current fully connected layer
+        :non_linear_fn: Activation function applied to the outcome of the layer
+        :weight_init:   Tensorflow initialization function used to initialize the weight matrix
+        :bias_init:     Tensorflow initialization function used to initialize the bias
+
+    Return:
+        :fc_out:        Output of the fully connected layer 
     """
+
     assert (type(out_dim) == int)
+
     with tf.variable_scope(name) as scope:
         input_dims = input_tensor.get_shape().as_list()
+
         if len(input_dims) == 4:
             batch_size, input_h, input_w, num_channels = input_dims
-            in_dim = input_h * input_w * num_channels
+
+            in_dim     = input_h * input_w * num_channels
             flat_input = tf.reshape(input_tensor, [-1, in_dim])
+
         else:
-            in_dim = input_dims[-1]
+            in_dim     = input_dims[-1]
             flat_input = input_tensor
 
-        w = tf.get_variable('weights', shape=[in_dim, out_dim], initializer=weight_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
-        b = tf.get_variable('bias', shape=[out_dim], initializer=bias_init)
-        fc1 = tf.add(tf.matmul(flat_input, w), b, name=scope.name)
+        # END IF
+
+        w      = tf.get_variable('weights', shape=[in_dim, out_dim], initializer=weight_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+        b      = tf.get_variable('bias', shape=[out_dim], initializer=bias_init)
+        fc_out = tf.add(tf.matmul(flat_input, w), b, name=scope.name)
+
         if non_linear_fn is not None:
-            fc1 = non_linear_fn(fc1)
-        return fc1
+            fc_out = non_linear_fn(fc_out)
+
+        # END IF
+
+    # END WITH
+
+    return fc_out
