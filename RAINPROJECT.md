@@ -91,7 +91,8 @@ Incomplete -  &#9974;
 This section contains the implemented ideas for various versions of RAIN layers and their descriptions.
 
 <a name="rainv1"/>
-### RAIN Layer v1.0
+RAIN Layer v1.0
+---------------
 The primary concept utilized in the formulation of this version is: The use of sampling and phase offset akin to 1D signals should be sufficient to characterize a given action signal.
 
 ![RAINv1Paramnw] (/images/Paramnw.pdf)
