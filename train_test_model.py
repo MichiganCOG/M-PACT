@@ -168,7 +168,7 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, input_dims
         # END IF
 
         print "validation acc: ", acc/float(count)
-        logger.add_scalar_value('val/gs'+str(gs)+'_step_acc',acc/float(count), step=count)
+        logger.add_scalar_value('val/step_acc',acc/float(count), step=count)
     
     # END FOR
 

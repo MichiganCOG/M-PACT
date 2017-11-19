@@ -1,12 +1,9 @@
 Numpy_from_Caffe/
 *.pyc
-<<<<<<< HEAD
 lrcn.npy
 format_weights.py
 lrcn_old.npy
-=======
 format_weights.py
 lrcn_old.npy
 lrcn.npy
->>>>>>> eric-dev
 test_v1.py
