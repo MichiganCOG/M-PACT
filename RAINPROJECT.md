@@ -242,7 +242,36 @@ Progress
 ### NOTES:
 
 <a name="ideas"/>
-Ideas for RAIN Layer 
+Ideas for Future Versions of RAIN Layer 
 ===================
-* The immediate next idea we were thinking about was to understand if uniform sampling over the entire sequence is important. If retaining some information about the entire setup is necessary then why not remove the offset parameter and instead attempt to interpolate using sampling parameter only. In case the sampling parameter minimizes to uniform sampling then we have a strong case to retain it.
-* Another idea proposed was to extract indices directly from the parameterization network and use them to interpolate output of extract layer. An interesting case would be the ordering proposed by such a system, or rather the lack of ordering so to speak. Are we getting close to segmentation territory possibly ?
+* V1:
+    * Current implementation using offset and sampling parameters
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* V2:
+    * Idea: (alpha only) The immediate next idea we were thinking about was to understand if uniform sampling over the entire sequence is important. If retaining some information about the entire setup is necessary then why not remove the offset parameter and instead attempt to interpolate using sampling parameter only. In case the sampling parameter minimizes to uniform sampling then we have a strong case to retain it.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* V3:
+    * Idea: (phi only) Similarly to V2, the idea behind this version to remove the sampling parameter and retain the offset parameter. The sampling will be uniform. This will show the impact that splicing the input video based off of the offset parameter.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* V4:
+    * Idea: (direct indices) Another idea proposed was to extract indices directly from the parameterization network and use them to interpolate output of extract layer. An interesting case would be the ordering proposed by such a system, or rather the lack of ordering so to speak. Are we getting close to segmentation territory possibly ?
+    * Non-Sorted output of Extract Layer
+    * Sorted output of Extract Layer
+* V5:
+    * Idea: (phi start, phi end) Replace the sampling parameter with a second offset parameter indicating the end frame of the sampling region. L frames will then be uniformly sampled between the start offset parameter and end offset parameter.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* V6:
+    * Idea: (nonlinear rate transform) Allow the output of the extract layer to be parameters used to modify the input video by gradually slowing down the video from the default rate to some learned rate until it reaches the main action and then speeding it back up to the default rate. The beginning and end points of this sampling will still be the beginning and end of the input video.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* Alternate:
+    * Pass the parameters through an LSTM before entering the RAIN layer.
