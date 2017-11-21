@@ -34,6 +34,9 @@ from models.resnet_RIL.resnet_RIL_interp_max_model_v1 import ResNet_RIL_Interp_M
 from models.resnet_RIL.resnet_RIL_interp_max_model_v2 import ResNet_RIL_Interp_Max_v2
 from models.resnet_RIL.resnet_RIL_interp_max_model_v3 import ResNet_RIL_Interp_Max_v3
 
+from models.resnet_RIL.resnet_RIL_interp_mean_nosort_v4   import ResNet_RIL_Interp_Mean_Nosort_v4
+from models.resnet_RIL.resnet_RIL_interp_median_nosort_v4 import ResNet_RIL_Interp_Median_Nosort_v4
+from models.resnet_RIL.resnet_RIL_interp_max_nosort_v4    import ResNet_RIL_Interp_Max_Nosort_v4
 
 def _average_gradients(tower_grads):
     """
@@ -572,6 +575,15 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v3':
         model = ResNet_RIL_Interp_Median_v3()
+
+    elif model_name == 'resnet_RIL_interp_mean_nosort_v4':
+        model = ResNet_RIL_Interp_Mean_Nosort_v4()
+
+    elif model_name == 'resnet_RIL_interp_median_nosort_v4':
+        model = ResNet_RIL_Interp_Median_Nosort_v4()
+
+    elif model_name == 'resnet_RIL_interp_max_nosort_v4':
+        model = ResNet_RIL_Interp_Max_Nosort_v4()
 
     else:
         print("Model not found")
