@@ -61,9 +61,9 @@ def _average_gradients(tower_grads):
 
             # Append on a 'tower' dimension which we will average over below.
             grads.append(expanded_g)
- 
+
         # END FOR
-       
+
         # Average over the 'tower' dimension.
         grad = tf.concat(axis=0, values=grads)
         grad = tf.reduce_mean(grad, 0)
@@ -99,7 +99,7 @@ def _average_gradients(tower_grads):
 #        :K:                      Temporal width of sliding window
 #        :base_data_path:         Full path to root directory containing datasets
 #        :seq_length:             Length of output sequence expected from LSTM
-# 
+#
 #    """
 #
 #    if 'HMDB51' in dataset:
@@ -124,14 +124,14 @@ def _average_gradients(tower_grads):
 #                             seq_length,
 #                             'tower_0', k, j,
 #                             weight_decay=wd)
-#    
+#
 #    batch_count = 0
 #    acc         = 0
 #
 #    fin = False
 #
 #    for vid_num in range(num_vids):
-#        batch_count+=1 
+#        batch_count+=1
 #        predictions = sess.run(logits)
 #
 #        # For ResNet and VGG16 based setup only : Need to add support for LRCN multi-GPU validation
@@ -165,7 +165,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :model:              tf-activity-recognition framework model object
         :input_dims:         Number of frames used in input
         :output_dims:        Integer number of classes in current dataset
-        :seq_length:         Length of output sequence expected from LSTM 
+        :seq_length:         Length of output sequence expected from LSTM
         :size:               List detailing height and width of frame
         :num_gpus:           Number of gpus to use when training
         :dataset:            Name of dataset being processed
@@ -173,7 +173,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :load_model:         Boolean variable indicating whether to load form a checkpoint or not
         :num_vids:           Number of videos to be used for training
         :val_num_vids:       Number of videos to be used for validation/testing
-        :n_epochs:           Total number of epochs to train 
+        :n_epochs:           Total number of epochs to train
         :split:              Split of dataset being used
         :base_data_path:     Full path to root directory containing datasets
         :f_name:             Prefix for HDF5 to be used
@@ -182,7 +182,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :save_freq:          Frequency, in epochs, with which to save
         :val_freq:           Frequency, in epochs, with which to run validaton
         :k:                  Width of temporal sliding window
-    
+
     """
 
     with tf.name_scope("my_scope") as scope:
@@ -291,7 +291,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # END IF
 
 
-        count          = 0
+        epoch_count    = 0
         acc            = 0
         tot_train_time = 0.0
         tot_load_time  = 0.0
@@ -305,18 +305,29 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Timing test setup
         time_init = time.time()
 
-        for tot_count in range(n_epochs*num_vids):
+        for tot_count in range(0, n_epochs*num_vids, num_gpus):
 
             # Variable to update during epoch intervals
-            if tot_count%num_vids == 0: 
-                batch_count = 0
-                epoch_acc   = 0
+            for gpu_idx in range(num_gpus):
+                if tot_count%num_vids == gpu_idx:
+                    batch_count = 0
+                    epoch_acc   = 0
+
+                    if epoch_count%save_freq == 0:# and tot_count > 0:
+                        print "Saving..."
+                        saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
+
+                    # END IF
+
+                    epoch_count += 1
+
+
 
             time_pre_train = time.time()
 
-            _, loss_train, predictions, gs, labels, video_names = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels = sess.run([train_op, tower_losses,
                                                                            tower_slogits, global_step,
-                                                                           labels_tensor, names_tensor])
+                                                                           labels_tensor])
 
 
             for pred_idx in range(len(predictions)):
@@ -340,12 +351,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
-	    
+
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
-            if (float(tot_count+1)/num_vids)%save_freq == 0 and tot_count > 0:
-                print "Saving..."
-                saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
             # END IF
 
@@ -353,6 +361,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             #    _validate(model, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, k, base_data_path, seq_length, val_num_vids)
             #
             ## END IF
+
+        print "Saving..."
+        saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
         coord.request_stop()
         coord.join(threads)
@@ -371,7 +382,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :model:              tf-activity-recognition framework model object
         :input_dims:         Number of frames used in input
         :output_dims:        Integer number of classes in current dataset
-        :seq_length:         Length of output sequence expected from LSTM 
+        :seq_length:         Length of output sequence expected from LSTM
         :size:               List detailing height and width of frame
         :dataset:            Name of dataset being loaded
         :loaded_dataset:     Name of dataset which was used to train the current model
@@ -381,7 +392,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :base_data_path:     Full path to root directory containing datasets
         :f_name:             Prefix for HDF5 to be used
         :k:                  Width of temporal sliding window
-    
+
     """
 
     with tf.name_scope("my_scope") as scope:
@@ -399,7 +410,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                                  input_dims,
                                  output_dims,
                                  seq_length,
-                                 scope, k, j) 
+                                 scope, k, j)
 
         # Logits
         softmax = tf.nn.softmax(logits)
@@ -418,7 +429,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
         sess.run(init)
 
-        
+
         ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
         if ckpt and ckpt.model_checkpoint_path:
             saver.restore(sess, ckpt.model_checkpoint_path)
@@ -575,7 +586,7 @@ if __name__=="__main__":
 
     else:
         print("Model not found")
-    
+
     # END IF
 
     if args.train:

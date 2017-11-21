@@ -10,7 +10,6 @@ import numpy      as np
 
 from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
-from load_dataset                    import load_dataset as load_data
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 class ResNet_RIL_Interp_Median_v3():
@@ -21,7 +20,7 @@ class ResNet_RIL_Interp_Median_v3():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp'
+        self.name = 'resnet_RIL_interp_median_model_v3'
         print "resnet RIL interp initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
@@ -31,7 +30,7 @@ class ResNet_RIL_Interp_Median_v3():
             :params: Offset and sampling parameter estimates from Parameterization Network
             :sets:   Number of non overlapping sets obtained from applying a temporal slid
                      ing window over the input
-            :K:      Size of temporal sliding window   
+            :K:      Size of temporal sliding window
             :L:      Expected number of output frames
 
         Return:
@@ -39,7 +38,7 @@ class ResNet_RIL_Interp_Median_v3():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_phi_tick   = tf.nn.top_k(params[:,0], params[:,0].get_shape()[0]//2).values[params[:,0].get_shape()[0]//2 - 1] 
+        sample_phi_tick   = tf.nn.top_k(params[:,0], params[:,0].get_shape()[0]//2).values[params[:,0].get_shape()[0]//2 - 1]
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
@@ -132,16 +131,16 @@ class ResNet_RIL_Interp_Median_v3():
         """
         Args:
             :n_filters:     List detailing the number of filters
-            :kernel_size:   List detailing the height and width of the kernel 
+            :kernel_size:   List detailing the height and width of the kernel
             :name:          Name of the conv_block branch
             :layer_numbers: List detailing the connecting layer indices
-            :input_layer:   Input layer to the conv_block 
+            :input_layer:   Input layer to the conv_block
             :data_dict:     Data dictionary containing initializers
             :strides:       Integer value for stride between filters
-            :weight_decay:  Double value of weight decay      
+            :weight_decay:  Double value of weight decay
 
         Return:
-            :layers:        Stack of layers 
+            :layers:        Stack of layers
         """
         layers = {}
 
@@ -216,16 +215,16 @@ class ResNet_RIL_Interp_Median_v3():
         """
         Args:
             :n_filters:     List detailing the number of filters
-            :kernel_size:   List detailing the height and width of the kernel 
+            :kernel_size:   List detailing the height and width of the kernel
             :name:          Name of the identity_block branch
             :layer_numbers: List detailing the connecting layer indices
-            :input_layer:   Input layer to the identity_block 
+            :input_layer:   Input layer to the identity_block
             :data_dict:     Data dictionary containing initializers
             :strides:       Integer value for stride between filters
-            :weight_decay:  Double value of weight decay      
+            :weight_decay:  Double value of weight decay
 
         Return:
-            :layers:        Stack of layers 
+            :layers:        Stack of layers
         """
 
         layers = {}
@@ -288,12 +287,12 @@ class ResNet_RIL_Interp_Median_v3():
             :output_dims:  Integer indicating total number of classes in final prediction
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
-            :k:            Width of sliding window (temporal width) 
-            :j:            Integer number of disjoint sets the sliding window over the input has generated 
+            :k:            Width of sliding window (temporal width)
+            :j:            Integer number of disjoint sets the sliding window over the input has generated
             :dropout_rate: Value indicating proability of keep inputs
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
-    
+
         Return:
             :layers[return_layer]: The requested layer's output tensor
         """
@@ -305,7 +304,7 @@ class ResNet_RIL_Interp_Median_v3():
         if self.verbose:
             print('Generating RESNET RIL v3 network layers')
 
-        # END IF    
+        # END IF
 
         # Must exist within the current model directory
         data_dict = h5py.File('models/resnet_RIL/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
@@ -315,7 +314,7 @@ class ResNet_RIL_Interp_Median_v3():
 
             # Input shape:  [(K frames in a set x J number of sets) x Height x Width x Channels]
             # Output shape: [(K frames in a set x J number of sets) x Height x Width x 32]
-            
+
             ############################################################################
             #                           Parameterization Network                       #
             ############################################################################
@@ -359,8 +358,8 @@ class ResNet_RIL_Interp_Median_v3():
                     out_dim=1, non_linear_fn=tf.nn.sigmoid,
                     name='FC2', weight_decay=weight_decay)
 
-            layers['RIlayer'] = self._extraction_layer(inputs=inputs, 
-                                                       params=layers['FC2'], 
+            layers['RIlayer'] = self._extraction_layer(inputs=inputs,
+                                                       params=layers['FC2'],
                                                        sets=j, L=seq_length, K=k)
 
             ############################################################################
@@ -381,7 +380,7 @@ class ResNet_RIL_Interp_Median_v3():
                     gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_gamma:0'].value))
 
             layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
-                                         filter_dims=[3, 3], stride_dims=[2,2], 
+                                         filter_dims=[3, 3], stride_dims=[2,2],
                                          name='pool1', padding='VALID')
 
             layers.update(self._conv_block([64,64,256], kernel_size=3, name='2a', layer_numbers=['4','5','6','7','8','9','10','11','12'],
@@ -443,7 +442,7 @@ class ResNet_RIL_Interp_Median_v3():
             layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
                                                      out_dim=output_dims, non_linear_fn=None,
                                                      name='logits', weight_decay=weight_decay)
-            
+
             # END WITH
 
         return layers[return_layer]
@@ -475,12 +474,11 @@ class ResNet_RIL_Interp_Median_v3():
     def loss(self, logits, labels):
         """
         Args:
-            :logits: Unscaled logits returned from final layer in model 
-            :labels: True labels corresponding to loaded data 
+            :logits: Unscaled logits returned from final layer in model
+            :labels: True labels corresponding to loaded data
         """
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
                                                                     logits=logits)
         return cross_entropy_loss
-
