@@ -192,8 +192,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         global_step     = tf.Variable(0, name='global_step', trainable=False)
         istraining      = True
         reuse_variables = None
+        j               = input_dims / k
 
-        j         = input_dims / k
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
