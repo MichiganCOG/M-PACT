@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP) + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP)v1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -9,11 +9,11 @@ import tensorflow as tf
 import numpy      as np
 
 from tensorflow.contrib.rnn          import static_rnn
-from resnet_RIL_interp_preprocessing import preprocess
 from layers_utils                    import *
 from load_dataset                    import load_dataset as load_data
+from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp():
+class ResNet_RIL_Interp_Median_v3():
 
     def __init__(self, verbose=True):
         """
@@ -39,8 +39,7 @@ class ResNet_RIL_Interp():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.reduce_mean(params[:,0])
-        sample_phi_tick   = tf.reduce_mean(params[:,1])
+        sample_phi_tick   = tf.nn.top_k(params[:,0], params[:,0].get_shape()[0]//2).values[params[:,0].get_shape()[0]//2 - 1] 
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
@@ -48,7 +47,7 @@ class ResNet_RIL_Interp():
         # Offset scaling to match inputs temporal dimension
         sample_phi_tick = sample_phi_tick * tf.cast((sets*K) - L, tf.float32)
 
-        phi_tick = tf.tile(sample_phi_tick, [L])
+        phi_tick = tf.tile([sample_phi_tick], [L])
 
         # Generate indices for output
         output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
@@ -59,10 +58,10 @@ class ResNet_RIL_Interp():
         output_idx = output_idx + phi_tick
 
         # Sampling parameter scaling to match inputs temporal dimension
-        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L) + sample_phi_tick)
+        alpha_tick = tf.cast(K * sets, tf.float32) / (float(L) + sample_phi_tick)
 
         # Include sampling parameter to correct output indices
-        output_idx = tf.multiply(tf.tile(alpha_tick, [L]), output_idx)
+        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
 
         # Clip output index values to >= 1 and <=N (valid cases only)
         output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
@@ -304,7 +303,7 @@ class ResNet_RIL_Interp():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RIL network layers')
+            print('Generating RESNET RIL v3 network layers')
 
         # END IF    
 
@@ -357,7 +356,7 @@ class ResNet_RIL_Interp():
             layers['Reshape4'] = tf.reshape(layers['Reshape3'], (-1, 53*53*64))
 
             layers['FC2'] = fully_connected_layer(input_tensor=layers['Reshape4'],
-                    out_dim=2, non_linear_fn=tf.nn.sigmoid,
+                    out_dim=1, non_linear_fn=tf.nn.sigmoid,
                     name='FC2', weight_decay=weight_decay)
 
             layers['RIlayer'] = self._extraction_layer(inputs=inputs, 
@@ -461,6 +460,17 @@ class ResNet_RIL_Interp():
         """
         return preprocess(index, Data, labels, size, is_training)
 
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+        """
+        Args:
+            :index:       Integer indicating the index of video frame from the text file containing video lists
+            :data:        Data loaded from HDF5 files
+            :labels:      Labels for loaded data
+            :size:        List detailing values of height and width for final frames
+            :is_training: Boolean value indication phase (TRAIN OR TEST)
+        """
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels):
         """
@@ -474,116 +484,3 @@ class ResNet_RIL_Interp():
                                                                     logits=logits)
         return cross_entropy_loss
 
-
-#if __name__=="__main__":
-#
-#    from tensorflow.python.ops import clip_ops
-#    from tensorflow.python.ops import control_flow_ops
-#    from tensorflow.python.ops import variable_scope as vs
-#    from tensorflow.python.ops import variables as vars_
-#    from tensorflow.python.ops import init_ops
-#    import os
-#    with tf.name_scope('my_scope') as scope:
-#
-#        #path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
-#        #data_dict = h5py.File(path,'r')
-#
-#        #network = _gen_resnet50_baseline1_network(x, True, data_dict, 35, 51)
-#        model = ResNet_RIL()
-#    #    import pdb; pdb.set_trace()
-#
-#        lr = 0.001
-#
-#
-#
-#        outputDims = 101
-#
-#        fName = 'testlist'
-#        dataset = 'HMDB51'
-#
-#        if fName == 'testlist':
-#            if dataset == 'UCF101':
-#                totalVids = 3783
-#            else:
-#                totalVids = 1530
-#                outputDims = 51
-#            inputDims = 250
-#        else:
-#            if dataset=='UCF101':
-#                totalVids = 9537
-#            else:
-#                totalVids = 3570
-#                outputDims = 51
-#            inputDims = 125
-#
-#
-#
-#        k=25
-#
-#        j_value=[inputDims/k]
-#
-#        seqLength = 50
-#        isTraining = True
-#
-#
-#        global_step = tf.Variable(0, name='global_step', trainable=False)
-#        x_placeholder = tf.placeholder(tf.float32, shape=(inputDims, 224,224,3))
-#        y_placeholder = tf.placeholder(tf.int32, [seqLength])
-#        j_placeholder = tf.placeholder(tf.int32, [1])
-#
-#
-#        logits = model.inference(x_placeholder, isTraining, inputDims, outputDims, seqLength, scope, k, j_placeholder)
-#
-#        slogits = tf.nn.softmax(logits)
-#        sess = tf.Session()
-#        sess.run(tf.global_variables_initializer())
-#        # Define Optimizer
-#        optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
-#        total_loss = model.loss(logits, y_placeholder)
-#        opt = optimizer(lr)
-#        gradients = opt.compute_gradients(total_loss, vars_.trainable_variables())
-#        gradients, variables = zip(*gradients)
-#        clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 5.0)
-#        gradients = list(zip(clipped_gradients, variables))
-#        grad_updates = opt.apply_gradients(gradients, global_step=global_step, name="train")
-#        train_op = control_flow_ops.with_dependencies([grad_updates], total_loss)
-#
-#
-#
-#
-#
-#
-#
-#        vidList = np.arange(totalVids)
-#        np.random.shuffle(vidList)
-#        numVids = 0
-#        acc=0
-#        for vid in vidList:
-#            input_data, label = load_data(model, vid, fName, '/z/home/madantrg/Datasets/HMDB51HDF5RGB/Split1',os.path.join('/z/home/erichof/TF_Activity_Recognition_Framework/datasets/HMDB51',fName+'01.txt'), '/z/home/erichof/TF_Activity_Recognition_Framework/datasets/HMDB51/classInd.txt', [224,224], False, 'HMDB51')
-#            labels = np.repeat(label, seqLength)
-#            _, loss_train, pred, gs = sess.run([train_op, total_loss, slogits, global_step], feed_dict={x_placeholder: input_data, y_placeholder: labels, j_placeholder: j_value})
-#
-#
-#            import pdb; pdb.set_trace()
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#        import pdb; pdb.set_trace()

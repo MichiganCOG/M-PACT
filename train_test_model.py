@@ -4,14 +4,13 @@ import argparse
 import numpy      as np
 import tensorflow as tf
 
-from utils                                     import *
-from logger                                    import Logger
-from Queue                                     import Queue
-from models.lrcn.lrcn_model                    import LRCN
-from models.vgg16.vgg16_model                  import VGG16
-from models.resnet.resnet_model                import ResNet
-from models.resnet_RIL.resnet_RIL_interp_model import ResNet_RIL_Interp
-from load_dataset                              import load_dataset
+from utils                                        import *
+from logger                                       import Logger
+from Queue                                        import Queue
+from models.lrcn.lrcn_model                       import LRCN
+from models.vgg16.vgg16_model                     import VGG16
+from models.resnet.resnet_model                   import ResNet
+from load_dataset                                 import load_dataset
 
 from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import init_ops
@@ -19,6 +18,17 @@ from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import variable_scope    as vs
 from tensorflow.python.ops import variables         as vars_
 
+from models.resnet_RIL.resnet_RIL_interp_mean_model_v1 import ResNet_RIL_Interp_Mean_v1
+from models.resnet_RIL.resnet_RIL_interp_mean_model_v2 import ResNet_RIL_Interp_Mean_v2
+from models.resnet_RIL.resnet_RIL_interp_mean_model_v3 import ResNet_RIL_Interp_Mean_v3
+
+from models.resnet_RIL.resnet_RIL_interp_median_model_v1 import ResNet_RIL_Interp_Median_v1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v2 import ResNet_RIL_Interp_Median_v2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v3 import ResNet_RIL_Interp_Median_v3
+
+from models.resnet_RIL.resnet_RIL_interp_max_model_v1 import ResNet_RIL_Interp_Max_v1
+from models.resnet_RIL.resnet_RIL_interp_max_model_v2 import ResNet_RIL_Interp_Max_v2
+from models.resnet_RIL.resnet_RIL_interp_max_model_v3 import ResNet_RIL_Interp_Max_v3
 
 def _average_gradients(tower_grads):
     """
@@ -100,22 +110,24 @@ def gen_video_list(dataset, model_name, experiment_name, f_name, split, num_vids
     return vid_list.tolist()
 
 
-def _validate(model, slogits, sess, experiment_name, logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, base_data_path):
+def _validate(model, slogits, sess, experiment_name, logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, base_data_path):
     """
     Args:
-        :model:            tf-activity-recognition framework model object
-        :slogits:          Tensorflow op that captures the output of inference op from model
-        :sess:             Tensorflow session object
-        :experiment_name:  Name of current experiment
-        :logger:           Logger class object
-        :dataset:          Name of dataset being processed
-        :input_dims:       Number of frames used in input
-        :output_dims:      Integer number of classes in current dataset
-        :split:            Split of dataset being used
-        :gs:               Integer for global step count
-        :size:             List detailing height and width of frame
-        :x_placeholder:    Tensorflow placeholder for input frames
-        :base_data_path:   Full path to root directory containing datasets
+        :model:                  tf-activity-recognition framework model object
+        :slogits:                Tensorflow op that captures the output of inference op from model
+        :sess:                   Tensorflow session object
+        :experiment_name:        Name of current experiment
+        :logger:                 Logger class object
+        :dataset:                Name of dataset being processed
+        :input_dims:             Number of frames used in input
+        :output_dims:            Integer number of classes in current dataset
+        :split:                  Split of dataset being used
+        :gs:                     Integer for global step count
+        :size:                   List detailing height and width of frame
+        :x_placeholder:          Tensorflow placeholder for input frames
+        :istraining_placeholder: Tensorflow placeholder for boolean indicating phase (TRAIN OR TEST)
+        :j_placeholder:          Tensorflow placeholder for number of disjoing sets from application of a sliding window
+        :base_data_path:         Full path to root directory containing datasets
     
     """
 
@@ -123,6 +135,7 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, input_dims
 
     if 'HMDB51' in dataset:
         f_name = 'vallist'
+
     else:
         f_name = 'testlist'
     
@@ -155,7 +168,10 @@ def _validate(model, slogits, sess, experiment_name, logger, dataset, input_dims
             input_data= np.reshape(loaded_data[clip], (1, -1, size[0], size[1], 3))
             labels = np.reshape(labels, (1, -1))
 
-            pred = sess.run(slogits, feed_dict={x_placeholder: input_data})
+            pred = sess.run(slogits, feed_dict={x_placeholder: input_data,
+                                                istraining_placeholder  : False,
+                                                j_placeholder           : [input_data.shape[1]/K]})
+
             output_predictions[clip] = np.mean(pred, 0)
 
         # END FOR
@@ -210,9 +226,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         reuse_variables = None
 
         # Setting up placeholders for models
-        x_placeholder = tf.placeholder(tf.float32, shape=[num_gpus, input_dims, size[0], size[1] ,3], name='x_placeholder')
-        y_placeholder = tf.placeholder(tf.int64, shape=[num_gpus, seq_length], name='y_placeholder')
-        j_placeholder = tf.placeholder(tf.int32, shape=[1], name='j_placeholder')
+        x_placeholder          = tf.placeholder(tf.float32, shape=[num_gpus, input_dims, size[0], size[1] ,3], name='x_placeholder')
+        y_placeholder          = tf.placeholder(tf.int64, shape=[num_gpus, seq_length], name='y_placeholder')
+        istraining_placeholder = tf.placeholder(tf.bool, name='istraining_placeholder')
+        j_placeholder          = tf.placeholder(tf.int32, shape=[1], name='j_placeholder')
 
         tower_losses = []
         tower_grads  = []
@@ -223,7 +240,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         for gpu_idx in range(num_gpus):
             with tf.device('/gpu:'+str(gpu_idx)):
                 with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
-                    logits = model.inference(x_placeholder[gpu_idx,:,:,:,:], True, input_dims, output_dims, seq_length, scope, k, j_placeholder, weight_decay=wd)
+                    logits = model.inference(x_placeholder[gpu_idx,:,:,:,:], istraining_placeholder, input_dims, output_dims, seq_length, scope, k, j_placeholder, weight_decay=wd)
 
                     # Calculating Softmax for probability outcomes : Can be modified
                     # Make function internal to model
@@ -357,7 +374,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     _, loss_train, pred, gs = sess.run([train_op, total_loss, 
                                                        slogits, global_step], 
                                                        feed_dict={x_placeholder: input_data, y_placeholder: labels, 
-                                                       j_placeholder: [input_data.shape[1]/k]})
+                                                       j_placeholder: [input_data.shape[1]/k],
+                                                       istraining_placeholder: True})
 
                     mean_loss.append(loss_train)
 
@@ -398,7 +416,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             #END IF
 
             if epoch % val_freq == 0:
-                _validate(model, slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, base_data_path)
+                _validate(model, slogits, sess, experiment_name, curr_logger, dataset, input_dims, output_dims, split, gs, size, x_placeholder, istraining_placeholder, j_placeholder, base_data_path)
 
             # END IF
 
@@ -511,7 +529,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
             for ldata in range(num_clips):
                 input_data = loaded_data[ldata]
-                prediction = softmax.eval(session=sess, feed_dict={x_placeholder: input_data})
+                prediction = softmax.eval(session=sess, feed_dict={x_placeholder: input_data,
+                                                                   j_placeholder: [input_data.shape[1]/k]})
+
                 output_predictions[ldata] = np.mean(prediction, 0)
 
             guess = np.mean(output_predictions, 0).argmax()
@@ -616,12 +636,37 @@ if __name__=="__main__":
     elif modelName == 'resnet':
         model = ResNet()
 
-    elif modelName == 'resnet_RIL_interp':
-        model = ResNet_RIL_Interp()
+    elif modelName == 'resnet_RIL_interp_mean_v1':
+        model = ResNet_RIL_Interp_Mean_v1()
+
+    elif modelName == 'resnet_RIL_interp_meanv2':
+        model = ResNet_RIL_Interp_Mean_v2()
+
+    elif modelName == 'resnet_RIL_interp_meanv3':
+        model = ResNet_RIL_Interp_Mean_v3()
+
+    elif modelName == 'resnet_RIL_interp_max_v1':
+        model = ResNet_RIL_Interp_Max_v1()
+
+    elif modelName == 'resnet_RIL_interp_max_v2':
+        model = ResNet_RIL_Interp_Max_v2()
+
+    elif modelName == 'resnet_RIL_interp_max_v3':
+        model = ResNet_RIL_Interp_Max_v3()
+
+    elif modelName == 'resnet_RIL_interp_median_v1':
+        model = ResNet_RIL_Interp_Median_v1()
+
+    elif modelName == 'resnet_RIL_interp_median_v2':
+        model = ResNet_RIL_Interp_Median_v2()
+
+    elif modelName == 'resnet_RIL_interp_median_v3':
+        model = ResNet_RIL_Interp_Median_v3()
 
     else:
         print("Model not found")
-
+    
+    # END IF
 
 
 
@@ -658,3 +703,5 @@ if __name__=="__main__":
                 split           = args.split,
                 base_data_path  = args.baseDataPath,
                 f_name          = args.fName)
+
+    # END IF

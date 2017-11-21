@@ -1,20 +1,19 @@
-" RESNET-50 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP)v1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
-import h5py
 import os
-import time
 import sys
+import h5py
 sys.path.append('../..')
 
 import tensorflow as tf
 import numpy      as np
 
-from tensorflow.contrib.rnn         import static_rnn
-from resnet_preprocessing           import preprocess
-from layers_utils                   import *
-from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from tensorflow.contrib.rnn          import static_rnn
+from layers_utils                    import *
+from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
+from load_dataset                    import load_dataset as load_data
 
-class ResNet():
+class ResNet_RIL_Interp_Max_v1():
 
     def __init__(self, verbose=True):
         """
@@ -22,8 +21,82 @@ class ResNet():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet'
-        print "resnet initialized"
+        self.name = 'resnet_RIL_interp'
+        print "resnet RIL interp initialized"
+
+    def _extraction_layer(self, inputs, params, sets, K, L):
+        """
+        Args:
+            :inputs: Original inputs to the model
+            :params: Offset and sampling parameter estimates from Parameterization Network
+            :sets:   Number of non overlapping sets obtained from applying a temporal slid
+                     ing window over the input
+            :K:      Size of temporal sliding window   
+            :L:      Expected number of output frames
+
+        Return:
+            :output:
+        """
+
+        # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
+        sample_alpha_tick = tf.nn.top_k(params[:,0], 1).values[0]
+        sample_phi_tick   = tf.nn.top_k(params[:,1], 1).values[0]
+
+        # Extract shape of input signal
+        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+
+        # Offset scaling to match inputs temporal dimension
+        sample_phi_tick = sample_phi_tick * tf.cast((sets*K) - L, tf.float32)
+
+        phi_tick = tf.tile([sample_phi_tick], [L])
+
+        # Generate indices for output
+        output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
+
+        output_idx = tf.slice(output_idx, [0],[L])
+
+        # Add offset to the output indices
+        output_idx = output_idx + phi_tick
+
+        # Sampling parameter scaling to match inputs temporal dimension
+        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L) + sample_phi_tick)
+
+        # Include sampling parameter to correct output indices
+        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
+
+        # Clip output index values to >= 1 and <=N (valid cases only)
+        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
+
+        # Create x0 and x1 float
+        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
+        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
+
+
+        # Deltas :
+        d1 = (output_idx - x0)
+        d2 = (x1 - x0)
+        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [50,224,224,3])
+        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [50,224,224,3])
+
+        # Create x0 and x1 indices
+        output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
+        output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
+        output_idx   = tf.cast(output_idx, 'int32')
+
+	# Create y0 and y1 outputs
+        output_0 = tf.gather(inputs, output_idx_0-1)
+        output_1 = tf.gather(inputs, output_idx_1-1)
+        output   = tf.gather(inputs, output_idx-1)
+
+        d3     = output_1 - output_0
+
+        output = tf.add_n([(d1/d2)*d3, output_0])
+
+        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
+
+        return output
+
+
 
     def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
         """
@@ -47,11 +120,12 @@ class ResNet():
         lstm_outputs, states = static_rnn(lstm_cell, inputs, dtype=tf.float32)
 
         # Condense output shape from:
-        # list of n_time_steps itmes, each item of size (batch_size x cell_size)
+        # list of n_time_steps itmes, each item of size (batch_size x cellSize)
         # To:
-        # Tensor: [(n_time_steps x 1), cell_size] (Specific to our case)
+        # Tensor: [(n_time_steps x 1), cellSize] (Specific to our case)
         lstm_outputs = tf.stack(lstm_outputs)
         lstm_outputs = tf.reshape(lstm_outputs,[-1,cell_size])
+
 
         return lstm_outputs
 
@@ -70,7 +144,6 @@ class ResNet():
         Return:
             :layers:        Stack of layers 
         """
-
         layers = {}
 
         # Conv block
@@ -207,7 +280,6 @@ class ResNet():
 
         return layers
 
-
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer='logits', data_dict=None, weight_decay=0.0):
         """
         Args:
@@ -228,21 +300,73 @@ class ResNet():
         """
 
         ############################################################################
-        #                Creating ResNet50 + LSTM Network Layers                   #
+        #               Creating ResNet50 + RAIN (interp) + LSTM Network Layers                   #
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET network layers')
-    
-        # END IF
+            print('Generating RESNET RIL v1 network layers')
 
-        # Must exist within current model directory
-        data_dict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
+        # END IF    
+
+        # Must exist within the current model directory
+        data_dict = h5py.File('models/resnet_RIL/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
 
-            layers['1'] = conv_layer(input_tensor=inputs,
+            # Input shape:  [(K frames in a set x J number of sets) x Height x Width x Channels]
+            # Output shape: [(K frames in a set x J number of sets) x Height x Width x 32]
+            
+            ############################################################################
+            #                           Parameterization Network                       #
+            ############################################################################
+
+            layers['Conv1'] = conv_layer(input_tensor=inputs,
+                    filter_dims=[7, 7, 64], stride_dims=[2,2],
+                    padding = 'VALID',
+                    name='Conv1',
+                    kernel_init=tf.constant_initializer(data_dict['conv1']['conv1_W:0'].value),
+                    bias_init=tf.constant_initializer(data_dict['conv1']['conv1_b:0'].value),
+                    weight_decay = weight_decay, non_linear_fn=None)
+
+            layers['Conv1_bn'] = tf.layers.batch_normalization(layers['Conv1'],
+                    name='bn_Conv1',
+                    moving_mean_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_mean:0'].value),
+                    moving_variance_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_std:0'].value),
+                    beta_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_beta:0'].value),
+                    gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_gamma:0'].value))
+
+            layers['Conv2'] = conv_layer(input_tensor=layers['Conv1_bn'],
+                    filter_dims=[5, 5, 64], stride_dims=[2,2],
+                    padding = 'VALID',
+                    name='Conv2',
+                    weight_decay = weight_decay, non_linear_fn=tf.nn.relu)
+
+            layers['Reshape1'] = tf.reshape(layers['Conv2'], (-1, k, 53, 53, 64))
+
+            layers['Dimshuffle1'] = tf.transpose(layers['Reshape1'], (0,2,3,4,1))
+
+            layers['Reshape2'] = tf.reshape(layers['Dimshuffle1'], (-1, 64*k))
+
+            layers['FC1'] = fully_connected_layer(input_tensor=layers['Reshape2'],
+                    out_dim=512, non_linear_fn=tf.nn.relu,
+                    name='FC1', weight_decay=weight_decay)
+
+            layers['Reshape3'] = tf.reshape(layers['FC1'], (-1, 53, 53, 64))
+
+            layers['Reshape4'] = tf.reshape(layers['Reshape3'], (-1, 53*53*64))
+
+            layers['FC2'] = fully_connected_layer(input_tensor=layers['Reshape4'],
+                    out_dim=2, non_linear_fn=tf.nn.sigmoid,
+                    name='FC2', weight_decay=weight_decay)
+
+            layers['RIlayer'] = self._extraction_layer(inputs=inputs, 
+                                                       params=layers['FC2'], 
+                                                       sets=j, L=seq_length, K=k)
+
+            ############################################################################
+
+            layers['1'] = conv_layer(input_tensor=layers['RIlayer'],
                     filter_dims=[7, 7, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='conv1',
@@ -320,13 +444,13 @@ class ResNet():
             layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
                                                      out_dim=output_dims, non_linear_fn=None,
                                                      name='logits', weight_decay=weight_decay)
+            
             # END WITH
 
         return layers[return_layer]
 
 
-
-    def preprocess(self, index, data, labels, size, is_training):
+    def preprocess(self, index, Data, labels, size, is_training):
         """
         Args:
             :index:       Integer indicating the index of video frame from the text file containing video lists
@@ -335,7 +459,7 @@ class ResNet():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        return preprocess(index, data,labels, size, is_training)
+        return preprocess(index, Data, labels, size, is_training)
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
@@ -355,24 +479,9 @@ class ResNet():
             :logits: Unscaled logits returned from final layer in model 
             :labels: True labels corresponding to loaded data 
         """
-
         labels = tf.cast(labels, tf.int64)
 
-        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
-                                                                  logits=logits[:logits.shape[0].value/2,:])
+        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
+                                                                    logits=logits)
         return cross_entropy_loss
 
-
-
-
-
-#if __name__=="__main__":
-#
-#    import os
-#    x = tf.placeholder(tf.float32, shape=(None, 224,224,3))
-#    y = tf.placeholder(tf.int32, [None])
-#    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
-#    data_dict = h5py.File(path,'r')
-#
-#    network = _gen_resnet50_baseline1_network(x, True, data_dict, 35, 51)
-#    import pdb; pdb.set_trace()
