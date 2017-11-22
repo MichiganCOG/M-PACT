@@ -357,6 +357,8 @@ def _sample_video(video, frame_count, offset):
 
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
 
+    istraining = False
+
     if istraining:
         footprint = 125
         sample_dims = input_dims/2
@@ -373,9 +375,11 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
     input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
 
-    # Reduce footprint to sample_dims in size by uniformly sampling
-    input_data_tensor = _sample_video(input_data_tensor, footprint, int(footprint/sample_dims))
+    # # Currently this would output the same input_data_tensor that gets input since footprint/sample_dims = 1
+    # # Reduce footprint to sample_dims in size by uniformly sampling
+    # input_data_tensor = _sample_video(input_data_tensor, footprint, int(footprint/sample_dims))
 
+    # Preprocess each frame (resize, central crop, mean image subtraction)
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining), input_data_tensor)
 

@@ -116,7 +116,7 @@ python train_test_TFRecords_multigpu_model.py \
 --dataset HMDB51 \
 --train 1 \
 --load 0 \
---inputDims 50 \
+--inputDims 250 \
 --outputDims 51 \
 --seqLength 50 \
 --size 224  \
@@ -129,7 +129,7 @@ python train_test_TFRecords_multigpu_model.py \
 --baseDataPath /z/home/madantrg/Datasets/ \
 --fName trainlist \
 --saveFreq 3 \
---valFreq 3 
+--valFreq 3
 
 
 
