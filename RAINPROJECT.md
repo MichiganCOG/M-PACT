@@ -273,5 +273,21 @@ Ideas for Future Versions of RAIN Layer
     * Mean of Extract Layer
     * Median of Extract Layer
     * Max of Extract Layer
+* V7:
+    * Idea: (Increase L) When comparing the inputs to the baseline networks, we found that multiple quick cycles are provided as input to the baseline networks. Given this high amount of redundancy, a possible solution to our situation of capturing only a single cycle would be to increase L so that the network has a longer timeframe to look over and make a decision.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* V8:
+    * Idea: (Change activation of FC2 to ReLu) While observing the outcomes of V1 we found that the videos have a general tendency to get slowed down but rarely speed up. This enforces a scenario where the rates of RAIN output videos are not the same. This could possibly be due to shackling of alpha by sigmoid activation (although this still allows for a theoretic speed up). Instead we believe ReLu might be a possible solution to this issue.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+* V9:
+    * Idea: (V7 + V8) The previous versions seeks to study the individual impacts of each suggested change while this version seeks to combine them.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
