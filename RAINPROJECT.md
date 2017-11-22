@@ -154,12 +154,25 @@ Parameters
 <a name="progressexpt1"/>
 Progress
 --------
-    HMDB51 Experiments
+    HMDB51 Baseline Experiments
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
 |   VGG16 + LSTM           |              32.75%                 |                  31.80%                     |
 | ResNet50 + LSTM          |              44.97%                 |                  44.38%                     |
-| ResNet50 + RAINv1 + LSTM |              --.--%                 |                  --.--%                     |
+
+    HMDB51 Original RAIN Layer Experiments
+|       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
+|:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
+| ResNet50 + RAINv1 + LSTM |             40.00%           |             34.38%         |          --.--%           |
+| ResNet50 + RAINv2 + LSTM |             50.13%           |             49.41%         |          34.38%           |
+| ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv4 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv5 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv6 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv7 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv8 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv9 + LSTM |             --.--            |             --.--%         |          --.--%           |
+
 
     UCF101 Experiments
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
@@ -292,6 +305,11 @@ Ideas for Future Versions of RAIN Layer
     * Mean of Extract Layer
     * Median of Extract Layer
     * Max of Extract Layer
-
+* V10:
+    * Idea: (V2 + phi after sampling) Based off of v2 results, we found that it is benenficial to allow alpha to sample from the entire video. Only afterwards will we apply the offset to the clip that was sampled by alpha. We will then resample that output to the correct number of frames, L.
+    * Mean of Extract Layer
+    * Median of Extract Layer
+    * Max of Extract Layer
+    
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
