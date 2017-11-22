@@ -408,7 +408,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, size, data_path, dataset, istraining)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
         # Model Inference
         logits = model.inference(input_data_tensor[0,:,:,:,:],
