@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N TFRecords_2gpu_Resnet_RIL_Interp_Max_V3     # Name of the job
+#PBS -N TFRecords_2gpu_Resnet_RIL_Interp_Max_V2_Train_HMDB51    # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn2:ppn=6:gpus=2    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn3:ppn=3:gpus=2    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -111,7 +111,7 @@ cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
 echo "Train Resnet"
 
 python train_test_TFRecords_multigpu_model.py \
---model resnet_RIL_interp_max_v3 \
+--model resnet_RIL_interp_max_v2 \
 --numGpus 2 \
 --dataset HMDB51 \
 --train 1 \
@@ -120,7 +120,7 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 51 \
 --seqLength 50 \
 --size 224  \
---expName tfrecords_resnet_RIL_interp_max_v3_HMDB51 \
+--expName tfrecords_resnet_RIL_interp_max_v2_HMDB51 \
 --numVids 3570 \
 --split 1 \
 --wd 0.0 \
