@@ -164,7 +164,7 @@ Progress
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
 | ResNet50 + RAINv1 + LSTM |             40.00%           |             34.38%         |          --.--%           |
-| ResNet50 + RAINv2 + LSTM |             50.13%           |             49.41%         |          34.38%           |
+| ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv4 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv5 + LSTM |             --.--%           |             --.--%         |          --.--%           |
