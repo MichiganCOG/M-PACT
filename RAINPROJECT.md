@@ -239,6 +239,10 @@ Progress
 | ResNet50 + LSTM          |              76.66%                 |                  76.75%                     |
 | ResNet50 + RAINv1 + LSTM |              --.--%                 |                  --.--%                     |
 
+
+![Ex1:baselineSpeedup] (/images/resnet_UCF101Rate_vid23002_input.gif/)
+
+
 ### NOTES:
 
 <a name="ideas"/>
