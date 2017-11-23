@@ -74,8 +74,8 @@ class ResNet_RIL_Interp_Median_v8():
         # Deltas :
         d1 = (output_idx - x0)
         d2 = (x1 - x0)
-        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [50,224,224,3])
-        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [50,224,224,3])
+        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [L,224,224,3])
+        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [L,224,224,3])
 
         # Create x0 and x1 indices
         output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
