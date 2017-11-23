@@ -506,7 +506,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         for vid_num in vid_list:
             count +=1
-            loaded_data, labels= load_dataset(model, vid_num, f_name, 
+            loaded_data, labels= load_dataset(model, 1419, f_name, #vid_num, f_name,
                                  os.path.join(base_data_path, dataset+'HDF5RGB', 'Split'+str(split)), 
                                  os.path.join('datasets',dataset,f_name+'0'+str(split)+'.txt'), 
                                  os.path.join("datasets",dataset,"classInd.txt"), 

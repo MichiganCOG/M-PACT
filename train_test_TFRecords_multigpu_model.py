@@ -402,13 +402,13 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     """
 
     with tf.name_scope("my_scope") as scope:
-        istraining = False
+        istraining  = False 
         global_step = tf.Variable(0, name='global_step', trainable=False)
         j           = input_dims / k
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, size, data_path, dataset, istraining)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
         # Model Inference
         logits = model.inference(input_data_tensor[0,:,:,:,:],
@@ -455,9 +455,12 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         for vid_num in range(num_vids):
             count +=1
-            output_predictions, labels = sess.run([softmax, labels_tensor])
+            output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
+            #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
+            #import pdb; pdb.set_trace()
 
             print "vidNum: ", vid_num
+            print "vidName: ",names
             print "label:  ", labels[0][0]
 
             guess = np.mean(output_predictions, 0).argmax()

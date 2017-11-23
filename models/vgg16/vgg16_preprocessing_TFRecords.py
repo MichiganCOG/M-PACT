@@ -30,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy      as np
 
 slim = tf.contrib.slim
 
@@ -253,7 +254,7 @@ def _aspect_preserving_resize(image, smallest_side):
   new_height, new_width = _smallest_size_at_least(height, width, smallest_side)
   image = tf.expand_dims(image, 0)
   resized_image = tf.image.resize_bilinear(image, [new_height, new_width],
-                                           align_corners=False)
+                                           align_corners=True)
   resized_image = tf.squeeze(resized_image)
   resized_image.set_shape([None, None, 3])
   return resized_image
@@ -304,6 +305,7 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+
 
 
 def preprocess_image(image, output_height, output_width, is_training=False,
@@ -360,13 +362,19 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     if istraining:
         footprint = 125
         sample_dims = input_dims/2
+
     else:
         footprint = 250
         sample_dims = input_dims
 
+    # END IF
+
+    # Selecting a random, seeded temporal offset
+    temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-1, shape=np.asarray([1]))[0]
+
     # Loop video video if it is shorter than footprint
-    input_data_tensor = tf.cond(tf.less(frames, footprint),
-                            lambda: _loop_video(input_data_tensor, frames, height, width, channel, footprint),
+    input_data_tensor = tf.cond(tf.less(frames-temporal_offset, footprint),
+                            lambda: _loop_video(input_data_tensor[temporal_offset:,:,:,:], frames-temporal_offset, height, width, channel, footprint),
                             lambda: input_data_tensor)
 
     # Remove excess frames after looping to reduce to footprint size
@@ -378,12 +386,11 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining), input_data_tensor)
-
+    
     # Pad with 0s if training
     if istraining:
         padding_zeros = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
         input_data_tensor = tf.concat([input_data_tensor, padding_zeros], 0)
-
 
     labels_tensor = tf.tile( [label], [seq_length])
 

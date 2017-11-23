@@ -228,11 +228,12 @@ def _preprocess_for_eval(image, output_height, output_width, resize_side):
         A preprocessed image.
     """
     image = _aspect_preserving_resize(image, resize_side)
-    image = _central_crop([image], output_height, output_width)[0]
-    image = image.reshape((output_height, output_width, 3))
-    image = image.astype('float32')
+    #image = _central_crop([image], output_height, output_width)[0]
+    #image = image.reshape((output_height, output_width, 3))
+    #image = image.astype('float32')
 
-    return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+    #return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+    return image
 
 
 def preprocess_image(image, output_height, output_width, is_training=False,
@@ -292,6 +293,7 @@ def preprocess(index, data, labels, size, is_training):
 
     # END IF
 
+
     # Check if total index number is > size of data
     if temp_offset + tfootprint > data.shape[0]-1:
         # Check if looping over can be done in a single shot
@@ -335,7 +337,6 @@ def preprocess(index, data, labels, size, is_training):
         # END IF
 
     # END FOR
-
     data = np.array(temp_data)
 
     # Sample 25 frames from the 125 frame clip
