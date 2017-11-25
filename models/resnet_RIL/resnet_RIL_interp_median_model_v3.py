@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP)v1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v3 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -21,7 +21,7 @@ class ResNet_RIL_Interp_Median_v3():
         """
         self.verbose=verbose
         self.name = 'resnet_RIL_interp_median_model_v3'
-        print "resnet RIL interp initialized"
+        print "resnet RIL interp median v3 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -302,7 +302,7 @@ class ResNet_RIL_Interp_Median_v3():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RIL v3 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v3 network layers')
 
         # END IF
 
