@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP)v4 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MAX + NOSORT) v4 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -21,7 +21,7 @@ class ResNet_RIL_Interp_Max_Nosort_v4():
         """
         self.verbose=verbose
         self.name = 'resnet_RIL_interp_max_nosort_v4'
-        print "resnet RIL interp initialized"
+        print "resnet RIL interp max nosort v4 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -283,7 +283,7 @@ class ResNet_RIL_Interp_Max_Nosort_v4():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RIL v4 network layers')
+            print('Generating RESNET RAIN INTERP MEAN NOSORT v4 network layers')
 
         # END IF
 
