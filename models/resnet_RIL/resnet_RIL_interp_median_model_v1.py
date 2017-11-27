@@ -448,18 +448,6 @@ class ResNet_RIL_Interp_Median_v1():
 
         return layers[return_layer]
 
-
-    def preprocess(self, index, Data, labels, size, is_training):
-        """
-        Args:
-            :index:       Integer indicating the index of video frame from the text file containing video lists
-            :data:        Data loaded from HDF5 files
-            :labels:      Labels for loaded data
-            :size:        List detailing values of height and width for final frames
-            :is_training: Boolean value indication phase (TRAIN OR TEST)
-        """
-        return preprocess(index, Data, labels, size, is_training)
-
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
         Args:

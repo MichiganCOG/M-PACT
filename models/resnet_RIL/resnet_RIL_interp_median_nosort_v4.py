@@ -63,7 +63,6 @@ class ResNet_RIL_Interp_Median_Nosort_v4():
         output_idx   = tf.cast(output_idx, 'int32')
 
 	# Create y0 and y1 outputs
-        import pdb; pdb.set_trace()
         output_0 = tf.gather(inputs, output_idx_0-1)
         output_1 = tf.gather(inputs, output_idx_1-1)
         output   = tf.gather(inputs, output_idx-1)
@@ -429,17 +428,6 @@ class ResNet_RIL_Interp_Median_Nosort_v4():
 
         return layers[return_layer]
 
-
-    def preprocess(self, index, Data, labels, size, is_training):
-        """
-        Args:
-            :index:       Integer indicating the index of video frame from the text file containing video lists
-            :data:        Data loaded from HDF5 files
-            :labels:      Labels for loaded data
-            :size:        List detailing values of height and width for final frames
-            :is_training: Boolean value indication phase (TRAIN OR TEST)
-        """
-        return preprocess(index, Data, labels, size, is_training)
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
