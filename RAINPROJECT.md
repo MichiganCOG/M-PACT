@@ -29,18 +29,20 @@ Our Goal: Submit ASAP
 ## Current Progress
 
      EXPERIMENT 1: Trained using original datasets 
-| Experiments      |  Coding in Progress  | Executing |  Debug  | Complete  (HMDB51)| Complete  (UCF101)|    
-|:----------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
-| VGG16            |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9745;       |
-| ResNet-50        |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9745;       |
-| ResNet-50 + RAIN |         &#9974;      |  &#9974;  | &#9974; |     &#9974;       |     &#9974;       |
+| Experiments        |  Coding in Progress  | Executing |  Debug  | Complete  (HMDB51)| Complete  (UCF101)|    
+|:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
+| VGG16              |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50          |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv1 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv2 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
 
      EXPERIMENT 2: Trained using rate-modified datasets 
-| Experiments      |  Coding in Progress  | Executing |  Debug  | Complete (HMDB51) | Complete (UCF101) |
-|:----------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
-| VGG16            |         &#9974;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
-| ResNet-50        |         &#9745;      |  &#9745;  | &#9745; |       &#9745;     |       &#9745;     |
-| ResNet-50 + RAIN |         &#9974;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
+| Experiments        |  Coding in Progress  | Executing |  Debug  | Complete (HMDB51) | Complete (UCF101) |
+|:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
+| VGG16              |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
+| ResNet-50          |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
+| ResNet-50 + RAINv1 |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
+| ResNet-50 + RAINv2 |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
 
 #### LEGEND
 Complete   -  &#9745; 
@@ -109,7 +111,7 @@ Parameters
 1. HMDB51 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001   
     * momentum - 0.9   
-    * wd - 0.0     
+    * wd - 0.001     
     * inputDims - 50     
     * seqLength - 50    
     * outputDims - 51      
@@ -125,14 +127,14 @@ Parameters
         * random crop to 224
         * random flip
         * mean subtraction (R - 123.68, G - 116.778, B - 103.94)
-        * extract 125 frame (loop if necessary)
+        * extract 125 frame (loop if necessary) using offset
         * sample 25 from those 125
         * pad with 25 frames of zero
     
 2. UCF 101 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001   
     * momentum - 0.9   
-    * wd - 0.0     
+    * wd - 0.001     
     * inputDims - 50     
     * seqLength - 50    
     * outputDims - 101      
@@ -147,7 +149,7 @@ Parameters
         * random crop to 224
         * random flip
         * mean subtraction (R - 123.68, G - 116.778, B - 103.94)
-        * extract 125 frame (loop if necessary)
+        * extract 125 frame (loop if necessary) using offset
         * sample 25 from those 125
         * pad with 25 frames of zero
 
@@ -157,29 +159,27 @@ Progress
     HMDB51 Baseline Experiments
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
-|   VGG16 + LSTM           |              32.75%                 |                  31.80%                     |
-| ResNet50 + LSTM          |              44.97%                 |                  44.38%                     |
+|   VGG16 + LSTM           |              --.--%                 |                  --.--%                     |
+| ResNet50 + LSTM          |              45.29%                 |                  --.--%                     |
 
     HMDB51 Original RAIN Layer Experiments
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
-| ResNet50 + RAINv1 + LSTM |             40.00%           |             34.38%         |          --.--%           |
+| ResNet50 + RAINv1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv4 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv5 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv6 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv7 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv8 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv9 + LSTM |             --.--            |             --.--%         |          --.--%           |
 
 
     UCF101 Experiments
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
-|   VGG16 + LSTM           |              67.27%                 |                  65.62%                     |
-| ResNet50 + LSTM          |              74.94%                 |                  74.92%                     |
-| ResNet50 + RAINv1 + LSTM |              --.--%                 |                  --.--%                     |
+|   VGG16 + LSTM           |              --.--%                 |                  --.--%                     |
+| ResNet50 + LSTM          |              --.--%                 |                  --.--%                     |
+
+    UCF101 Original RAIN Layer Experiments
+|       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
+|:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
+| ResNet50 + RAINv1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 
 ### NOTES:
 
@@ -194,7 +194,7 @@ Parameters
 1. HMDB51 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001  
     * momentum - 0.9 
-    * wd - 0.0  
+    * wd - 0.001  
     * inputDims - 50    
     * seqLength - 50
     * outputDims - 51  
@@ -209,14 +209,14 @@ Parameters
         * resize to 256
         * random crop to 224
         * random flip, mean subtraction (R - 123.68, G - 116.778, B - 103.94)
-        * extract 125 frame (loop if necessary)
+        * extract 125 frame (loop if necessary) using offset
         * sample 25 from those 125
         * pad with 25 frames of zero
     
 2. UCF 101 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001   
     * momentum - 0.9  
-    * wd - 0.0  
+    * wd - 0.001  
     * inputDims - 50     
     * seqLength - 50    
     * outputDims - 101
@@ -231,7 +231,7 @@ Parameters
         * random crop to 224
         * random flip
         * mean subtraction (R - 123.68, G - 116.778, B - 103.94),  
-        * extract 125 frame (loop if necessary)
+        * extract 125 frame (loop if necessary) using offset
         * sample 25 from those 125
         * pad with 25 frames of zero
 
@@ -242,14 +242,14 @@ Progress
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
 |   VGG16 + LSTM           |              --.--%                 |                  --.--%                     |
-| ResNet50 + LSTM          |              43.92%                 |                  43.29%                     |
+| ResNet50 + LSTM          |              --.--%                 |                  --.--%                     |
 | ResNet50 + RAINv1 + LSTM |              --.--%                 |                  --.--%                     |
 
     UCF101 Experiments
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
 |   VGG16 + LSTM           |              --.--%                 |                  --.--%                     |
-| ResNet50 + LSTM          |              76.66%                 |                  76.75%                     |
+| ResNet50 + LSTM          |              --.--%                 |                  --.--%                     |
 | ResNet50 + RAINv1 + LSTM |              --.--%                 |                  --.--%                     |
 
 

@@ -388,7 +388,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     
     # Pad with 0s if training
     if istraining:
-        padding_zeros = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
+        padding_zeros     = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
         input_data_tensor = tf.concat([input_data_tensor, padding_zeros], 0)
 
     labels_tensor = tf.tile( [label], [seq_length])
