@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn3:ppn=6:gpus=4    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn5:ppn=6:gpus=4    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -116,14 +116,14 @@ python train_test_TFRecords_multigpu_model.py \
 --dataset HMDB51 \
 --train 1 \
 --load 0 \
---inputDims 50 \
+--inputDims 250 \
 --outputDims 51 \
 --seqLength 50 \
 --size 224  \
 --expName tfrecords_resnet_rain_interp_mean_v2_HMDB51 \
 --numVids 3570 \
 --split 1 \
---wd 0.0 \
+--wd 0.001 \
 --lr 0.001 \
 --nEpochs 30 \
 --baseDataPath /z/dat \

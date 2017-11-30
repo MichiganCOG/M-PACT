@@ -38,11 +38,14 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
         label = tf.cast(features['Label'], tf.int32)
         input_data_tensor = tf.reshape(tf.decode_raw(features['Data'], tf.uint8), tf.stack([frames,height,width,channel]))
 
+        # BGR to RGB
+        input_data_tensor = input_data_tensor[...,::-1]
+
         if 'HMDB51' in dataset:
             input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
 
-	input_data_tensor, labels_tensor = model.preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
-	
+        input_data_tensor, labels_tensor = model.preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+
         input_data_list.append(input_data_tensor)
         labels_list.append(labels_tensor)
         names_list.append(name)
@@ -70,16 +73,22 @@ def _read_tfrecords(filename_queue):
 def _reduce_fps(video, frame_count):
     # Convert from 30 fps to 25 fps
     remove_count = tf.cast(tf.ceil(tf.divide(frame_count, 6)), tf.int32)
-    output_frames = tf.subtract(frame_count, remove_count)
+
     intermediate_frames = tf.multiply(remove_count, 5)
-    indices = tf.tile([1,2,3,4,5], [remove_count])                                 # [[1,2,3,4,5],[1,2,3,4,5]..]
-    indices = tf.reshape(indices, [intermediate_frames])                           # [1,2,3,4,5,1,2,3,4,5,1,2....]
+    indices = tf.tile([0,1,2,3,4], [remove_count])                                 # [[0,1,2,3,4],[0,1,2,3,4]..]
+    indices = tf.reshape(indices, [intermediate_frames])                           # [0,1,2,3,4,0,1,2,3,4,0,1,2....]
     additions = tf.range(remove_count)                                             # [0,1,2,3,4,5,6,....]
     additions = tf.stack([additions, additions, additions, additions, additions])  # [[0,1,2,3,4,5,6...], [0,1,2,3,4,5,6..], [0,1..], [0,1,..], [0,1,...]]
     additions = tf.transpose(additions)                                            # [[0,0,0,0,0], [1,1,1,1,1], [2,2,2,2,2], ...]
     additions = tf.reshape(additions, [intermediate_frames])                       # [0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3....]
     additions = tf.multiply(additions, 6)                                          # [0,0,0,0,0,6,6,6,6,6,12,12,12,12,12,18,18,18,18,18....]
-    indices = tf.add(indices, additions)                                           # [1,2,3,4,5,7,8,9,10,11,13,14,15,16,17,19....]
+    indices = tf.add(indices, additions)                                           # [0,1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19....]
+
+    remove_count = tf.cond( tf.equal(frame_count, tf.multiply(remove_count, 6)),
+                    lambda: remove_count,
+                    lambda: tf.subtract(remove_count, 1))
+    output_frames = tf.subtract(frame_count, remove_count)
+
     indices = tf.slice(indices, [0], [output_frames])
     indices_to_keep = tf.reshape(indices, [output_frames])
     output = tf.gather(video, indices_to_keep)

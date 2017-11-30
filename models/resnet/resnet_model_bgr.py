@@ -10,10 +10,11 @@ import tensorflow as tf
 import numpy      as np
 
 from tensorflow.contrib.rnn         import static_rnn
+from resnet_preprocessing           import preprocess
 from layers_utils                   import *
-from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from resnet_preprocessing_TFRecords_BGR import preprocess   as preprocess_tfrecords
 
-class ResNet():
+class ResNet_BGR():
 
     def __init__(self, verbose=True):
         """
@@ -21,8 +22,8 @@ class ResNet():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet'
-        print "resnet initialized"
+        self.name = 'resnet_bgr'
+        print "resnet bgr initialized"
 
     def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
         """
@@ -323,6 +324,18 @@ class ResNet():
 
         return layers[return_layer]
 
+
+
+    def preprocess(self, index, data, labels, size, is_training):
+        """
+        Args:
+            :index:       Integer indicating the index of video frame from the text file containing video lists
+            :data:        Data loaded from HDF5 files
+            :labels:      Labels for loaded data
+            :size:        List detailing values of height and width for final frames
+            :is_training: Boolean value indication phase (TRAIN OR TEST)
+        """
+        return preprocess(index, data,labels, size, is_training)
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

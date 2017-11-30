@@ -115,7 +115,7 @@ python train_test_TFRecords_multigpu_model.py \
 --numGpus 2 \
 --dataset HMDB51 \
 --train 1 \
---load 0 \
+--load 1 \
 --inputDims 50 \
 --outputDims 51 \
 --seqLength 50 \
