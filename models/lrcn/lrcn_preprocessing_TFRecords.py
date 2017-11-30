@@ -441,13 +441,16 @@ def _video_resize(video, height, width):
 
 #import pdb;
 def preprocess_for_eval(input_data_tensor, clip_length, sets, size):
-    input_data_tensor = tf.tile(input_data_tensor, [1,10,1,1,1])
+    #return input_data_tensor
+    # input_data_tensor = tf.tile(input_data_tensor, [1,10,1,1,1])
     shape = input_data_tensor.shape
-    #pdb.set_trace()
-    input_data_tensor = tf.reshape(input_data_tensor, (sets, 10, clip_length, shape[2].value, shape[3].value, shape[4].value))
-    input_data_tensor = tf.transpose(input_data_tensor, (0,2,1,3,4,5))
+    #import pdb; pdb.set_trace()
+    # input_data_tensor = tf.reshape(input_data_tensor, (sets, 10, clip_length, shape[2].value, shape[3].value, shape[4].value))
+    # input_data_tensor = tf.transpose(input_data_tensor, (0,2,1,3,4,5))
 
-
+    input_data_tensor = tf.pad(tf.expand_dims(input_data_tensor, axis=2), [[0,0],[0,0],[0,9],[0,0],[0,0],[0,0]], 'CONSTANT')
+    #tf.concat([input_data_tensor, tf.zeros([shape[0].value, shape[1].value*9, shape[2].value, shape[3].value, shape[4].value])], axis=1)
+    #print input_data_tensor
     vid_clips = tf.map_fn(lambda clip: tf.map_fn(lambda repeated_frame: oversample(repeated_frame, [size, size]), clip), input_data_tensor)
     vid_clips = tf.reshape(vid_clips, (sets, tf.multiply(clip_length, 10), size, size, shape[4].value))
 
@@ -459,6 +462,8 @@ def preprocess_for_train(input_data_tensor, size):
     vid_clips = tf.map_fn(lambda clip: tf.map_fn(lambda img: _resize_image(img, size, size), clip), input_data_tensor)
 
     return vid_clips
+
+
 
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
 
@@ -506,103 +511,18 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     input_data_tensor = tf.gather(input_data_tensor, clips_indices)
 
 
-    #pdb.set_trace()
-
+#    import pdb; pdb.set_trace()
+    input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0,0], tf.stack([10, clip_length, height, width, channel]))
+    input_data_tensor = tf.reshape(input_data_tensor, tf.stack([10, clip_length, 240, 320, 3]))
+#    import pdb; pdb.set_trace()
     if istraining:
         vid_clips = preprocess_for_train(input_data_tensor, size)
     else:
-        vid_clips = preprocess_for_eval(input_data_tensor, clip_length, sets, size)
+        vid_clips = preprocess_for_eval(input_data_tensor, clip_length, 10, size)#sets, size)
 
-    # vid_clips = tf.cond( tf.equal(istraining, tf.constant(True)),
-    #                 lambda: ,
-    #                 lambda:
-    #                 )
-    # sess = tf.Session()
-    #pdb.set_trace()
     labels_tensor = tf.tile( [label], [seq_length])
 
     return vid_clips, labels_tensor
-
-
-    #
-    # vid_clips  = []
-    #
-    # if is_training:
-    #     for i in range(0,len(input_data),clip_length):
-    #         clip_input = input_data[i:i+clip_length]
-    #         new_clip   = []
-    #
-    #         for cl in clip_input:
-    #             new_clip.append(resize_image(cl, (size,size)))
-    #
-    #         # END FOR
-    #
-    #         vid_clips.append(np.array(new_clip))
-    #
-    #     # END FOR
-    #
-    # else:
-    #     for i in range(0,len(input_data),clip_length):
-    #         clip_input = input_data[i:i+clip_length]
-    #         clip_input = oversample(clip_input,[size, size])
-    #         vid_clips.append(clip_input)
-    #
-    #     # END FOR
-    #
-    # # END IF
-    #
-    # return vid_clips
-    #
-    #
-
-
-
-
-
-
-
-
-
-
-    #
-    #
-    # if istraining:
-    #     footprint = 125
-    #     sample_dims = input_dims/2
-    #
-    # else:
-    #     footprint = 250
-    #     sample_dims = input_dims
-    #
-    # # END IF
-    #
-    # # Selecting a random, seeded temporal offset
-    # temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-1, shape=np.asarray([1]))[0]
-    #
-    # # Loop video video if it is shorter than footprint
-    # input_data_tensor = tf.cond(tf.less(frames-temporal_offset, footprint),
-    #                         lambda: _loop_video(input_data_tensor[temporal_offset:,:,:,:], frames-temporal_offset, height, width, channel, footprint),
-    #                         lambda: input_data_tensor)
-    #
-    # # Remove excess frames after looping to reduce to footprint size
-    # input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
-    # input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
-    #
-    # # Reduce footprint to sample_dims in size by uniformly sampling
-    # input_data_tensor = _sample_video(input_data_tensor, footprint, int(footprint/sample_dims))
-    #
-    # input_data_tensor = tf.cast(input_data_tensor, tf.float32)
-    # input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining), input_data_tensor)
-    #
-    # # Pad with 0s if training
-    # if istraining:
-    #     padding_zeros = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
-    #     input_data_tensor = tf.concat([input_data_tensor, padding_zeros], 0)
-    #
-    # labels_tensor = tf.tile( [label], [seq_length])
-    #
-    # return input_data_tensor, labels_tensor
-
 
 
 
