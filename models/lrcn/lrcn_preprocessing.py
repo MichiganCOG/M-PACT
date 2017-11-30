@@ -15,8 +15,8 @@ def oversample(images, crop_dims):
     Args:
         :images:    Iterable [H x W x C] ndarray
         :crop_dims: List detailing final height and width of cropped frames.
-    
-    Return:    
+
+    Return:
         :crops:     (10*N x H x W x C) ndarray of crops for number of inputs N.
     """
 
@@ -34,7 +34,7 @@ def oversample(images, crop_dims):
         for j in w_indices:
             crops_ix[curr] = (i, j, i + crop_dims[0], j + crop_dims[1])
             curr += 1
-        
+
         # END FOR
 
     # END FOR
@@ -56,7 +56,7 @@ def oversample(images, crop_dims):
         # END FOR
 
         crops[ix-5:ix] = crops[ix-5:ix, :, ::-1, :]  # flip for mirror
-    
+
     # END FOR
 
     return crops
@@ -69,7 +69,7 @@ def resize_image(im, new_dims, interp_order=1):
         :im:           (H x W x C) ndarray
         :new_dims:     (height, width) tuple of new dimensions.
         :interp_order: interpolation order, default is linear.
-    
+
     Return:
         :im:           resized ndarray with shape (new_dims[0], new_dims[1], C)
     """
@@ -106,8 +106,8 @@ def preprocess(index, data, label, size, is_training):
     Args:
         :index:       Integer used to index a video from a given text file listing all available videos
         :data:        Original data
-        :label:       True labels   
-        :size:        List detailing final height and width from preprocessing  
+        :label:       True labels
+        :size:        List detailing final height and width from preprocessing
         :is_training: Boolean value indicating phase (TRAIN or TEST)
 
     Return:
@@ -142,7 +142,7 @@ def preprocess(index, data, label, size, is_training):
 
         else:  # video may not be divisible by clip_length
             input_data.extend(data[-clip_length:])
-    
+
         # END IF
 
     # END FOR
@@ -157,7 +157,7 @@ def preprocess(index, data, label, size, is_training):
 
             for cl in clip_input:
                 new_clip.append(resize_image(cl, (size,size)))
-        
+
             # END FOR
 
             vid_clips.append(np.array(new_clip))

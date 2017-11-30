@@ -12,9 +12,9 @@ import numpy      as np
 from tensorflow.contrib.rnn         import static_rnn
 from resnet_preprocessing           import preprocess
 from layers_utils                   import *
-from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from resnet_preprocessing_TFRecords_BGR import preprocess   as preprocess_tfrecords
 
-class ResNet():
+class ResNet_BGR():
 
     def __init__(self, verbose=True):
         """
@@ -22,8 +22,8 @@ class ResNet():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet'
-        print "resnet initialized"
+        self.name = 'resnet_bgr'
+        print "resnet bgr initialized"
 
     def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
         """

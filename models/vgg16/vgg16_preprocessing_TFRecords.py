@@ -32,7 +32,7 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy      as np
 
-slim = tf.contrib.slim
+#slim = tf.contrib.slim
 
 _R_MEAN = 123.68
 _G_MEAN = 116.78
@@ -386,7 +386,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining), input_data_tensor)
-    
+
     # Pad with 0s if training
     if istraining:
         padding_zeros = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)

@@ -7,10 +7,11 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from rnn_cell_impl      import LSTMCell
-from lrcn_preprocessing import preprocess
-from layers_utils       import *
+from rnn_cell_impl                import LSTMCell
 
+#from lrcn_preprocessing           import preprocess
+from lrcn_preprocessing_TFRecords import preprocess as preprocess_tfrecords
+from layers_utils                 import *
 
 class LRCN():
 
@@ -40,21 +41,21 @@ class LRCN():
             :rnn_outputs:  Output list of length seq_length where each element is of shape [batch_size x cell_size]
         """
 
-        with tf.device('/gpu:'+str(gpu_id)):
-            inputs = tf.reshape(inputs, shape=[input_dims/seq_length,seq_length,feat_size])
 
-            wi = tf.get_variable('rnn/lstm_cell/kernel', [4352, 1024], initializer=tf.constant_initializer(data_dict['lstm1'][0]))
-            bi = tf.get_variable('rnn/lstm_cell/bias',   [1024],       initializer=tf.constant_initializer(data_dict['lstm1'][1]))
+        inputs = tf.reshape(inputs, shape=[input_dims/seq_length,seq_length,feat_size])
 
-            lstm_cell           = LSTMCell(cellSize, forget_bias=0.0, weights_initializer=wi, bias_initializer=bi)
-            rnn_outputs, states = tf.nn.dynamic_rnn(lstm_cell, inputs, dtype=tf.float32)
-            rnn_outputs         = tf.reshape(rnn_outputs, shape=[-1,256])
+        wi = tf.get_variable('rnn/lstm_cell/kernel', [4352, 1024], initializer=tf.constant_initializer(data_dict['lstm1'][0]))
+        bi = tf.get_variable('rnn/lstm_cell/bias',   [1024],       initializer=tf.constant_initializer(data_dict['lstm1'][1]))
 
-        # END WITH
+        lstm_cell           = LSTMCell(cell_size, forget_bias=0.0, weights_initializer=wi, bias_initializer=bi)
+        rnn_outputs, states = tf.nn.dynamic_rnn(lstm_cell, inputs, dtype=tf.float32)
+        rnn_outputs         = tf.reshape(rnn_outputs, shape=[-1,256])
+
+
 
         return rnn_outputs
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer='logits', gpu_id = 0, weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, K, J, dropout_rate = 0.5, return_layer='logits', gpu_id = 0, weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -67,7 +68,7 @@ class LRCN():
             :return_layer: String matching name of a layer in current model
             :gpu_id:       GPU ID for current model
             :weight_decay: Double value of weight decay
-    
+
         Return:
             :layers[return_layer]: The requested layer's output tensor
         """
@@ -83,7 +84,7 @@ class LRCN():
         # END IF
 
         # Must exist within current model directory
-        data_dict = np.load('lrcn.npy').tolist()
+        data_dict = np.load('models/lrcn/lrcn.npy').tolist()
 
         with tf.name_scope(scope, 'lrcn', [inputs]):
             layers = {}
@@ -175,7 +176,7 @@ class LRCN():
 
 
             layers['logits'] = fully_connected_layer(input_tensor=layers['rnn_outputs_rs'],
-                                      out_dim=outputDims,
+                                      out_dim=output_dims,
                                       name='logits',
                                       weight_decay=weight_decay,
                                       non_linear_fn=None,
@@ -186,8 +187,7 @@ class LRCN():
 
         return layers[return_layer]
 
-
-    def preprocess(self, index, data, labels, size, is_training):
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
         Args:
             :index:       Integer indicating the index of video frame from the text file containing video lists
@@ -196,19 +196,31 @@ class LRCN():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        return preprocess(index, data,labels, size, is_training)
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+
+
+    # def preprocess(self, index, data, labels, size, is_training):
+    #     """
+    #     Args:
+    #         :index:       Integer indicating the index of video frame from the text file containing video lists
+    #         :data:        Data loaded from HDF5 files
+    #         :labels:      Labels for loaded data
+    #         :size:        List detailing values of height and width for final frames
+    #         :is_training: Boolean value indication phase (TRAIN OR TEST)
+    #     """
+    #     return preprocess(index, data,labels, size, is_training)
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels):
         """
         Args:
-            :logits: Unscaled logits returned from final layer in model 
-            :labels: True labels corresponding to loaded data 
+            :logits: Unscaled logits returned from final layer in model
+            :labels: True labels corresponding to loaded data
         """
 
         labels = tf.tile(labels, logits.shape[0].value/labels.shape[0].value)
         labels = tf.cast(labels, tf.int64)
-        
+
         crossEntropyLoss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
                                                                   logits=logits)
 

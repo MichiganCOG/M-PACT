@@ -18,6 +18,7 @@ from Queue                                            import Queue
 from models.lrcn.lrcn_model                           import LRCN
 from models.vgg16.vgg16_model                         import VGG16
 from models.resnet.resnet_model                       import ResNet
+from models.resnet.resnet_model_bgr                   import ResNet_BGR
 from logger                                           import Logger
 from random                                           import shuffle
 from load_dataset_tfrecords                           import load_dataset
@@ -380,8 +381,37 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 
 
+def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j):
+    #import pdb; pdb.set_trace()
+    # Model Inference
+    logits_list = tf.map_fn(lambda clip_tensor: model.inference(clip_tensor,
+                             istraining,
+                             input_dims,
+                             output_dims,
+                             seq_length,
+                             scope, k, j), input_data_tensor[0,:,:,:,:,:])
+    #import pdb; pdb.set_trace()
+    # Logits
+    softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, k=25):
+    return logits_list, softmax
+
+def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j):
+
+    # Model Inference
+    logits = model.inference(input_data_tensor[0,:,:,:,:],
+                             istraining,
+                             input_dims,
+                             output_dims,
+                             seq_length,
+                             scope, k, j)
+
+    # Logits
+    softmax = tf.nn.softmax(logits)
+
+    return logits, softmax
+
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, k=25):
 
     """
     Args:
@@ -402,7 +432,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     """
 
     with tf.name_scope("my_scope") as scope:
-        istraining  = False 
+        istraining  = False
         global_step = tf.Variable(0, name='global_step', trainable=False)
         j           = input_dims / k
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
@@ -410,16 +440,32 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Setting up tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
-        # Model Inference
-        logits = model.inference(input_data_tensor[0,:,:,:,:],
-                                 istraining,
-                                 input_dims,
-                                 output_dims,
-                                 seq_length,
-                                 scope, k, j)
-
-        # Logits
-        softmax = tf.nn.softmax(logits)
+        #import pdb; pdb.set_trace()
+        if len(input_data_tensor.shape) > 5:
+            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
+        else:
+            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
+        # logits, softmax = tf.cond( tf.greater(len(input_data_tensor.shape), tf.constant(5)),
+        #                             lambda: ,
+        #                             lambda:
+        #                          )
+        #
+        # logits_list = tf.map_fn(lambda clip_tensor: model.inference(input_data_tensor[0,:,:,:,:],
+        #                          istraining,
+        #                          input_dims,
+        #                          output_dims,
+        #                          seq_length,
+        #                          scope, k, j), input_data_tensor)
+        # # # Model Inference
+        # # logits = model.inference(input_data_tensor[0,:,:,:,:],
+        # #                          istraining,
+        # #                          input_dims,
+        # #                          output_dims,
+        # #                          seq_length,
+        # #                          scope, k, j)
+        #
+        # # Logits
+        # softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
 
         # Logger setup
         log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
@@ -430,21 +476,21 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Initialize Variables
         sess    = tf.Session()
         saver   = tf.train.Saver()
-        init    = tf.global_variables_initializer()
+        init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
         sess.run(init)
 
+        if load_model:
+            ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
+            if ckpt and ckpt.model_checkpoint_path:
+                saver.restore(sess, ckpt.model_checkpoint_path)
+                print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
 
-        ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
-        if ckpt and ckpt.model_checkpoint_path:
-            saver.restore(sess, ckpt.model_checkpoint_path)
-            print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
-
-        else:
-            print os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint'))
-            print "Invalid load dataset specified. Please check."
-            exit()
+            else:
+                print os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint'))
+                print "Invalid load dataset specified. Please check."
+                exit()
 
         # END IF
 
@@ -452,6 +498,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         acc        = 0
         count      = 0
 
+        print "Begin Testing"
 
         for vid_num in range(num_vids):
             count +=1
@@ -459,16 +506,19 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
             #import pdb; pdb.set_trace()
 
+            label = labels[0][0]
             print "vidNum: ", vid_num
             print "vidName: ",names
-            print "label:  ", labels[0][0]
-
+            print "label:  ", label
+            #import pdb; pdb.set_trace()
+            if len(output_predictions.shape)!=2:
+                output_predictions = np.mean(output_predictions, 1)
             guess = np.mean(output_predictions, 0).argmax()
             print "prediction: ", guess
 
-            total_pred.append((guess, labels[0][0]))
+            total_pred.append((guess, label))
 
-            if int(guess) == int(labels[0][0]):
+            if int(guess) == int(label):
                 acc += 1
 
             # END IF
@@ -566,6 +616,9 @@ if __name__=="__main__":
     elif model_name == 'resnet':
         model = ResNet()
 
+    elif model_name == 'resnet_bgr':
+        model = ResNet_BGR()
+        
     elif model_name == 'resnet_RIL_interp_mean_v1':
         model = ResNet_RIL_Interp_Mean_v1()
 
@@ -638,15 +691,16 @@ if __name__=="__main__":
                 val_freq            = args.valFreq)
 
     else:
-        test(   model           = model,
-                input_dims      = args.inputDims,
-                output_dims     = args.outputDims,
-                seq_length      = args.seqLength,
-                size            = [args.size, args.size],
-                dataset         = args.dataset,
-                loaded_dataset  = args.loadedDataset,
-                experiment_name = args.expName,
-                num_vids        = args.numVids,
-                split           = args.split,
-                base_data_path  = args.baseDataPath,
-                f_name          = args.fName)
+        test(   model             = model,
+                input_dims        = args.inputDims,
+                output_dims       = args.outputDims,
+                seq_length        = args.seqLength,
+                size              = [args.size, args.size],
+                dataset           = args.dataset,
+                loaded_dataset    = args.loadedDataset,
+                experiment_name   = args.expName,
+                num_vids          = args.numVids,
+                split             = args.split,
+                base_data_path    = args.baseDataPath,
+                f_name            = args.fName,
+                load_model        = args.load)
