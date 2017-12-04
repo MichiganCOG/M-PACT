@@ -33,8 +33,9 @@ Our Goal: Submit ASAP
 |:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
 | VGG16              |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
 | ResNet-50          |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
-| ResNet-50 + RAINv1 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
-| ResNet-50 + RAINv2 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv1 |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv2 |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv3 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
 
      EXPERIMENT 2: Trained using rate-modified datasets 
 | Experiments        |  Coding in Progress  | Executing |  Debug  | Complete (HMDB51) | Complete (UCF101) |
@@ -43,6 +44,7 @@ Our Goal: Submit ASAP
 | ResNet-50          |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
 | ResNet-50 + RAINv1 |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
 | ResNet-50 + RAINv2 |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
+| ResNet-50 + RAINv3 |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
 
 #### LEGEND
 Complete   -  &#9745; 
@@ -112,7 +114,7 @@ Parameters
     * lr - 0.001   
     * momentum - 0.9   
     * wd - 0.001     
-    * inputDims - 50     
+    * inputDims - 50 (250 for RAIN layers)
     * seqLength - 50    
     * outputDims - 51      
     * numVids - 3570    
@@ -160,13 +162,14 @@ Progress
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
 |   VGG16 + LSTM           |              --.--%                 |                  --.--%                     |
-| ResNet50 + LSTM          |              45.29%                 |                  --.--%                     |
+| ResNet50 + LSTM          |              43.46%                 |                  --.--%                     |
 
     HMDB51 Original RAIN Layer Experiments
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
-| ResNet50 + RAINv1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv1 + LSTM |             42.42%           |             33.53%         |          42.55%           |
+| ResNet50 + RAINv2 + LSTM |             --.--%           |             43.53%         |          46.47%           |
+| ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 
 
     UCF101 Experiments
@@ -180,6 +183,7 @@ Progress
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
 | ResNet50 + RAINv1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 
 ### NOTES:
 

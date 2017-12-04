@@ -348,6 +348,16 @@ def _loop_video(input_data_tensor, frames, height, width, channel, input_dims):
     return tf.reshape(input_data_tensor, reshape_stack)
 
 
+def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
+    # Loop the video the number of times necessary for the number of frames to be > footprint
+    loop_factor = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
+    loop_stack = tf.stack([loop_factor,1,1,1])
+    input_data_tensor = tf.tile(input_data_tensor, loop_stack)
+    reshape_stack = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
+    input_data_looped = tf.reshape(input_data_tensor, reshape_stack)
+    output_data = tf.concat([offset_tensor, input_data_looped], axis = 0)
+    return output_data
+
 def _sample_video(video, frame_count, offset):
     # Return frame_count number of frames from video at every offset
     indices = range(0, frame_count, offset)
@@ -369,12 +379,16 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # END IF
 
+
+    input_data_tensor = input_data_tensor[...,::-1]
+
+
     # Selecting a random, seeded temporal offset
     temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-1, shape=np.asarray([1]))[0]
 
     # Loop video video if it is shorter than footprint
     input_data_tensor = tf.cond(tf.less(frames-temporal_offset, footprint),
-                            lambda: _loop_video(input_data_tensor[temporal_offset:,:,:,:], frames-temporal_offset, height, width, channel, footprint),
+                            lambda: _loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint),
                             lambda: input_data_tensor)
 
     # Remove excess frames after looping to reduce to footprint size

@@ -6,6 +6,10 @@ import numpy           as np
 import multiprocessing as mp
 
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+
 from tensorflow.python.ops      import clip_ops
 from tensorflow.python.ops      import init_ops
 from tensorflow.python.ops      import control_flow_ops
@@ -18,7 +22,7 @@ from Queue                                            import Queue
 from models.lrcn.lrcn_model                           import LRCN
 from models.vgg16.vgg16_model                         import VGG16
 from models.resnet.resnet_model                       import ResNet
-#from models.resnet.resnet_model_bgr                   import ResNet_BGR
+from models.resnet.resnet_model_bgr                   import ResNet_BGR
 from logger                                           import Logger
 from random                                           import shuffle
 from load_dataset_tfrecords                           import load_dataset
@@ -41,6 +45,10 @@ from models.resnet_RIL.resnet_RIL_interp_max_model_v3  import ResNet_RIL_Interp_
 from models.resnet_RIL.resnet_RIL_interp_max_nosort_v4 import ResNet_RIL_Interp_Max_Nosort_v4
 from models.resnet_RIL.resnet_RIL_interp_max_model_v8  import ResNet_RIL_Interp_Max_v8
 
+
+_R_MEAN = 123.68
+_G_MEAN = 116.78
+_B_MEAN = 103.94
 
 def _average_gradients(tower_grads):
     """
@@ -396,20 +404,74 @@ def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, 
 
     return logits_list, softmax
 
-def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j):
+def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j, dataset):
 
-    # Model Inference
-    logits = model.inference(input_data_tensor[0,:,:,:,:],
-                             istraining,
-                             input_dims,
-                             output_dims,
-                             seq_length,
-                             scope, k, j)
 
+    if "RIL" in model.name:
+        # Model Inference
+        logits = model.inference(input_data_tensor[0,:,:,:,:],
+                                 istraining,
+                                 input_dims,
+                                 output_dims,
+                                 seq_length,
+                                 scope, k, j,
+                                 return_layer = 'Conv2')#"RIlayer")
+    else:
+        # Model Inference
+        logits = model.inference(input_data_tensor[0,:,:,:,:],
+                                 istraining,
+                                 input_dims,
+                                 output_dims,
+                                 seq_length,
+                                 scope, k, j)
     # Logits
     softmax = tf.nn.softmax(logits)
 
     return logits, softmax
+
+def save_gif(frames, name, model, dataset, vid_num):
+    my_dpi = 16
+    #frames = frames[...,::-1]
+    #fig, ax = plt.subplots()
+    fig = plt.figure(figsize=(224/my_dpi*2,224/my_dpi*2), dpi=my_dpi)
+
+    ax = fig.add_subplot(111)
+    #fig.subplots_adjust(left=0, bottom=0, right=0, top=0, wspace=None, hspace=None)
+    #ax.axis('tight')
+    ax.axis('off')
+    fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=None, hspace=None)
+    #ax.set_frame_on(False)
+    #ax.set_axis_off()
+    #fig.set_size_inches(14,14,forward=True)
+    #import pdb; pdb.set_trace()
+    def animate(i):
+        if i < frames.shape[0]:
+            frame = np.zeros((224,224,3))
+            frame[:,:,0] = frames[i][:,:,0] + _R_MEAN
+            frame[:,:,1] = frames[i][:,:,1] + _G_MEAN
+            frame[:,:,2] = frames[i][:,:,2] + _B_MEAN
+            return ax.imshow(frame/255.0, aspect='auto')
+        else:
+            frame = np.zeros((224,224,3))
+            return ax.imshow(frame/255.0, aspect='auto')
+    ims = map(lambda x: (animate(x), ax.set_title('')), range(frames.shape[0]+25))
+    anim = animation.ArtistAnimation(fig, ims, interval=frames.shape[0]+25,)
+    #plt.tight_layout(pad=0.0, h_pad=0.0, w_pad=0.0)
+    #fig.set_tight_layout(True)
+#    plt.show()
+    make_dir(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model.name))
+    make_dir(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model.name, vid_num))
+    anim.save(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model.name,vid_num,name+'.mp4'), writer='imagemagick', fps=25, dpi=my_dpi)
+    print "Saved ", name
+    plt.cla()
+    plt.clf()
+    plt.close(fig)
+    #import pdb;pdb.set_trace()
+#    for frame in frames:
+
+
+
+
 
 def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, k=25):
 
@@ -444,7 +506,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         if len(input_data_tensor.shape) > 5:
             logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
         else:
-            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
+            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j, dataset)
         # logits, softmax = tf.cond( tf.greater(len(input_data_tensor.shape), tf.constant(5)),
         #                             lambda: ,
         #                             lambda:
@@ -467,11 +529,11 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # # Logits
         # softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
 
-        # Logger setup
-        log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                                           dataset,
-                                                           experiment_name))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
+        # # Logger setup
+        # log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
+        #                                                    dataset,
+        #                                                    experiment_name))
+        # curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
 
         # Initialize Variables
         sess    = tf.Session()
@@ -483,6 +545,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         if load_model:
             ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
+        #    import pdb; pdb.set_trace()
             if ckpt and ckpt.model_checkpoint_path:
                 saver.restore(sess, ckpt.model_checkpoint_path)
                 print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
@@ -498,32 +561,60 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         acc        = 0
         count      = 0
 
+
+
         print "Begin Testing"
 
-        for vid_num in range(num_vids):
+        if 'Rate' in dataset:
+            rate_label = 'Rate'
+        else:
+            rate_label = 'Orig'
+        if 'RIL' in model.name:
+            model_label = 'RIL'
+        else:
+            model_label = 'res'
+
+        for vid_num in range(10):
             count +=1
-            output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
-            #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
+            frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
+            #frames = frames[0]
+            import pdb; pdb.set_trace()
+        #     input_data = input_data[0]
+        #     #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
+        # #    import pdb; pdb.set_trace()
+        #     if model_label == 'RIL':
+        #         if rate_label == 'Rate':
+        #             save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+        #             save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
+        #         else:
+        #             save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+        #             save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
+        #     else:
+        #         if rate_label == 'Rate':
+        #         #    import pdb;pdb.set_trace()
+        #             save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+        #         #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
+        #         else:
+        #             save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+                #    save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
+            # label = labels[0][0]
+            # print "vidNum: ", vid_num
+            # print "vidName: ",names
+            # print "label:  ", label
             #import pdb; pdb.set_trace()
-
-            label = labels[0][0]
-            print "vidNum: ", vid_num
-            print "vidName: ",names
-            print "label:  ", label
-            #import pdb; pdb.set_trace()
-            if len(output_predictions.shape)!=2:
-                output_predictions = np.mean(output_predictions, 1)
-            guess = np.mean(output_predictions, 0).argmax()
-            print "prediction: ", guess
-
-            total_pred.append((guess, label))
-
-            if int(guess) == int(label):
-                acc += 1
-
-            # END IF
-
-            curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
+            # if len(output_predictions.shape)!=2:
+            #     output_predictions = np.mean(output_predictions, 1)
+            # guess = np.mean(output_predictions, 0).argmax()
+            # print "prediction: ", guess
+            #
+            # total_pred.append((guess, label))
+            #
+            # if int(guess) == int(label):
+            #     acc += 1
+            #
+            # # END IF
+            #
+            # curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
         # END FOR
 
@@ -531,9 +622,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
     coord.request_stop()
     coord.join(threads)
-
-    print "Total accuracy : ", acc/float(count)
-    print total_pred
+    #
+    # print "Total accuracy : ", acc/float(count)
+    # print total_pred
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -586,7 +677,7 @@ if __name__=="__main__":
     parser.add_argument('--split', action='store', type=int, default=1,
             help = 'Dataset split to use')
 
-    parser.add_argument('--baseDataPath', action='store', default='/z/home/madantrg/Datasets',
+    parser.add_argument('--baseDataPath', action='store', default='/z/dat',
             help = 'Path to datasets')
 
     parser.add_argument('--fName', action='store',
@@ -618,7 +709,7 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_bgr':
         model = ResNet_BGR()
-        
+
     elif model_name == 'resnet_RIL_interp_mean_v1':
         model = ResNet_RIL_Interp_Mean_v1()
 
