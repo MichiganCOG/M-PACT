@@ -163,12 +163,29 @@ The primary concept utilized in the formulation of this version is: Increase the
 <a name="rainv8"/>
 RAIN Layer v8.0
 ---------------
-The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu. 
+The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu.
 
 ![RAINv8Paramnw] (/images/Paramnw.pdf)
 ![RAINv8extractlayer] (/images/extractlayer.pdf)
 
 
+<a name="rainv9"/>
+RAIN Layer v9.0
+---------------
+The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu and increase the number of output frames to 75 and 100.
+
+![RAINv9Paramnw] (/images/Paramnw.pdf)
+![RAINv9extractlayer] (/images/extractlayer7.pdf)
+
+
+
+<a name="rainv10"/>
+RAIN Layer v10.0
+---------------
+The primary concept utilized in the formulation of this version is: Allow the sampling parameter to first sample frames from the beginning of the input data then apply the phase offset parameter to select the start frame of the output. Sample L frames from the output
+
+![RAINv10Paramnw] (/images/Paramnw.pdf)
+![RAINv10extractlayer] (/images/extractlayer10.pdf)
 
 
 
