@@ -167,8 +167,8 @@ Progress
     HMDB51 Original RAIN Layer Experiments
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
-| ResNet50 + RAINv1 + LSTM |             42.42%           |             33.53%         |          42.55%           |
-| ResNet50 + RAINv2 + LSTM |             --.--%           |             43.53%         |          46.47%           |
+| ResNet50 + RAINv1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 
 
