@@ -249,7 +249,7 @@ Progress
 |       Experiments        | Mean Recog. Accuracy(MRA) on Orig.  | Mean Recog. Accuracy(MRA) on Rate Modified  |
 |:------------------------:|:----------------------------------: |:------------------------------------------: |
 |   VGG16 + LSTM           |              --.--%                 |                  --.--%                     |
-| ResNet50 + LSTM          |              43.46%                 |                  --.--%                     |
+| ResNet50 + LSTM          |              43.46%                 |                  41.33%                     |
 
     HMDB51 Original RAIN Layer Experiments
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
