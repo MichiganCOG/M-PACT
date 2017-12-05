@@ -415,7 +415,7 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  output_dims,
                                  seq_length,
                                  scope, k, j,
-                                 return_layer = 'Conv2')#"RIlayer")
+                                 return_layer = 'FC2')#"RIlayer")
     else:
         # Model Inference
         logits = model.inference(input_data_tensor[0,:,:,:,:],
@@ -578,30 +578,47 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             count +=1
             frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
             #frames = frames[0]
-            import pdb; pdb.set_trace()
-        #     input_data = input_data[0]
-        #     #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-        # #    import pdb; pdb.set_trace()
-        #     if model_label == 'RIL':
-        #         if rate_label == 'Rate':
-        #             save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
-        #             save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
-        #         else:
-        #             save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
-        #             save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
-        #     else:
-        #         if rate_label == 'Rate':
-        #         #    import pdb;pdb.set_trace()
-        #             save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
-        #         #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
-        #         else:
-        #             save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
-                #    save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
+#            import pdb; pdb.set_trace()
+            input_data = input_data[0]
+            #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
+        #    import pdb; pdb.set_trace()
+
+
+
+
+
+
+
+            # if model_label == 'RIL':
+            #     if rate_label == 'Rate':
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+            #         save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
+            #     else:
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+            #         save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
+            # else:
+            #     if rate_label == 'Rate':
+            #     #    import pdb;pdb.set_trace()
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+            #     #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
+            #     else:
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+            #         save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
+
+
+
+
+
+
+
+
+
+
             # label = labels[0][0]
             # print "vidNum: ", vid_num
             # print "vidName: ",names
             # print "label:  ", label
-            #import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
             # if len(output_predictions.shape)!=2:
             #     output_predictions = np.mean(output_predictions, 1)
             # guess = np.mean(output_predictions, 0).argmax()

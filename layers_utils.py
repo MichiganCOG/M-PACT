@@ -20,7 +20,7 @@ def conv_layer(input_tensor,
         :input_tensor:  Input tensor to the convolutional layer
         :filter_dims:   A list detailing the height, width and number of channels for filters in the layer
         :stride_dims:   A list detailing the height and width of the stride between filters
-        :name:          Scope name to be provided for current convolutional layer  
+        :name:          Scope name to be provided for current convolutional layer
         :padding:       Padding type definition (VALID or SAME)
         :non_linear_fn: Activation function applied to the outcome of the layer
         :kernel_init:   Tensorflow initialization function used to initialize the kernel
@@ -57,7 +57,7 @@ def conv_layer(input_tensor,
             kernel_groups = tf.split(w, groups, axis=3)
             output_groups = [convolve(i, k) for i, k in zip(input_groups, kernel_groups)]
             output        = tf.concat(output_groups, 3)
-        
+
         # END IF
 
         b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
@@ -67,7 +67,7 @@ def conv_layer(input_tensor,
             conv_out = non_linear_fn(conv_out, name=scope.name)
 
         # END IF
-    
+
     # END WITH
 
     return conv_out
@@ -81,14 +81,14 @@ def max_pool_layer(input_tensor,
 
     """
     Args:
-        :input_tensor: Input tensor to the max pooling layer 
+        :input_tensor: Input tensor to the max pooling layer
         :filter_dims:  A list detailing the height and width for filters in this layer
         :stride_dims:  A list detailing the height and width of the stride between filters
         :name:         Scope name to be provided for current max pooling layer
         :padding:      Padding type definition (SAME or VALID)
 
     Return:
-        :pool_out:     Output of max pooling layer  
+        :pool_out:     Output of max pooling layer
     """
 
     # Ensure parameters match required shapes
@@ -105,6 +105,39 @@ def max_pool_layer(input_tensor,
     # END WITH
 
     return pool_out
+
+
+
+def avg_pool_layer(input_tensor,
+                   filter_dims,
+                   stride_dims,
+                   name,
+                   padding='SAME'):
+    """
+    Args:
+        :input_tensor: Input tensor to the average pooling layer
+        :filter_dims:  A list detailing the height and width for filters in this layer
+        :stride_dims:  A list detailing the height and width of the stride between filters
+        :name:         Scope name to be provided for current max pooling layer
+        :padding:      Padding type definition (SAME or VALID)
+
+    Return:
+        :pool_out:     Output of average pooling layer
+    """
+
+    # Ensure parameters match required shapes
+    assert(len(filter_dims) == 2)  # filter height and width
+    assert(len(stride_dims) == 2)  # stride height and width
+
+    filter_h, filter_w = filter_dims
+    stride_h, stride_w = stride_dims
+    with tf.variable_scope(name) as scope:
+        # Define the max pool flow graph and return output
+        pool_out = tf.nn.avg_pool(input_tensor, ksize=[1, filter_h, filter_w, 1],
+                               strides=[1, stride_h, stride_w, 1], padding=padding, name=scope.name)
+    return pool_out
+
+
 
 
 def fully_connected_layer(input_tensor,
@@ -125,7 +158,7 @@ def fully_connected_layer(input_tensor,
         :bias_init:     Tensorflow initialization function used to initialize the bias
 
     Return:
-        :fc_out:        Output of the fully connected layer 
+        :fc_out:        Output of the fully connected layer
     """
 
     assert (type(out_dim) == int)
@@ -157,3 +190,24 @@ def fully_connected_layer(input_tensor,
     # END WITH
 
     return fc_out
+
+
+
+
+def pad(input_tensor,
+        padding):
+
+    """
+    :param input_tensor:
+    :param padding:
+    :return:
+    """
+    # Pad all four sides of each frame with "padding" amount of zeros
+    if len(input_tensor.shape) == 3:
+        return tf.pad(input_tensor, [[padding, padding],[padding, padding],[0,0]], "CONSTANT")
+
+    elif len(input_tensor.shape) == 4:
+        return tf.pad(input_tensor, [[0,0],[padding, padding],[padding, padding],[0,0]], "CONSTANT")
+
+    elif len(input_tensor.shape) == 5:
+        return tf.pad(input_tensor, [[0,0],[0,0],[padding, padding],[padding, padding],[0,0]], "CONSTANT")

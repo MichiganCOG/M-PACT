@@ -534,6 +534,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
     print "Total accuracy : ", acc/float(count)
     print total_pred
+    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -618,7 +619,7 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_bgr':
         model = ResNet_BGR()
-        
+
     elif model_name == 'resnet_RIL_interp_mean_v1':
         model = ResNet_RIL_Interp_Mean_v1()
 
