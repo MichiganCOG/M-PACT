@@ -11,7 +11,7 @@ Our Goal: Submit ASAP
 * [Introduction](#intro)
 * [Baseline Models](#baselinemodels)
 * [RAIN Layers](#rainlayers)
-    * [RAIN v1.0](#rainv1) 
+    * [RAIN v1.0](#rainv1)
 * [Experiment 1 - Models trained using original datasets](#expt1)
 * [Experiment 2 - Models trained using rate-modified datasets](#expt2)
 * [Ideas for RAIN Layer](#ideas)
@@ -28,7 +28,7 @@ Our Goal: Submit ASAP
 <a name="currentprogress"/>
 ## Current Progress
 
-     EXPERIMENT 1: Trained using original datasets 
+     EXPERIMENT 1: Trained using original datasets
 | Experiments        |  Coding in Progress  | Executing |  Debug  | Complete  (HMDB51)| Complete  (UCF101)|    
 |:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
 | VGG16              |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
@@ -37,7 +37,7 @@ Our Goal: Submit ASAP
 | ResNet-50 + RAINv2 |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
 | ResNet-50 + RAINv3 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
 
-     EXPERIMENT 2: Trained using rate-modified datasets 
+     EXPERIMENT 2: Trained using rate-modified datasets
 | Experiments        |  Coding in Progress  | Executing |  Debug  | Complete (HMDB51) | Complete (UCF101) |
 |:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
 | VGG16              |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
@@ -47,7 +47,7 @@ Our Goal: Submit ASAP
 | ResNet-50 + RAINv3 |         &#9745;      |  &#9974;  | &#9974; |       &#9974;     |       &#9974;     |
 
 #### LEGEND
-Complete   -  &#9745; 
+Complete   -  &#9745;
 Incomplete -  &#9974;
 
 
@@ -86,7 +86,7 @@ Incomplete -  &#9974;
 
 <a name="baselinemodels"/>
 ## Baseline Models
-* [ResNet50 + LSTM]:(https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5) 
+* [ResNet50 + LSTM]:(https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5)
 * [LRCN]           :()     
 * [VGG16    + LSTM]:(https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5)
 
@@ -102,13 +102,100 @@ The primary concept utilized in the formulation of this version is: The use of s
 ![RAINv1Paramnw] (/images/Paramnw.pdf)
 ![RAINv1extractlayer] (/images/extractlayer.pdf)
 
+
+<a name="rainv2"/>
+RAIN Layer v2.0
+---------------
+The primary concept utilized in the formulation of this version is: The use of only a sampling offset that will specify the rate at which to sample input videos starting at the first frame.
+
+![RAINv2Paramnw] (/images/Paramnw.pdf)
+![RAINv2extractlayer] (/images/extractlayer2.pdf)
+
+
+<a name="rainv3"/>
+RAIN Layer v3.0
+---------------
+The primary concept utilized in the formulation of this version is: The use of only a phase offset to select the start of the RAIN output clip then uniformly sample to the end of the input data.
+
+![RAINv3Paramnw] (/images/Paramnw.pdf)
+![RAINv3extractlayer] (/images/extractlayer3.pdf)
+
+
+<a name="rainv4"/>
+RAIN Layer v4.0
+---------------
+The primary concept utilized in the formulation of this version is: The use of directly learning indices of frames to sample from the input video from the output of the FC2 layer.  RAINv4 models will be trained with these indices sorted and unsorted.
+
+![RAINv4Paramnw] (/images/Paramnw4.pdf)
+![RAINv4extractlayer_sorted] (/images/extractlayer4_sorted.pdf)
+![RAINv4extractlayer_unsorted] (/images/extractlayer4_unsorted.pdf)
+
+
+<a name="rainv5"/>
+RAIN Layer v5.0
+---------------
+The primary concept utilized in the formulation of this version is: The use of only a phase start offset and a phase end offset that directly specify the start and end frames of the output clip of the RAIN layer.
+
+![RAINv5Paramnw] (/images/Paramnw.pdf)
+![RAINv5extractlayer] (/images/extractlayer5.pdf)
+
+
+
+<a name="rainv6"/>
+RAIN Layer v6.0
+---------------
+The primary concept utilized in the formulation of this version is: Allow the output of the extract layer to be parameters used to modify the input video by gradually slowing down the video from the default rate to some learned rate until it reaches the main action and then speeding it back up to the default rate. The beginning and end points of this sampling will still be the beginning and end of the input video.  Phi represents the offset for the frame at which the maximum slow down will be reached.
+
+![RAINv6Paramnw] (/images/Paramnw.pdf)
+![RAINv6extractlayer] (/images/extractlayer6.pdf)
+
+
+<a name="rainv7"/>
+RAIN Layer v7.0
+---------------
+The primary concept utilized in the formulation of this version is: Increase the number of frames output by the RAIN layer. Models will be trained with 75 and 100 frames.
+
+![RAINv7Paramnw] (/images/Paramnw.pdf)
+![RAINv7extractlayer] (/images/extractlayer7.pdf)
+
+
+
+<a name="rainv8"/>
+RAIN Layer v8.0
+---------------
+The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu.
+
+![RAINv8Paramnw] (/images/Paramnw.pdf)
+![RAINv8extractlayer] (/images/extractlayer.pdf)
+
+
+<a name="rainv9"/>
+RAIN Layer v9.0
+---------------
+The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu and increase the number of output frames to 75 and 100.
+
+![RAINv9Paramnw] (/images/Paramnw.pdf)
+![RAINv9extractlayer] (/images/extractlayer7.pdf)
+
+
+
+<a name="rainv10"/>
+RAIN Layer v10.0
+---------------
+The primary concept utilized in the formulation of this version is: Allow the sampling parameter to first sample frames from the beginning of the input data then apply the phase offset parameter to select the start frame of the output. Sample L frames from the output
+
+![RAINv10Paramnw] (/images/Paramnw.pdf)
+![RAINv10extractlayer] (/images/extractlayer10.pdf)
+
+
+
 <a name="expt1"/>
 Experiment 1:  Models trained using original datasets
 ========================================================
 The first experiment lists the results of models trained using only the original datasets.
 
 <a name="paramsexpt1"/>
-Parameters 
+Parameters
 ----------
 1. HMDB51 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001   
@@ -132,7 +219,7 @@ Parameters
         * extract 125 frame (loop if necessary) using offset
         * sample 25 from those 125
         * pad with 25 frames of zero
-    
+
 2. UCF 101 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001   
     * momentum - 0.9   
@@ -167,8 +254,8 @@ Progress
     HMDB51 Original RAIN Layer Experiments
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
-| ResNet50 + RAINv1 + LSTM |             42.42%           |             33.53%         |          42.55%           |
-| ResNet50 + RAINv2 + LSTM |             --.--%           |             43.53%         |          46.47%           |
+| ResNet50 + RAINv1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 
 
@@ -193,20 +280,20 @@ Experiment 2:  Models trained using rate-modified datasets
 The second experiment lists the results of models trained using only the rate-modified datasets.
 
 <a name="paramsexpt2"/>
-Parameters 
+Parameters
 ----------
 1. HMDB51 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001  
-    * momentum - 0.9 
+    * momentum - 0.9
     * wd - 0.001  
     * inputDims - 50    
     * seqLength - 50
     * outputDims - 51  
-    * numVids - 35700 
+    * numVids - 35700
     * size - 224        
-    * nEpochs - 5 
+    * nEpochs - 5
     * saveFreq - 1  
-    * valFreq - 3 
+    * valFreq - 3
     * split - 1     
     * preprocessing:   
         * reduce framerate from 30 to 25 fps
@@ -216,7 +303,7 @@ Parameters
         * extract 125 frame (loop if necessary) using offset
         * sample 25 from those 125
         * pad with 25 frames of zero
-    
+
 2. UCF 101 (For ResNet50 + LSTM and VGG16 + LSTM)
     * lr - 0.001   
     * momentum - 0.9  
@@ -224,11 +311,11 @@ Parameters
     * inputDims - 50     
     * seqLength - 50    
     * outputDims - 101
-    * numVids - 95370 
+    * numVids - 95370
     * size - 224    
     * nEpochs - 1
-    * saveFreq - 1 
-    * valFreq - 3 
+    * saveFreq - 1
+    * valFreq - 3
     * split - 1
     * preprocessing:   
         * resize to 256
@@ -263,7 +350,7 @@ Progress
 ### NOTES:
 
 <a name="ideas"/>
-Ideas for Future Versions of RAIN Layer 
+Ideas for Future Versions of RAIN Layer
 ===================
 * V1:
     * Current implementation using offset and sampling parameters
@@ -314,6 +401,6 @@ Ideas for Future Versions of RAIN Layer
     * Mean of Extract Layer
     * Median of Extract Layer
     * Max of Extract Layer
-    
+
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.

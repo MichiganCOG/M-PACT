@@ -342,9 +342,9 @@ class ResNet_RIL_Interp_Mean_v2():
                     out_dim=512, non_linear_fn=tf.nn.relu,
                     name='FC1', weight_decay=weight_decay)
 
-            layers['Reshape3'] = tf.reshape(layers['FC1'], (-1, 53, 53, 64))
+            layers['Reshape3'] = tf.reshape(layers['FC1'], (-1, 53, 53, 512))
 
-            layers['Reshape4'] = tf.reshape(layers['Reshape3'], (-1, 53*53*64))
+            layers['Reshape4'] = tf.reshape(layers['Reshape3'], (-1, 53*53*512))
 
             layers['FC2'] = fully_connected_layer(input_tensor=layers['Reshape4'],
                     out_dim=1, non_linear_fn=tf.nn.sigmoid,

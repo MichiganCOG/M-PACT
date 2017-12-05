@@ -125,7 +125,7 @@ python train_test_TFRecords_multigpu_model.py \
 --split 1 \
 --wd 0.0 \
 --lr 0.001 \
---nEpochs 30 \
+--nEpochs 35 \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \

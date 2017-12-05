@@ -1,10 +1,10 @@
 #!/bin/bash -f
-#PBS -N TFRecords_2gpu_Resnet_RAIN_Interp_Median_V2_Train_HMDB51     # Name of the job
+#PBS -N TFRecords_4gpu_Resnet_RAIN_Interp_Max_V7_75_Frames_Train_HMDB51     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn7:ppn=6:gpus=2    # nodes requested: Processor per node: gpus requested
-#PBS -M erichof@umich.edu      #  send email to user@umich.edu
+#PBS -l nodes=lgn7:ppn=6:gpus=4    # nodes requested: Processor per node: gpus requested
+#PBS -M madantrg@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
 
@@ -104,28 +104,28 @@ echo ------------------------------------------------------
 echo "start"
 hostname
 nvidia-smi
-export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]}"
+export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]},${allocatedgpus[2]},${allocatedgpus[3]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
-echo "Train Resnet RAIN Interp Median V2"
+echo "Train Resnet RAIN Interp Max V7 75 Frames"
 
 python train_test_TFRecords_multigpu_model.py \
---model resnet_RIL_interp_median_v2 \
---numGpus 2 \
+--model resnet_RIL_interp_max_v1 \
+--numGpus 4 \
 --dataset HMDB51 \
 --train 1 \
---load 1 \
---inputDims 50 \
+--load 0 \
+--inputDims 250 \
 --outputDims 51 \
---seqLength 50 \
+--seqLength 75 \
 --size 224  \
---expName tfrecords_resnet_rain_interp_median_v2_HMDB51 \
+--expName tfrecords_resnet_rain_interp_max_v7_75_frames_HMDB51 \
 --numVids 3570 \
 --split 1 \
---wd 0.001 \
+--wd 0.0 \
 --lr 0.001 \
---nEpochs 30 \
+--nEpochs 35 \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \
