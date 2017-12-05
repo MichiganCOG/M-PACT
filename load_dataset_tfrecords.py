@@ -1,6 +1,8 @@
-import numpy as np
 import os
+
+import numpy      as np
 import tensorflow as tf
+
 from random import shuffle
 
 

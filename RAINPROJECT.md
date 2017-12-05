@@ -12,6 +12,15 @@ Our Goal: Submit ASAP
 * [Baseline Models](#baselinemodels)
 * [RAIN Layers](#rainlayers)
     * [RAIN v1.0](#rainv1)
+    * [RAIN v2.0](#rainv2)
+    * [RAIN v3.0](#rainv3)
+    * [RAIN v4.0](#rainv4)
+    * [RAIN v5.0](#rainv5)
+    * [RAIN v6.0](#rainv6)
+    * [RAIN v7.0](#rainv7)
+    * [RAIN v8.0](#rainv8)
+    * [RAIN v9.0](#rainv9)
+    * [RAIN v10.0](#rainv10)
 * [Experiment 1 - Models trained using original datasets](#expt1)
 * [Experiment 2 - Models trained using rate-modified datasets](#expt2)
 * [Ideas for RAIN Layer](#ideas)
@@ -33,9 +42,9 @@ Our Goal: Submit ASAP
 |:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
 | VGG16              |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
 | ResNet-50          |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
-| ResNet-50 + RAINv1 |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
-| ResNet-50 + RAINv2 |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
-| ResNet-50 + RAINv3 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv1 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv2 |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv3 |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
 
      EXPERIMENT 2: Trained using rate-modified datasets
 | Experiments        |  Coding in Progress  | Executing |  Debug  | Complete (HMDB51) | Complete (UCF101) |
@@ -106,7 +115,7 @@ The primary concept utilized in the formulation of this version is: The use of s
 <a name="rainv2"/>
 RAIN Layer v2.0
 ---------------
-The primary concept utilized in the formulation of this version is: The use of only a sampling offset that will specify the rate at which to sample input videos starting at the first frame.
+The primary concept utilized in the formulation of this version is: The use of only a sampling parameter that will specify the rate at which to sample input videos starting at the first frame. This should give us a baseline to understand the preference of networks designed to handle rate to either stick with uniform sampling or choose an alternate path.
 
 ![RAINv2Paramnw] (/images/Paramnw.pdf)
 ![RAINv2extractlayer] (/images/extractlayer2.pdf)
@@ -115,7 +124,7 @@ The primary concept utilized in the formulation of this version is: The use of o
 <a name="rainv3"/>
 RAIN Layer v3.0
 ---------------
-The primary concept utilized in the formulation of this version is: The use of only a phase offset to select the start of the RAIN output clip then uniformly sample to the end of the input data.
+The primary concept utilized in the formulation of this version is: The use of only a phase offset to select the start of the RAIN output clip then uniformly sample to the end of the input data. Once again, this model is used to study the impact of offset while holding the sampling parameter constant to understand the networks inner working.
 
 ![RAINv3Paramnw] (/images/Paramnw.pdf)
 ![RAINv3extractlayer] (/images/extractlayer3.pdf)
@@ -124,7 +133,7 @@ The primary concept utilized in the formulation of this version is: The use of o
 <a name="rainv4"/>
 RAIN Layer v4.0
 ---------------
-The primary concept utilized in the formulation of this version is: The use of directly learning indices of frames to sample from the input video from the output of the FC2 layer.  RAINv4 models will be trained with these indices sorted and unsorted.
+The primary concept utilized in the formulation of this version is: The use of directly learning indices of frames to sample from the input video from the output of the FC2 layer.  RAINv4 models will be trained with these indices sorted and unsorted. This model is an exploration into the importance of ordering for action videos.
 
 ![RAINv4Paramnw] (/images/Paramnw4.pdf)
 ![RAINv4extractlayer_sorted] (/images/extractlayer4_sorted.pdf)
@@ -134,7 +143,7 @@ The primary concept utilized in the formulation of this version is: The use of d
 <a name="rainv5"/>
 RAIN Layer v5.0
 ---------------
-The primary concept utilized in the formulation of this version is: The use of only a phase start offset and a phase end offset that directly specify the start and end frames of the output clip of the RAIN layer.
+The primary concept utilized in the formulation of this version is: The use of only a phase start offset and a phase end offset that directly specify the start and end frames of the output clip of the RAIN layer. Abandoning the original signal processing formulation, we instead seek to use offset anchors to determine the exact part of the video to extract without paying attention to rate control explicitly.
 
 ![RAINv5Paramnw] (/images/Paramnw.pdf)
 ![RAINv5extractlayer] (/images/extractlayer5.pdf)
@@ -154,6 +163,7 @@ The primary concept utilized in the formulation of this version is: Allow the ou
 RAIN Layer v7.0
 ---------------
 The primary concept utilized in the formulation of this version is: Increase the number of frames output by the RAIN layer. Models will be trained with 75 and 100 frames.
+Given multiple cycles of input being observed in baseline models, this model is used to study the impact of allowing the network to see a single cycle (if v1 or previous models capture a single cycle) for an extended period of time.
 
 ![RAINv7Paramnw] (/images/Paramnw.pdf)
 ![RAINv7extractlayer] (/images/extractlayer7.pdf)
@@ -163,7 +173,7 @@ The primary concept utilized in the formulation of this version is: Increase the
 <a name="rainv8"/>
 RAIN Layer v8.0
 ---------------
-The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu.
+The primary concept utilized in the formulation of this version is: Change the activation of the FC2 layer from sigmoid to ReLu. In an effort to accomodate more open ended estimations of sampling and offset from v1, we chose to allow ReLU activations so that both slow down and speed up are afforded to the RAIN layer.
 
 ![RAINv8Paramnw] (/images/Paramnw.pdf)
 ![RAINv8extractlayer] (/images/extractlayer.pdf)
@@ -182,7 +192,7 @@ The primary concept utilized in the formulation of this version is: Change the a
 <a name="rainv10"/>
 RAIN Layer v10.0
 ---------------
-The primary concept utilized in the formulation of this version is: Allow the sampling parameter to first sample frames from the beginning of the input data then apply the phase offset parameter to select the start frame of the output. Sample L frames from the output
+The primary concept utilized in the formulation of this version is: Allow the sampling parameter to first sample frames from the beginning of the input data then apply the phase offset parameter to select the start frame of the output. Sample L frames from the output. This is built on the hypothesis that if sampling seeks to look at the entire video in a variable rate form then we can use offset to skim the portions that we explicitly desire. In this state, we are not guarenteed a single cycle.
 
 ![RAINv10Paramnw] (/images/Paramnw.pdf)
 ![RAINv10extractlayer] (/images/extractlayer10.pdf)
