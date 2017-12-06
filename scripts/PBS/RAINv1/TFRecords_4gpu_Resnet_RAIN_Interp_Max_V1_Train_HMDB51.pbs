@@ -131,6 +131,30 @@ cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
 # --saveFreq 1 \
 # --valFreq 40
 
+#echo "Continue Training Resnet RAIN Interp Max V1"
+#
+#python train_test_TFRecords_multigpu_model.py \
+#--model resnet_RIL_interp_max_v1 \
+#--numGpus 4 \
+#--dataset HMDB51 \
+#--train 1 \
+#--load 1 \
+#--inputDims 250 \
+#--outputDims 51 \
+#--seqLength 50 \
+#--size 224  \
+#--expName tfrecords_resnet_rain_interp_max_v1_HMDB51 \
+#--numVids 3570 \
+#--split 1 \
+#--wd 0.0 \
+#--lr 0.0001 \
+#--nEpochs 10 \
+#--baseDataPath /z/dat \
+#--fName trainlist \
+#--saveFreq 1 \
+#--valFreq 40
+
+
 echo "Continue Training Resnet RAIN Interp Max V1"
 
 python train_test_TFRecords_multigpu_model.py \
@@ -148,11 +172,10 @@ python train_test_TFRecords_multigpu_model.py \
 --split 1 \
 --wd 0.0 \
 --lr 0.0001 \
---nEpochs 10 \
+--nEpochs 15 \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \
 --valFreq 40
-
 
 echo "end"
