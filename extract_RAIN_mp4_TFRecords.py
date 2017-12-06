@@ -415,7 +415,7 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  output_dims,
                                  seq_length,
                                  scope, k, j,
-                                 return_layer = 'FC2')#"RIlayer")
+                                 return_layer = "RIlayer")
     else:
         # Model Inference
         logits = model.inference(input_data_tensor[0,:,:,:,:],
@@ -581,9 +581,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 #            import pdb; pdb.set_trace()
             input_data = input_data[0]
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
 
-
+            return frames, input_data
 
             #
             #

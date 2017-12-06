@@ -284,7 +284,10 @@ Progress
 
 ### NOTES:
 
-RAINv1 Mean Output: This model learned to supply a constant value of 1 to phi and alpha no matter the input video. This results in the output video to consist of only the last L frames of the input video. Phi is cutting away all but the last L frames of the video rendering alpha useless. However, this improves the classification accuracy by 1% over the baseline suggesting that it is valid to reduce the input video to contain only a few actions as opposed to sampling the entire input.  This could indicate an increase in performance if the RAIN layer were to be able to detect a single action.
+RAINv1
+Mean Output: This model learned to supply a constant value of 1 to phi and alpha no matter the input video. This results in the output video to consist of only the last L frames of the input video. Phi is cutting away all but the last L frames of the video rendering alpha useless. However, this improves the classification accuracy by 1% over the baseline suggesting that it is valid to reduce the input video to contain only a few actions as opposed to sampling the entire input.  This could indicate an increase in performance if the RAIN layer were to be able to detect a single action.
+Median Output: This model learned to supply a constant value of 0 to alpha and a value of 0.02 to phi no matter the input video.
+Max Output: This model learned to supply a constant value of 0 to alpha and a value of 0.002 to phi no matter the input video.
 
 <a name="expt2"/>
 Experiment 2:  Models trained using rate-modified datasets
