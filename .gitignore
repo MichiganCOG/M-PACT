@@ -2,7 +2,7 @@
 *.npy
 Logs
 logs/
-*.gif
+
 *.mp4
 *.o*
 results/*
