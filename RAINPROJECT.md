@@ -198,6 +198,56 @@ The primary concept utilized in the formulation of this version is: Allow the sa
 ![RAINv10extractlayer] (/images/extractlayer10.pdf)
 
 
+<a name="rainv11"/>
+RAIN Layer v11.0
+---------------
+The primary concept utilized in the formulation of this version is: Seeing that v3 fluctuates the learned value of phi from zero to one, it may be possible to apply a relu activation to fc2 instead of the sigmoid which can bias the values to zero or one.
+
+![RAINv11Paramnw Placeholder] (/images/Paramnw.pdf)
+![RAINv11extractlayer Placeholder] (/images/extractlayer3.pdf)
+
+
+
+<a name="rainv12"/>
+RAIN Layer v12.0
+---------------
+The primary concept utilized in the formulation of this version is: Remove initialization in parameterization network of v3. Currently the convolutional layers in the parameterization network are initialized to pretrained resnet weights, this may be what causes the network to bias the values of 0 and 1 for phi.
+
+![RAINv12Paramnw Placeholder] (/images/Paramnw.pdf)
+![RAINv12extractlayer Placeholder] (/images/extractlayer3.pdf)
+
+
+
+<a name="rainv13"/>
+RAIN Layer v13.0
+---------------
+The primary concept utilized in the formulation of this version is: To add an LSTM into the parameterization network of v3. The network may not be able to learn the temporal information of the input properly in its current state which could be improved upon with an LSTM.
+
+![RAINv13Paramnw Placeholder] (/images/Paramnw.pdf)
+![RAINv13extractlayer Placeholder] (/images/extractlayer3.pdf)
+
+
+
+<a name="rainv14"/>
+RAIN Layer v14.0
+---------------
+The primary concept utilized in the formulation of this version is: The v1 definition of the RAIN layer causes the output video to return the first frame of the input if alpha equals zero no matter the value of phi. This model avoid this issue by first calculating alpha and then adding the offset. 
+
+![RAINv14Paramnw Placeholder] (/images/Paramnw.pdf)
+![RAINv14extractlayer Placeholder] (/images/extractlayer.pdf)
+
+
+
+<a name="rainv15"/>
+RAIN Layer v15.0
+---------------
+The primary concept utilized in the formulation of this version is: To train v14 alpha and phi using different activation functions for FC2. The value phi has a linear relationship with the chosen output indices while alphas relationship is nonlinear. Thus FC2 is split into FC2a for alpha with a sigmoid activation function and FC2b for phi with an ReLu activation function.
+![RAINv15Paramnw Placeholder] (/images/Paramnw.pdf)
+![RAINv15extractlayer Placeholder] (/images/extractlayer.pdf)
+
+
+
+
 
 <a name="expt1"/>
 Experiment 1:  Models trained using original datasets
@@ -265,7 +315,7 @@ Progress
 |       Experiments        | Median of Extract Layer MRA  | Mean of Extract Layer MRA  | Max of Extract Layer MRA  |
 |:------------------------:|:---------------------------: |:-------------------------: |:------------------------: |
 | ResNet50 + RAINv1 + LSTM |             34.44%           |             44.44%         |          32.94%           |
-| ResNet50 + RAINv2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv2 + LSTM |             --.--%           |             36.54%         |          43.99%           |
 | ResNet50 + RAINv3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 
 
@@ -425,5 +475,25 @@ Ideas for Future Versions of RAIN Layer
     * Median of Extract Layer
     * Max of Extract Layer
 
+* V11:
+    * Idea: (V3 + ReLu) Seeing that v3 fluctuates the learned value of phi from zero to one, it may be possible to apply a relu activation to fc2 instead of the sigmoid which can bias the values to zero or one.
+    * Median of Extract Layer
+
+* V12:
+    * Idea: (V3 + random initializations) Currently the convolutional layers in the parameterization network are initialized to pretrained resnet weights, this may be what causes the network to bias the values of 0 and 1 for phi.
+    * Median of Extract Layer
+
+* V13:
+    * Idea: (V3 + LSTM) The network may not be able to learn the temporal information of the input properly in its current state which could be improved upon with an LSTM.
+    * Median of Extract Layer
+
+* V14:
+    * Idea: (Alternate V1) The v1 definition of the RAIN layer causes the output video to return the first frame of the input if alpha equals zero no matter the value of phi. This model avoid this issue by first calculating alpha and then adding the offset. 
+    * Median of Extract Layer
+     
+* V15:
+    * Idea: (V14 ReLu activation for phi, sigmoid activation for alpha, random initializations) The value phi has a linear relationship with the chosen output indices while alphas relationship is nonlinear. Thus FC2 is split into FC2a for alpha with a sigmoid activation function and FC2b for phi with an ReLu activation function.
+    * Median of Extract Layer
+     
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
