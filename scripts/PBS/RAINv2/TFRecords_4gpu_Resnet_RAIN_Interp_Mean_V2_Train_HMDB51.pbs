@@ -133,7 +133,29 @@ cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
 
 
 
-echo "Continue Training Resnet RAIN Interp Mean V2"
+#echo "Continue Training Resnet RAIN Interp Mean V2"
+#
+#python train_test_TFRecords_multigpu_model.py \
+#--model resnet_RIL_interp_mean_v2 \
+#--numGpus 4 \
+#--dataset HMDB51 \
+#--train 1 \
+#--load 1 \
+#--inputDims 250 \
+#--outputDims 51 \
+#--seqLength 50 \
+#--size 224  \
+#--expName tfrecords_resnet_rain_interp_mean_v2_HMDB51 \
+#--numVids 3570 \
+#--split 1 \
+#--wd 0.0 \
+#--lr 0.001 \
+#--nEpochs 25 \
+#--baseDataPath /z/dat \
+#--fName trainlist \
+#--saveFreq 1 \
+#--valFreq 40
+
 
 python train_test_TFRecords_multigpu_model.py \
 --model resnet_RIL_interp_mean_v2 \
@@ -155,7 +177,5 @@ python train_test_TFRecords_multigpu_model.py \
 --fName trainlist \
 --saveFreq 1 \
 --valFreq 40
-
-
 
 echo "end"

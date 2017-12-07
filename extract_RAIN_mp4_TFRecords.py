@@ -38,6 +38,8 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v2  import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Interp_Median_v3
 from models.resnet_RIL.resnet_RIL_interp_median_nosort_v4 import ResNet_RIL_Interp_Median_Nosort_v4
 from models.resnet_RIL.resnet_RIL_interp_median_model_v8  import ResNet_RIL_Interp_Median_v8
+from models.resnet_RIL.resnet_RIL_interp_median_model_v15  import ResNet_RIL_Interp_Median_v15
+
 
 from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
 from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
@@ -415,7 +417,7 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  output_dims,
                                  seq_length,
                                  scope, k, j,
-                                 return_layer = "RIlayer")
+                                 return_layer = 'FC2a')#"RIlayer")
     else:
         # Model Inference
         logits = model.inference(input_data_tensor[0,:,:,:,:],
@@ -574,20 +576,20 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         else:
             model_label = 'res'
 
-        for vid_num in range(10):
+        for vid_num in range(20):
             count +=1
             frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
             #frames = frames[0]
-#            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             input_data = input_data[0]
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-            #import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
 
-            return frames, input_data
+            #return frames, input_data
 
-            #
-            #
-            #
+
+
+            #print names, frames
             #
             # if model_label == 'RIL':
             #     if rate_label == 'Rate':
@@ -607,7 +609,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             #
             #
             #
-
+            #
 
 
 
@@ -771,6 +773,10 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v8':
         model = ResNet_RIL_Interp_Median_v8()
+
+    elif model_name == 'resnet_RIL_interp_median_v15':
+        model = ResNet_RIL_Interp_Median_v15()
+
 
     else:
         print("Model not found")

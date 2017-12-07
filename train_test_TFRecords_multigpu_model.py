@@ -36,6 +36,10 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_nosort_v4 import ResNet_RIL_Interp_Median_Nosort_v4
 from models.resnet_RIL.resnet_RIL_interp_median_model_v8  import ResNet_RIL_Interp_Median_v8
 from models.resnet_RIL.resnet_RIL_interp_median_model_v10 import ResNet_RIL_Interp_Median_v10
+from models.resnet_RIL.resnet_RIL_interp_median_model_v11 import ResNet_RIL_Interp_Median_v11
+from models.resnet_RIL.resnet_RIL_interp_median_model_v12 import ResNet_RIL_Interp_Median_v12
+from models.resnet_RIL.resnet_RIL_interp_median_model_v14 import ResNet_RIL_Interp_Median_v14
+from models.resnet_RIL.resnet_RIL_interp_median_model_v15 import ResNet_RIL_Interp_Median_v15
 
 from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
 from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
@@ -667,6 +671,18 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v8':
         model = ResNet_RIL_Interp_Median_v8()
+
+    elif model_name == 'resnet_RIL_interp_median_v11':
+        model = ResNet_RIL_Interp_Median_v11()
+
+    elif model_name == 'resnet_RIL_interp_median_v12':
+        model = ResNet_RIL_Interp_Median_v12()
+
+    elif model_name == 'resnet_RIL_interp_median_v14':
+        model = ResNet_RIL_Interp_Median_v14()
+
+    elif model_name == 'resnet_RIL_interp_median_v15':
+        model = ResNet_RIL_Interp_Median_v15()
 
     else:
         print("Model not found")
