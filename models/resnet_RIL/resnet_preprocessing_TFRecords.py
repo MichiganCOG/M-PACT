@@ -372,7 +372,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
 
 
-    footprint = 250
+    footprint = input_dims
 
 
     # END IF

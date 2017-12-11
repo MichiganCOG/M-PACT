@@ -40,6 +40,9 @@ class ResNet_RIL_Interp_Median_Nosort_v4():
         # Index estimates
         output_idx = tf.nn.top_k(tf.transpose(params), tf.transpose(params).get_shape()[1]//2).values[:,tf.transpose(params).get_shape()[1]//2 - 1]
 
+        # Scale output_idx from 0-1 to 0-N frames
+        output_idx = tf.multiply(output_idx, sets*K)
+
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
 
