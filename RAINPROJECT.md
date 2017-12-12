@@ -265,7 +265,7 @@ The primary concept utilized in the formulation of this version is: Remove the R
 <a name="rainv14.2"/>
 RAIN Layer v14.2
 ---------------
-The primary concept utilized in the formulation of this version is: Remove the activation function on FC1 to determine its impact.
+The primary concept utilized in the formulation of this version is: Remove the parameterization network initializations to determine their impact.
 
 ![RAINv14Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv14extractlayer Placeholder] (/images/extractlayer.pdf)
@@ -273,7 +273,7 @@ The primary concept utilized in the formulation of this version is: Remove the a
 <a name="rainv14.3"/>
 RAIN Layer v14.3
 ---------------
-Remove the activation function on FC1 to determine its impact.
+The primary concept utilized in the formulation of this version is: Remove the activation function on FC1 to determine its impact.
 
 ![RAINv14Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv14extractlayer Placeholder] (/images/extractlayer.pdf)
