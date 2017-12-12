@@ -273,7 +273,7 @@ The primary concept utilized in the formulation of this version is: Remove the a
 <a name="rainv14.3"/>
 RAIN Layer v14.3
 ---------------
-The primary concept utilized in the formulation of this version is: The value phi has a linear relationship with the chosen output indices while alphas relationship is nonlinear. Thus FC2 is split into FC2a for alpha with a sigmoid activation function and FC2b for phi with an ReLu activation function.
+Remove the activation function on FC1 to determine its impact.
 
 ![RAINv14Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv14extractlayer Placeholder] (/images/extractlayer.pdf)
