@@ -703,6 +703,18 @@ Ideas for Future Versions of RAIN Layer
 * V17:
     * Idea: (Pass K dims through FC1 then reshape to V dims through FC2) The filter blocks relating to each pixel may contain the information needed to learn alpha and phi.  Allow output of FC2 to be the filter dimension, V, x 2. 
     * Median of Extract Layer
-     
+
+* V21:
+    * Idea: (alpha and phi as variables, based off of v14) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v14.
+    * Median of Extract Layer
+
+* V22:
+    * Idea: (alpha and phi as variables, based off of v18) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v18.
+    * Median of Extract Layer
+
+* V23:
+    * Idea: (alpha as a variable, based off of v2) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
+    * Median of Extract Layer
+
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
