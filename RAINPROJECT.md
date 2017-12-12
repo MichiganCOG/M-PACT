@@ -289,14 +289,14 @@ The primary concept utilized in the formulation of this version is: To train v14
 <a name="rainv16"/>
 RAIN Layer v16.0
 ---------------
-The primary concept utilized in the formulation of this version is: This model attempts to fix the issue that could arrise from combining dimension K and V immediately after the convolution layers by first passing dimension K through FC1 then reshaping the output and passing dimension V through FC2 before reducing the output to 2 dimensions in FC3.
+The primary concept utilized in the formulation of this version is: This model attempts to fix the issue that could arrise from combining dimension K and V immediately after the convolution layers by first passing dimension K through FC1 then reshaping the output and passing dimension V through FC2 before reducing the output to 2 dimensions in FC3. This model only modifies the parameterization network, the extraction layer remains the same as v14.
 ![RAINv16Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv16extractlayer Placeholder] (/images/extractlayer.pdf)
 
 <a name="rainv17"/>
 RAIN Layer v17.0
 ---------------
-The primary concept utilized in the formulation of this version is: The filter blocks relating to each pixel may contain the information needed to learn alpha and phi.  Allow output of FC2 to be the filter dimension, V, x 2. 
+The primary concept utilized in the formulation of this version is: The filter blocks relating to each pixel may contain the information needed to learn alpha and phi.  Allow output of FC2 to be the filter dimension, V, x 2. This model only modifies the parameterization network, the extraction layer remains the same as v14.
 ![RAINv17Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv17extractlayer Placeholder] (/images/extractlayer.pdf)
 
