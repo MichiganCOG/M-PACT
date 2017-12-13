@@ -265,7 +265,7 @@ The primary concept utilized in the formulation of this version is: Remove the R
 <a name="rainv14.2"/>
 RAIN Layer v14.2
 ---------------
-The primary concept utilized in the formulation of this version is: Remove the activation function on FC1 to determine its impact.
+The primary concept utilized in the formulation of this version is: Remove the parameterization network initializations to determine their impact.
 
 ![RAINv14Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv14extractlayer Placeholder] (/images/extractlayer.pdf)
@@ -273,7 +273,7 @@ The primary concept utilized in the formulation of this version is: Remove the a
 <a name="rainv14.3"/>
 RAIN Layer v14.3
 ---------------
-The primary concept utilized in the formulation of this version is: The value phi has a linear relationship with the chosen output indices while alphas relationship is nonlinear. Thus FC2 is split into FC2a for alpha with a sigmoid activation function and FC2b for phi with an ReLu activation function.
+The primary concept utilized in the formulation of this version is: Remove the activation function on FC1 to determine its impact.
 
 ![RAINv14Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv14extractlayer Placeholder] (/images/extractlayer.pdf)
@@ -289,14 +289,14 @@ The primary concept utilized in the formulation of this version is: To train v14
 <a name="rainv16"/>
 RAIN Layer v16.0
 ---------------
-The primary concept utilized in the formulation of this version is: This model attempts to fix the issue that could arrise from combining dimension K and V immediately after the convolution layers by first passing dimension K through FC1 then reshaping the output and passing dimension V through FC2 before reducing the output to 2 dimensions in FC3.
+The primary concept utilized in the formulation of this version is: This model attempts to fix the issue that could arrise from combining dimension K and V immediately after the convolution layers by first passing dimension K through FC1 then reshaping the output and passing dimension V through FC2 before reducing the output to 2 dimensions in FC3. This model only modifies the parameterization network, the extraction layer remains the same as v14.
 ![RAINv16Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv16extractlayer Placeholder] (/images/extractlayer.pdf)
 
 <a name="rainv17"/>
 RAIN Layer v17.0
 ---------------
-The primary concept utilized in the formulation of this version is: The filter blocks relating to each pixel may contain the information needed to learn alpha and phi.  Allow output of FC2 to be the filter dimension, V, x 2. 
+The primary concept utilized in the formulation of this version is: The filter blocks relating to each pixel may contain the information needed to learn alpha and phi.  Allow output of FC2 to be the filter dimension, V, x 2. This model only modifies the parameterization network, the extraction layer remains the same as v14.
 ![RAINv17Paramnw Placeholder] (/images/Paramnw.pdf)
 ![RAINv17extractlayer Placeholder] (/images/extractlayer.pdf)
 
@@ -382,6 +382,9 @@ Progress
 | ResNet50 + RAINv15 + LSTM |             34.77%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv16 + LSTM |             35.95%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv17 + LSTM |             33.92%*           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 *-models were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -527,6 +530,42 @@ Median Output: phi ~ 1e^-5, alpha ~ 1e^-4
 
 Since the extraction layer of this model is the same as v14, alpha = 0.0 will now select a single frame located at phi and repeat it L (50) times. Phi = 0.0 will select the first frame of the input video and sample according to alpha, phi = 1.0 will select the last L (50) frames of the input video.
 
+
+#### RAINv18
+
+Median Output: phi = 0.0, alpha = 0.0
+
+Mean Output: phi = 0.0, alpha = 0.0
+
+
+#### RAINv19
+
+Median Output: phi = 0.0, alpha = 0.0 
+
+
+#### RAINv20
+
+Max Output: phi = 1.0
+
+
+#### RAINv21
+
+Median Output: phi = 0.1104, alpha = 1.0 
+
+
+#### RAINv22
+
+Median Output: phi = 1.0, alpha = 0.9395
+
+
+#### RAINv23
+
+Median Output: alpha ~ 
+
+
+#### RAINv24
+
+Median Output: alpha ~ 
 
 
 
@@ -704,5 +743,30 @@ Ideas for Future Versions of RAIN Layer
     * Idea: (Pass K dims through FC1 then reshape to V dims through FC2) The filter blocks relating to each pixel may contain the information needed to learn alpha and phi.  Allow output of FC2 to be the filter dimension, V, x 2. 
     * Median of Extract Layer
      
+* V18:
+    * Idea: (Parameterization Network at the end, phi and alpha) Since the parameterization network has been located at the top of the model, the gradients may have had less of an impact by the time they reached the parameterization network, resulting in alpha and phi just falling to 0.0 or 1.0.  Moving the parameterization network to the end could allow the gradients to have a greater impact on alpha and phi values. 
+    * Mean of Extract Layer
+    * Median of Extract Layer
+ 
+* V19:
+    * Idea: (V18 + negative exponent) The tanh used in v18 to force the values of alpha and phi may have been to abrupt causing them to fall to 0.0 or 1.0.  A negative exponent has a more gradual curve which could allow alpha and phi to learn values in between 0 and 1.
+    * Median of Extract Layer
+
+* V20:
+    * Idea: (V18 phi only) 
+    * Max of Extract Layer
+
+* V21:
+    * Idea: (alpha and phi as variables, based off of v14) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v14.
+    * Median of Extract Layer
+
+* V22:
+    * Idea: (alpha and phi as variables, based off of v18) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v18.
+    * Median of Extract Layer
+
+* V23:
+    * Idea: (alpha as a variable, based off of v2) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
+    * Median of Extract Layer
+
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
