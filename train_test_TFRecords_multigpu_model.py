@@ -18,7 +18,7 @@ from Queue                                            import Queue
 from models.lrcn.lrcn_model                           import LRCN
 from models.vgg16.vgg16_model                         import VGG16
 from models.resnet.resnet_model                       import ResNet
-from models.resnet.resnet18_model                   import ResNet18
+from models.resnet.resnet18_model                     import ResNet18
 #from models.resnet.resnet_model_bgr                   import ResNet_BGR
 from logger                                           import Logger
 from random                                           import shuffle
@@ -50,6 +50,11 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v15 import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_model_v16 import ResNet_RIL_Interp_Median_v16
 from models.resnet_RIL.resnet_RIL_interp_median_model_v17 import ResNet_RIL_Interp_Median_v17
 from models.resnet_RIL.resnet_RIL_interp_median_model_v18 import ResNet_RIL_Interp_Median_v18
+from models.resnet_RIL.resnet_RIL_interp_median_model_v19 import ResNet_RIL_Interp_Median_v19
+from models.resnet_RIL.resnet_RIL_interp_median_model_v21 import ResNet_RIL_Interp_Median_v21
+from models.resnet_RIL.resnet_RIL_interp_median_model_v22 import ResNet_RIL_Interp_Median_v22
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23 import ResNet_RIL_Interp_Median_v23
+from models.resnet_RIL.resnet_RIL_interp_median_model_v24 import ResNet_RIL_Interp_Median_v24
 
 from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
 from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
@@ -57,6 +62,7 @@ from models.resnet_RIL.resnet_RIL_interp_max_model_v3  import ResNet_RIL_Interp_
 from models.resnet_RIL.resnet_RIL_interp_max_nosort_v4 import ResNet_RIL_Interp_Max_Nosort_v4
 from models.resnet_RIL.resnet_RIL_interp_max_model_v8  import ResNet_RIL_Interp_Max_v8
 from models.resnet_RIL.resnet_RIL_interp_max_model_v10 import ResNet_RIL_Interp_Max_v10
+from models.resnet_RIL.resnet_RIL_interp_max_model_v20 import ResNet_RIL_Interp_Max_v20
 
 
 def _average_gradients(tower_grads):
@@ -337,7 +343,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     batch_count = 0
                     epoch_acc   = 0
 
-                    if epoch_count%save_freq == 0:# and tot_count > 0:
+                    if epoch_count%save_freq == 0 and tot_count > 0:
                         print "Saving..."
                         saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
 
@@ -676,6 +682,9 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_max_v8':
         model = ResNet_RIL_Interp_Max_v8()
 
+    elif model_name == 'resnet_RIL_interp_max_v20':
+        model = ResNet_RIL_Interp_Max_v20()
+
     elif model_name == 'resnet_RIL_interp_median_v1':
         model = ResNet_RIL_Interp_Median_v1()
 
@@ -723,6 +732,21 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v18':
         model = ResNet_RIL_Interp_Median_v18()
+
+    elif model_name == 'resnet_RIL_interp_median_v19':
+        model = ResNet_RIL_Interp_Median_v19()
+
+    elif model_name == 'resnet_RIL_interp_median_v21':
+        model = ResNet_RIL_Interp_Median_v21()
+
+    elif model_name == 'resnet_RIL_interp_median_v22':
+        model = ResNet_RIL_Interp_Median_v22()
+
+    elif model_name == 'resnet_RIL_interp_median_v23':
+        model = ResNet_RIL_Interp_Median_v23()
+
+    elif model_name == 'resnet_RIL_interp_median_v24':
+        model = ResNet_RIL_Interp_Median_v24()
 
     else:
         print("Model not found")

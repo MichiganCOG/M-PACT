@@ -236,7 +236,7 @@ class ResNet18():
                             input_layer=layers['19'], strides=1, data_dict=data_dict))
 
             layers.update(self._identity_block([256,256,256], kernel_size=3, name='conv4_1', layer_numbers=['25','26','27','28','29','30'],
-                            input_layer=layers['20'], data_dict=data_dict))
+                            input_layer=layers['24'], data_dict=data_dict))
 
             layers.update(self._conv_block([256,256], kernel_size=3, name='conv4_2', layer_numbers=['31','32','33','34','35'],
                             input_layer=layers['30'], strides=1, data_dict=data_dict))
