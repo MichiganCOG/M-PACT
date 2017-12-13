@@ -753,20 +753,41 @@ Ideas for Future Versions of RAIN Layer
     * Median of Extract Layer
 
 * V20:
-    * Idea: (V18 phi only) 
+    * Idea: (V18 phi only, take max of block softmax) Instead of allowing phi to be any frames, only allow it to choose from the J blocks.  
     * Max of Extract Layer
 
 * V21:
     * Idea: (alpha and phi as variables, based off of v14) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v14.
-    * Median of Extract Layer
+    * Variables learned directly
 
 * V22:
     * Idea: (alpha and phi as variables, based off of v18) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v18.
-    * Median of Extract Layer
+    * Variables learned directly
 
 * V23:
-    * Idea: (alpha as a variable, based off of v2) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
-    * Median of Extract Layer
+    * Idea: (alpha as a variable, based off of v2 + v21) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
+    * Variables learned directly
+
+* V24:
+    * Idea: (alpha as a variable, based off of v2 + v22) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
+    * Variables learned directly
+
+* V25:
+    * Idea: (phi as a variable, based off of v3 + v21) Initialize phi as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v21.
+    * Variables learned directly
+
+* V26:
+    * Idea: (phi as a variable, based off of v3 + v22) Initialize phi as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
+    * Variables learned directly
+     
+* V27:
+    * Idea: (2 Step - offset then alpha, beginning of model) Initialize phi and alpha and then let them learn solely off of backpropagation. First apply the offset phi, then sample alpha from the remaining frames.
+    * Variables learned directly
+
+* V28:
+    * Idea: (2 Step - offset then alpha, end of model) Initialize phi and alpha and then let them learn solely off of backpropagation. First apply the offset phi, then sample alpha from the remaining frames.
+    * Variables learned directly
+    
 
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
