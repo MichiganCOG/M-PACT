@@ -382,6 +382,9 @@ Progress
 | ResNet50 + RAINv15 + LSTM |             34.77%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv16 + LSTM |             35.95%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv17 + LSTM |             33.92%*           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 *-models were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -527,6 +530,42 @@ Median Output: phi ~ 1e^-5, alpha ~ 1e^-4
 
 Since the extraction layer of this model is the same as v14, alpha = 0.0 will now select a single frame located at phi and repeat it L (50) times. Phi = 0.0 will select the first frame of the input video and sample according to alpha, phi = 1.0 will select the last L (50) frames of the input video.
 
+
+#### RAINv18
+
+Median Output: phi = 0.0, alpha = 0.0
+
+Mean Output: phi = 0.0, alpha = 0.0
+
+
+#### RAINv19
+
+Median Output: phi = 0.0, alpha = 0.0 
+
+
+#### RAINv20
+
+Max Output: phi = 1.0
+
+
+#### RAINv21
+
+Median Output: phi = 0.1104, alpha = 1.0 
+
+
+#### RAINv22
+
+Median Output: phi = 1.0, alpha = 0.9395
+
+
+#### RAINv23
+
+Median Output: alpha ~ 
+
+
+#### RAINv24
+
+Median Output: alpha ~ 
 
 
 
