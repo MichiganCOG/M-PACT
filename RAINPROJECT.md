@@ -783,7 +783,10 @@ Ideas for Future Versions of RAIN Layer
 * V23:
     * Idea: (alpha as a variable, based off of v2 + v21) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
     * Variables learned directly
-
+     
+* V23.1:
+    * Idea: (v23 + tanh) ReLu with a negative exponential function causes any negative value to default to 1.0.  Switching the activation function to tanh will allow negative values to remain valid
+    * Variables learned directly
 * V24:
     * Idea: (alpha as a variable, based off of v2 + v22) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
     * Variables learned directly
@@ -803,6 +806,7 @@ Ideas for Future Versions of RAIN Layer
 * V28:
     * Idea: (2 Step - offset then alpha, end of model) Initialize phi and alpha and then let them learn solely off of backpropagation. First apply the offset phi, then sample alpha from the remaining frames.
     * Variables learned directly
+
     
 
 * Alternate:
