@@ -807,7 +807,9 @@ Ideas for Future Versions of RAIN Layer
     * Idea: (2 Step - offset then alpha, end of model) Initialize phi and alpha and then let them learn solely off of backpropagation. First apply the offset phi, then sample alpha from the remaining frames.
     * Variables learned directly
 
-    
+* V29:
+    * Idea: (Define alpha on top, then phi on bottom) Initialize alpha at the beginning of the model and sample the input video, then pass this through the network until the end where phi gets initialized and offsets the video and samples to L frames.
+    * Variables learned directly
 
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
