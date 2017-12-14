@@ -382,9 +382,17 @@ Progress
 | ResNet50 + RAINv15 + LSTM |             34.77%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv16 + LSTM |             35.95%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv17 + LSTM |             33.92%*           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             35.49%*           |             37.84%*         |          --.--%           |
+| ResNet50 + RAINv19 + LSTM |             **43.86**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv20 + LSTM |             --.--%           |             --.--%         |          **44.58**%           |
+| ResNet50 + RAINv21 + LSTM |             **43.14**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv22 + LSTM |             **43.33**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23 + LSTM |             **44.64**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv24 + LSTM |             41.96%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv25 + LSTM |             41.11%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv26 + LSTM |             **43.76**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv27 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv28 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 *-models were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -560,14 +568,22 @@ Median Output: phi = 1.0, alpha = 0.9395
 
 #### RAINv23
 
-Median Output: alpha ~ 
+Median Output: alpha ~ 0.462
 
 
 #### RAINv24
 
-Median Output: alpha ~ 
+Median Output: alpha = 1.0
 
 
+#### RAINv25
+
+Median Output: phi = 1.0
+
+
+#### RAINv26
+
+Median Output: phi ~ 0.6075
 
 
 
