@@ -447,10 +447,10 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  output_dims,
                                  seq_length,
                                  scope, k, j,
-                                 return_layer = "RAINlayer")
+                                # return_layer = "RAINlayer")
                                 # return_layer = 'Parameterization_Variables')
                                 # return_layer = 'Parameterization_Variable_Phi')
-                                # return_layer = 'Parameterization_Variable_Alpha')
+                                 return_layer = 'Parameterization_Variable_Alpha')
                                 # return_layer = 'RAINlayer_lstm_fc_4')
     else:
         # Model Inference
@@ -638,7 +638,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
         #    import pdb; pdb.set_trace()
 
-            return frames, input_data
+            # return frames, input_data
             #
             #
             #
