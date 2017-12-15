@@ -657,9 +657,9 @@ The left gif is the input video, the right gif is the output of RAINv26.
 
 #### RAINv27
 
-Output: phi = 1.0 (-0.104), alpha = 0.0491
+Output: phi = 1.0 (-0.104), alpha = 0.0426
 
-Phi selects that the output video starts at frame N-L, but alpha is low enough for it to choose approximately 2.5 (50 * 0.0491) frames starting at frame N-L, then interpolates these 2.5 frames to 50.
+Phi selects that the output video starts at frame N-L, but alpha is low enough for it to choose approximately 2.1 (50 * 0.0426) frames starting at frame N-L, then interpolates these 2.1 frames to 50.
 
 ![ RAINv27.0 Input and Output ](images/Combined_RAINv27.gif)
 
