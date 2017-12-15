@@ -388,11 +388,15 @@ Progress
 | ResNet50 + RAINv21 + LSTM |             **43.14**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv22 + LSTM |             **43.33**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23 + LSTM |             **44.64**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23_LSTM + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23.1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv24 + LSTM |             41.96%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv24_LSTM + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv25 + LSTM |             41.11%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv26 + LSTM |             **43.76**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv27 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv28 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv29 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 *-models were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -558,33 +562,61 @@ Max Output: phi = 1.0
 
 #### RAINv21
 
-Median Output: phi = 0.1104, alpha = 1.0 
+Median Output: phi = 0.1104, alpha = 1.0 (-0.0303)
 
 
 #### RAINv22
 
-Median Output: phi = 1.0, alpha = 0.9395
+Median Output: phi = 1.0 (-0.00795), alpha = 0.9395
 
 
 #### RAINv23
 
 Median Output: alpha ~ 0.462
 
+RAINv23 LSTM
+
+Median Output: alpha = 1.0 (before negative exponent alpha = 0.0)
+
+RAINv23.1
+
+Median Output: alpha ~ IN PROGRESS (currently alpha = 1.0 (-0.0803))
+
 
 #### RAINv24
 
-Median Output: alpha = 1.0
+Median Output: alpha = 1.0 (-0.0280)
+
+
+RAINv24 LSTM
+
+Median Output: alpha = 1.0 (before negative exponent alpha = 0.0)
+
 
 
 #### RAINv25
 
-Median Output: phi = 1.0
+Median Output: phi = 1.0 (-0.0272)
 
 
 #### RAINv26
 
 Median Output: phi ~ 0.6075
 
+
+#### RAINv27
+
+Median Output: phi = 1.0 (-0.104), alpha = 0.0491
+
+
+#### RAINv28
+
+Median Output: phi = 1.0 (-0.0132), alpha = 1.0 (-0.00335)
+
+
+#### RAINv29
+
+Median Output: phi = IN PROGRESS (currently phi = 0.646), alpha = IN PROGRESS (currently alpha = 1.0 (-0.0917)
 
 
 <a name="expt2"/>
