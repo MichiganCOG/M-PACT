@@ -5,22 +5,22 @@ import tensorflow as tf
 from utils import make_dir
 import os
 from models.resnet_RIL.resnet_RIL_interp_mean_model_v1  import ResNet_RIL_Interp_Mean_v1
-
 from models.resnet_RIL.resnet_RIL_interp_median_model_v1  import ResNet_RIL_Interp_Median_v1
-
 from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
 
 from models.resnet_RIL.resnet_RIL_interp_mean_model_v2  import ResNet_RIL_Interp_Mean_v2
-
 from models.resnet_RIL.resnet_RIL_interp_median_model_v2  import ResNet_RIL_Interp_Median_v2
-
 from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
 
 from models.resnet_RIL.resnet_RIL_interp_mean_model_v3  import ResNet_RIL_Interp_Mean_v3
-
 from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Interp_Median_v3
 
 from models.resnet_RIL.resnet_RIL_interp_median_model_v14  import ResNet_RIL_Interp_Median_v14
+from models.resnet_RIL.resnet_RIL_interp_median_model_v21  import ResNet_RIL_Interp_Median_v21
+from models.resnet_RIL.resnet_RIL_interp_median_model_v22  import ResNet_RIL_Interp_Median_v22
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23  import ResNet_RIL_Interp_Median_v23
+from models.resnet_RIL.resnet_RIL_interp_median_model_v26  import ResNet_RIL_Interp_Median_v26
+from models.resnet_RIL.resnet_RIL_interp_median_model_v27  import ResNet_RIL_Interp_Median_v27
 
 from extract_RAIN_mp4_TFRecords import test
 
@@ -44,19 +44,27 @@ _B_MEAN = 103.94
 #
 # tf.reset_default_graph()
 
-framesMedian, input_data = test( model             = ResNet_RIL_Interp_Median_v14(),
-                input_dims        = 250,
+extractEnd = 1
+
+if extractEnd == 0:
+    inputDims = 250
+else:
+    inputDims = 100
+
+framesMedian, input_data = test( model             = ResNet_RIL_Interp_Median_v22(),
+                input_dims        = inputDims,
                 output_dims       = 51,
                 seq_length        = 50,
                 size              = [224,224],
                 dataset           = 'HMDB51',
                 loaded_dataset    = 'HMDB51',
-                experiment_name   = 'tfrecords_resnet_rain_interp_median_v14_HMDB51',
+                experiment_name   = 'tfrecords_resnet_rain_interp_median_v22_HMDB51',
                 num_vids          = 1530,
                 split             = 1,
                 base_data_path    = '/z/dat',
                 f_name            = 'testlist',
-                load_model        = 1)
+                load_model        = 1,
+                extract_end       = extractEnd)
 
 # tf.reset_default_graph()
 #
@@ -105,15 +113,16 @@ def save_gif(frames, name, model, dataset, vid_num):
     anim = animation.ArtistAnimation(fig, ims, interval=frames.shape[0]+25,)
     make_dir(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model))
     make_dir(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model, vid_num))
-    anim.save(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model,vid_num,name+'.mp4'), writer='imagemagick', fps=25, dpi=my_dpi)
+    anim.save(os.path.join('results/gifs', dataset.split('Rate')[0]+'_'+model,vid_num,name+'_'+model+'.mp4'), writer='imagemagick', fps=25, dpi=my_dpi)
     print "Saved ", name
     plt.cla()
     plt.clf()
     plt.close(fig)
 
-
-
-zer = np.zeros((200,224,224,3))
+if extractEnd == 1:
+    zer = np.zeros((50,224,224,3))
+else:
+    zer = np.zeros((200,224,224,3))
 zer[:,:,0] -= _R_MEAN
 zer[:,:,1] -= _G_MEAN
 zer[:,:,2] -= _B_MEAN
@@ -123,8 +132,9 @@ framesMedian = np.concatenate([framesMedian, zer], axis=0)
 
 #frames = np.concatenate([input_data, framesMedian, framesMean, framesMax], axis = 2)
 #frames = np.concatenate([input_data, framesMedian, framesMean], axis = 2)
+#import pdb; pdb.set_trace()
 frames = np.concatenate([input_data, framesMedian], axis = 2)
-save_gif(frames, 'Combined', "RAINv14", 'HMDB51', str(1))
+save_gif(frames, 'Combined', "RAINv22", 'HMDB51', str(1))
 
 
 

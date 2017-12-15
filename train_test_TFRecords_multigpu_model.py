@@ -54,7 +54,16 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v19 import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_model_v21 import ResNet_RIL_Interp_Median_v21
 from models.resnet_RIL.resnet_RIL_interp_median_model_v22 import ResNet_RIL_Interp_Median_v22
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23 import ResNet_RIL_Interp_Median_v23
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1 import ResNet_RIL_Interp_Median_v23_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_lstm import ResNet_RIL_Interp_Median_v23_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24 import ResNet_RIL_Interp_Median_v24
+from models.resnet_RIL.resnet_RIL_interp_median_model_v24_lstm import ResNet_RIL_Interp_Median_v24_lstm
+from models.resnet_RIL.resnet_RIL_interp_median_model_v25 import ResNet_RIL_Interp_Median_v25
+from models.resnet_RIL.resnet_RIL_interp_median_model_v26 import ResNet_RIL_Interp_Median_v26
+from models.resnet_RIL.resnet_RIL_interp_median_model_v27 import ResNet_RIL_Interp_Median_v27
+from models.resnet_RIL.resnet_RIL_interp_median_model_v28 import ResNet_RIL_Interp_Median_v28
+from models.resnet_RIL.resnet_RIL_interp_median_model_v29 import ResNet_RIL_Interp_Median_v29
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v30 import ResNet_RIL_Interp_Median_v30
 
 from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
 from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
@@ -106,7 +115,6 @@ def _average_gradients(tower_grads):
         average_grads.append(grad_and_var)
 
     # END FOR
-
     return average_grads
 
 
@@ -745,11 +753,38 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v23':
         model = ResNet_RIL_Interp_Median_v23()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_lstm':
+        model = ResNet_RIL_Interp_Median_v23_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_1':
+        model = ResNet_RIL_Interp_Median_v23_1()
+
     elif model_name == 'resnet_RIL_interp_median_v24':
         model = ResNet_RIL_Interp_Median_v24()
 
+    elif model_name == 'resnet_RIL_interp_median_v24_lstm':
+        model = ResNet_RIL_Interp_Median_v24_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v25':
+        model = ResNet_RIL_Interp_Median_v25()
+
+    elif model_name == 'resnet_RIL_interp_median_v26':
+        model = ResNet_RIL_Interp_Median_v26()
+
+    elif model_name == 'resnet_RIL_interp_median_v27':
+        model = ResNet_RIL_Interp_Median_v27()
+
+    elif model_name == 'resnet_RIL_interp_median_v28':
+        model = ResNet_RIL_Interp_Median_v28()
+
+    elif model_name == 'resnet_RIL_interp_median_v29':
+        model = ResNet_RIL_Interp_Median_v29()
+
+    # elif model_name == 'resnet_RIL_interp_median_v30':
+    #     model = ResNet_RIL_Interp_Median_v30()
+
     else:
-        print("Model not found")
+        print("Model not found, check the import and elif statements")
 
     # END IF
 
