@@ -382,9 +382,21 @@ Progress
 | ResNet50 + RAINv15 + LSTM |             34.77%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv16 + LSTM |             35.95%*           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv17 + LSTM |             33.92%*           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv18 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv18 + LSTM |             35.49%*           |             37.84%*         |          --.--%           |
+| ResNet50 + RAINv19 + LSTM |             **43.86**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv20 + LSTM |             --.--%           |             --.--%         |          **44.58**%           |
+| ResNet50 + RAINv21 + LSTM |             **43.14**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv22 + LSTM |             **43.33**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23 + LSTM |             **44.64**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23_LSTM + LSTM |             **44.25**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23.1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv24 + LSTM |             41.96%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv24_LSTM + LSTM |             41.96%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv25 + LSTM |             41.11%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv26 + LSTM |             **43.76**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv27 + LSTM |             34.90%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv28 + LSTM |             **43.35**%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv29 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 *-models were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -550,25 +562,102 @@ Max Output: phi = 1.0
 
 #### RAINv21
 
-Median Output: phi = 0.1104, alpha = 1.0 
+Output: phi = 0.1104, alpha = 1.0 (-0.0303)
+
+![ RAINv21.0 Input and Output ](images/Combined_RAINv21.gif)
+
+The left gif is the input video, the right gif is the output of RAINv21.
+
 
 
 #### RAINv22
 
-Median Output: phi = 1.0, alpha = 0.9395
+Output: phi = 1.0 (-0.00795), alpha = 0.9395
+
+Phi = 1.0 states that the output video will begin at frame N-L, then alpha will uniformly sample to frame (N-L)*0.9395
+
+![ RAINv22.0 Input and Output ](images/Combined_RAINv22.gif)
+
+The left gif is the input video, the right gif is the output of RAINv22.
+
 
 
 #### RAINv23
 
-Median Output: alpha ~ 
+Output: alpha ~ 0.462
+
+Sample only the first 46% of the input video.
+
+![ RAINv23.0 Input and Output ](images/Combined_RAINv23.gif)
+
+The left gif is the input video, the right gif is the output of RAINv23.
+
+
+RAINv23 LSTM
+
+Median Output: alpha = 1.0 (before negative exponent alpha = 0.0)
+
+Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
+
+
+RAINv23.1
+
+Output: alpha ~ IN PROGRESS (currently alpha = 1.0 (-0.0803))
 
 
 #### RAINv24
 
-Median Output: alpha ~ 
+Output: alpha = 1.0 (-0.0280)
+
+Uniform sampling of input
 
 
+RAINv24 LSTM
 
+Output: alpha = 1.0 (before negative exponent alpha = 0.0)
+
+Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
+
+
+#### RAINv25
+
+Output: phi = 1.0 (-0.0272)
+
+Output video is the last 50 frames of the input video.
+
+
+#### RAINv26
+
+Output: phi ~ 0.6075
+
+Phi ~ 0.6 means that phi has chosen the frame located 40% of the way from frame 0 to frame N-L. The output video then starts at this frame and uniformly samples L (50) frames until the end of the video (frame N)
+
+![ RAINv26.0 Input and Output ](images/Combined_RAINv26.gif)
+
+The left gif is the input video, the right gif is the output of RAINv26.
+
+
+#### RAINv27
+
+Output: phi = 1.0 (-0.104), alpha = 0.0491
+
+Phi selects that the output video starts at frame N-L, but alpha is low enough for it to choose approximately 2.5 (50 * 0.0491) frames starting at frame N-L, then interpolates these 2.5 frames to 50.
+
+![ RAINv27.0 Input and Output ](images/Combined_RAINv27.gif)
+
+The left gif is the input video, the right gif is the output of RAINv27.
+
+
+#### RAINv28
+
+Output: phi = 1.0 (-0.0132), alpha = 1.0 (-0.00335)
+
+The output video consists of the last 50 frames of the input video.
+
+
+#### RAINv29
+
+Output: phi = IN PROGRESS (currently phi = 0.646), alpha = IN PROGRESS (currently alpha = 1.0 (-0.0917)
 
 
 <a name="expt2"/>
@@ -753,20 +842,56 @@ Ideas for Future Versions of RAIN Layer
     * Median of Extract Layer
 
 * V20:
-    * Idea: (V18 phi only) 
+    * Idea: (V18 phi only, take max of block softmax) Instead of allowing phi to be any frames, only allow it to choose from the J blocks.  
     * Max of Extract Layer
 
 * V21:
     * Idea: (alpha and phi as variables, based off of v14) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v14.
-    * Median of Extract Layer
+    * Variables learned directly
 
 * V22:
     * Idea: (alpha and phi as variables, based off of v18) Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v18.
-    * Median of Extract Layer
+    * Variables learned directly
 
 * V23:
-    * Idea: (alpha as a variable, based off of v2) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
-    * Median of Extract Layer
+    * Idea: (alpha as a variable, based off of v2 + v21) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v2.
+    * Variables learned directly
+
+* V23 LSTM:
+    * Idea: (v23 Initialize alpha using an LSTM) Initialize alpha based off of the hidden state of an LSTM unrolled 4 times. LSTM location towards the beginning of the model.
+    * Variables learned through LSTM
+
+* V23.1:
+    * Idea: (v23 + tanh) ReLu with a negative exponential function causes any negative value to default to 1.0.  Switching the activation function to tanh will allow negative values to remain valid
+    * Variables learned directly
+
+* V24:
+    * Idea: (alpha as a variable, based off of v2 + v22) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
+    * Variables learned directly
+
+* V24 LSTM:
+    * Idea: (v24 Initialize alpha using an LSTM) Initialize alpha based off of the hidden state of an LSTM unrolled 4 times. LSTM location is at the end of the model.
+    * Variables learned through LSTM
+
+* V25:
+    * Idea: (phi as a variable, based off of v3 + v21) Initialize phi as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v21.
+    * Variables learned directly
+
+* V26:
+    * Idea: (phi as a variable, based off of v3 + v22) Initialize phi as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
+    * Variables learned directly
+     
+* V27:
+    * Idea: (2 Step - offset then alpha, beginning of model) Initialize phi and alpha and then let them learn solely off of backpropagation. First apply the offset phi, then sample alpha from the remaining frames.
+    * Variables learned directly
+
+* V28:
+    * Idea: (2 Step - offset then alpha, end of model) Initialize phi and alpha and then let them learn solely off of backpropagation. First apply the offset phi, then sample alpha from the remaining frames.
+    * Variables learned directly
+
+* V29:
+    * Idea: (Define alpha on top, then phi on bottom) Initialize alpha at the beginning of the model and sample the input video, then pass this through the network until the end where phi gets initialized and offsets the video and samples to L frames.
+    * Variables learned directly
 
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
