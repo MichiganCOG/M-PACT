@@ -389,7 +389,7 @@ Progress
 | ResNet50 + RAINv22 + LSTM |             **43.33**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23 + LSTM |             **44.64**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23_LSTM + LSTM |             **44.25**%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv23.1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23.1 + LSTM |             35.82%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23.2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23.3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv24 + LSTM |             41.96%           |             --.--%         |          --.--%           |
@@ -606,7 +606,7 @@ Uniform sampling of input, alpha could have different values for various input v
 
 RAINv23.1
 
-Output: alpha ~ IN PROGRESS (currently alpha = 1.0 (-0.0803))
+Output: alpha = 1.0 (-0.0803)
 
 
 RAINv23.2
