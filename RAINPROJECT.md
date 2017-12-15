@@ -14,13 +14,14 @@ Our Goal: Submit ASAP
     * [RAIN v21.0](#rainv21)
     * [RAIN v22.0](#rainv22)
     * [RAIN v23.0](#rainv23)
+        * [RAIN v23.0 LSTM](#rainv23_lstm)
         * [RAIN v23.1](#rainv23.1)
         * [RAIN v23.2](#rainv23.2)
         * [RAIN v23.3](#rainv23.3)
-        * [RAIN v23.0 LSTM](#rainv23_lstm)
     * [RAIN v24.0](#rainv24)
-        * [RAIN v24.1](#rainv24.1)
         * [RAIN v24.0 LSTM](#rainv24_lstm)
+        * [RAIN v24.1](#rainv24.1)
+
     * [RAIN v25.0](#rainv25)
     * [RAIN v26.0](#rainv26)
     * [RAIN v27.0](#rainv27)
@@ -49,13 +50,28 @@ Our Goal: Submit ASAP
 ## Current Progress
 
      EXPERIMENT 1: Trained using original datasets
-| Experiments        |  Coding in Progress  | Executing |  Debug  | Complete  (HMDB51)| Complete  (UCF101)|    
-|:------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
-| VGG16              |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
-| ResNet-50          |         &#9745;      |  &#9745;  | &#9745; |     &#9745;       |     &#9974;       |
-| ResNet-50 + RAINv1 |         &#9745;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
-| ResNet-50 + RAINv2 |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
-| ResNet-50 + RAINv3 |         &#9745;      |  &#9974;  | &#9745; |     &#9974;       |     &#9974;       |
+| Experiments           |  Coding in Progress  | Executing |  Debug  | Complete  (HMDB51)| Complete  (UCF101)|    
+|:---------------------:|:--------------------:|:---------:|:-------:|:-----------------:|:-----------------:|
+| VGG16                 |         &#9745;      |  &#9974;  | &#9974; |     &#9974;       |     &#9974;       |
+| ResNet-50             |         &#9745;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv21.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv22.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv23.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv23.0 LSTM |    &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv23.1 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv23.2 |         &#9974;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv23.3 |         &#9974;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv24.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv24.0 LSTM |    &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv24.1 |         &#9974;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+| ResNet-50 + RAINv25.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv26.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv27.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv28.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv29.0 |         &#9974;      |  &#9974;  | &#9745; |     &#9745;       |     &#9974;       |
+| ResNet-50 + RAINv30.0 |         &#9974;      |  &#9745;  | &#9745; |     &#9974;       |     &#9974;       |
+
+
 
      EXPERIMENT 2: Trained using rate-modified datasets
 | Experiments        |  Coding in Progress  | Executing |  Debug  | Complete (HMDB51) | Complete (UCF101) |
@@ -118,7 +134,7 @@ This section contains the implemented ideas for various versions of RAIN layers 
 <a name="rainv21"/>
 RAIN Layer v21.0
 ---------------
-The primary concept utilized in the formulation of this version is: The use of sampling and phase offset akin to 1D signals should be sufficient to characterize a given action signal.
+The use of sampling and phase offset akin to 1D signals should be sufficient to characterize a given action signal. Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model directly from the input videos.
 
 ![RAINv21 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv21 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -128,7 +144,7 @@ The primary concept utilized in the formulation of this version is: The use of s
 <a name="rainv22"/>
 RAIN Layer v22.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, right before the models' LSTM.
 
 ![RAINv22 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv22 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -138,17 +154,25 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv23"/>
 RAIN Layer v23.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v21. We are using only alpha in order to understand if uniform sampling over the entire sequence is important. If retaining some information about the entire setup is necessary then why not remove the offset parameter and instead attempt to interpolate using sampling parameter only. In case the sampling parameter minimizes to uniform sampling then we have a strong case to retain it.
 
 ![RAINv23 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
+<a name="rainv23_lstm"/>
+RAIN Layer v23.0 LSTM
+---------------
+Instead of just initialiizing a value to alpha and letting it learn based off of backpropagation, we want the value of alpha to differ from video to video so we initialize it based off of the hidden state of an LSTM unrolled 4 times. The extraction layer and location of this parameterization LSTM is identical to v23.0.
+
+![RAINv23 LSTM Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23 LSTM extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
 
 <a name="rainv23.1"/>
 RAIN Layer v23.1
 ---------------
-The primary concept utilized in the formulation of this version is: 
+For the previous models, the value of alpha can be any real value, then an ReLu activation function was applied to set all negative values to zero and a negative exponential function was applied to force the values of alpha after these functions to be between 0 and 1.  In this model we try to switch the activation function to tanh because instead of negative alpha values defaulting alpha after the activations to 1.0, this activation function will allow negative values to remain valid
 
 ![RAINv23.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -158,7 +182,7 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv23.2"/>
 RAIN Layer v23.2
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Similarly to 23.1, we change the activation function to sigmoid instead of tanh.
 
 ![RAINv23.2 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23.2 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -167,55 +191,47 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv23.3"/>
 RAIN Layer v23.3
 ---------------
-The primary concept utilized in the formulation of this version is: 
+The default value of alpha is set so that alpha after the activation functions equals 0.5 because it is equidistant from both 0.0 and 1.0. A problem with the other versions was that the value alpha was learning was 1.0 after the activation functions so if we initialize it lower to 0.25 instead of 0.5 then it may not end up learning the value 1.0.
 
 ![RAINv23.3 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23.3 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
-<a name="rainv23_lstm"/>
-RAIN Layer v23.0 LSTM
----------------
-The primary concept utilized in the formulation of this version is: 
-
-![RAINv23 LSTM Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv23 LSTM extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 <a name="rainv24"/>
 RAIN Layer v24.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Initialize alpha as a variable and let it learn based solely off of backpropagation. This model only uses alpha and is similar to v23.0 except that alpha and the extraction layer are applied towards the end of the model similar to v22.0.
 
 ![RAINv24 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv24 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
+<a name="rainv24_lstm"/>
+RAIN Layer v24.0 LSTM
+---------------
+This model calculates values for alpha using an lstm similar to v23.0_LSTM but applied to the network towards the bottom idential to v24.0.
+
+![RAINv24 LSTM Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv24 LSTM extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
 
 <a name="rainv24.1"/>
 RAIN Layer v24.1
 ---------------
-The primary concept utilized in the formulation of this version is: 
+This model is idential to v24.0 except that the initialization for alpha is set to 0.25 like in v23.3
 
 ![RAINv24.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv24.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv24_lstm"/>
-RAIN Layer v24.0 LSTM
----------------
-The primary concept utilized in the formulation of this version is: 
-
-![RAINv24 LSTM Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv24 LSTM extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
-
-
 
 <a name="rainv25"/>
 RAIN Layer v25.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Similarly to V23.0, the idea behind this version to remove the sampling parameter and retain the offset parameter. The sampling will be uniform. This will show the impact that splicing the input video based off of the offset parameter.
 
 ![RAINv25 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv25 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -225,7 +241,8 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv26"/>
 RAIN Layer v26.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Initialize phi as a variable and let it learn based solely off of backpropagation. This model is similar to v25 except that phi and the extraction layer are located at the bottom of the model like in v22.0.
+
 
 ![RAINv26 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv26 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -235,7 +252,7 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv27"/>
 RAIN Layer v27.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+The idea behind this model is to attempt to decouple phi and alpha. First phi is applied to the input videos which will select an offset and then select the remaining frames from this location to the end of the video.  Then alpha is applied which will sample 50 frames starting at the location that phi selected. The values are initialized at the beginning of the model along with the extraction layer location.
 
 ![RAINv27 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv27 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -245,7 +262,7 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv28"/>
 RAIN Layer v28.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+This model is nearly identical to v27.0 except that the alpha and phi initializations and the extraction layer are located towards the end of the model, like in v22.0.
 
 ![RAINv28 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv28 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -254,16 +271,17 @@ The primary concept utilized in the formulation of this version is:
 <a name="rainv29"/>
 RAIN Layer v29.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+Results show that phi and alpha may learn better if they are initialized and applied on the top or bottom of the network. However, this ideal location may not be the same for both alpha and phi.  This model initalizes and applies the sampling parameter, alpha, at the top of the model directly to the input videos.  The output of this first extraction layer will be a video beginning at the first frame of the input and consist of 100 frames sampled and interpolated to whatever end frame that alpha learns. This output video gets passed through the network until just before the LSTM where the offset parameter, phi, is applied.  Phi will select one of the 100 input features as a starting point and uniformly sample and interpolate 50 features to the end of the inputs tensor. 
 
 ![RAINv29 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv29 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
+
 <a name="rainv30"/>
 RAIN Layer v30.0
 ---------------
-The primary concept utilized in the formulation of this version is: 
+This model is similar to v29 except that phi is applied to the input videos and alpha is applied to the features at the end of the model.
 
 ![RAINv30 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv30 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -348,8 +366,8 @@ Progress
 | ResNet50 + RAINv23.2 + LSTM |           --.--%           |        -.-       |   Default 0.0  |      
 | ResNet50 + RAINv23.3 + LSTM |           --.--%           |        -.-       |   Default 0.0  |      
 | ResNet50 + RAINv24 + LSTM |             41.96%           |        1.0       |   Default 0.0  |
-| ResNet50 + RAINv24.1 + LSTM |           --.--%           |        -.-       |   Default 0.0  |      
 | ResNet50 + RAINv24_LSTM + LSTM |        41.96%           |        1.0       |   Default 0.0  |
+| ResNet50 + RAINv24.1 + LSTM |           --.--%           |        -.-       |   Default 0.0  |      
 | ResNet50 + RAINv25 + LSTM |             41.11%           |    Default 1.0   |      1.0       |
 | ResNet50 + RAINv26 + LSTM |             **43.76**%       |    Default 1.0   |      0.61      |
 | ResNet50 + RAINv27 + LSTM |             37.32%           |        0.043     |      1.0       |
@@ -436,16 +454,19 @@ Output: alpha = 1.0 (-0.0280)
 Uniform sampling of input
 
 
-RAIN v24.1
-
-Output: alpha = IN PROGRESS
-
-
 RAIN v24 LSTM
 
 Output: alpha = 1.0 (before negative exponent alpha = 0.0)
 
 Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
+
+
+RAIN v24.1
+
+Output: alpha = IN PROGRESS
+
+
+
 
 
 #### RAIN v25
@@ -716,13 +737,14 @@ Ideas for Future Versions of RAIN Layer
     * Idea: (alpha as a variable, based off of v2 + v22) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
     * Variables learned directly
 
+* V24 LSTM:
+    * Idea: (v24 Initialize alpha using an LSTM) Initialize alpha based off of the hidden state of an LSTM unrolled 4 times. LSTM location is at the end of the model.
+    * Variables learned through LSTM
+    
 * V24.1:
     * Idea: (v24 + initial alpha = 0.25) The model may be able to learn to not default to 1.0 is the initialization of alpha starts lower.
     * Variables learned directly
 
-* V24 LSTM:
-    * Idea: (v24 Initialize alpha using an LSTM) Initialize alpha based off of the hidden state of an LSTM unrolled 4 times. LSTM location is at the end of the model.
-    * Variables learned through LSTM
 
 * V25:
     * Idea: (phi as a variable, based off of v3 + v21) Initialize phi as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model, similar to v21.
