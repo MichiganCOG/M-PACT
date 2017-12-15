@@ -12,6 +12,25 @@ Our Goal: Submit ASAP
 * [Baseline Models](#baselinemodels)
 * [RAIN Layers](#rainlayers)
     * [RAIN v21.0](#rainv21)
+    * [RAIN v22.0](#rainv22)
+    * [RAIN v23.0](#rainv23)
+        * [RAIN v23.1](#rainv23.1)
+        * [RAIN v23.2](#rainv23.2)
+        * [RAIN v23.3](#rainv23.3)
+        * [RAIN v23.0 LSTM](#rainv23_lstm)
+    * [RAIN v24.0](#rainv24)
+        * [RAIN v24.1](#rainv24.1)
+        * [RAIN v24.0 LSTM](#rainv24_lstm)
+    * [RAIN v25.0](#rainv25)
+    * [RAIN v26.0](#rainv26)
+    * [RAIN v27.0](#rainv27)
+    * [RAIN v28.0](#rainv28)
+    * [RAIN v29.0](#rainv29)
+    * [RAIN v30.0](#rainv30)
+
+
+
+
 
 * [Experiment 1 - Models trained using original datasets](#expt1)
 * [Experiment 2 - Models trained using rate-modified datasets](#expt2)
@@ -101,8 +120,8 @@ RAIN Layer v21.0
 ---------------
 The primary concept utilized in the formulation of this version is: The use of sampling and phase offset akin to 1D signals should be sufficient to characterize a given action signal.
 
-![RAINv21Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv21extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv21 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv21 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
@@ -111,8 +130,8 @@ RAIN Layer v22.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv22 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv22 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
@@ -121,8 +140,8 @@ RAIN Layer v23.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv23Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv23extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv23 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
@@ -131,8 +150,8 @@ RAIN Layer v23.1
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv23.1Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv23.1extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv23.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
@@ -141,8 +160,8 @@ RAIN Layer v23.2
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv23.2Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv23.2extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv23.2 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.2 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 <a name="rainv23.3"/>
@@ -150,8 +169,8 @@ RAIN Layer v23.3
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv23.3Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv23.3extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv23.3 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.3 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 <a name="rainv23_lstm"/>
@@ -159,78 +178,95 @@ RAIN Layer v23.0 LSTM
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv23lstmParamnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv23lstmextractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv23 LSTM Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23 LSTM extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv24"/>
+RAIN Layer v24.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv24 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv24 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv24.1"/>
+RAIN Layer v24.1
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv24.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv24.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv24_lstm"/>
+RAIN Layer v24.0 LSTM
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv24 LSTM Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv24 LSTM extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv25"/>
+RAIN Layer v25.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv25 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv25 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv26"/>
+RAIN Layer v26.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv26 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv26 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv27"/>
+RAIN Layer v27.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv27 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv27 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
-<a name="rainv22"/>
-RAIN Layer v22.0
+<a name="rainv28"/>
+RAIN Layer v28.0
 ---------------
 The primary concept utilized in the formulation of this version is: 
 
-![RAINv22Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
-![RAINv22extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+![RAINv28 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv28 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
+
+<a name="rainv29"/>
+RAIN Layer v29.0
+---------------
+The primary concept utilized in the formulation of this version is: 
+
+![RAINv29 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv29 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+<a name="rainv30"/>
+RAIN Layer v30.0
+---------------
+The primary concept utilized in the formulation of this version is: 
+
+![RAINv30 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv30 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
@@ -316,7 +352,7 @@ Progress
 | ResNet50 + RAINv24_LSTM + LSTM |        41.96%           |        1.0       |   Default 0.0  |
 | ResNet50 + RAINv25 + LSTM |             41.11%           |    Default 1.0   |      1.0       |
 | ResNet50 + RAINv26 + LSTM |             **43.76**%       |    Default 1.0   |      0.61      |
-| ResNet50 + RAINv27 + LSTM |             34.90%           |        0.043     |      1.0       |
+| ResNet50 + RAINv27 + LSTM |             37.32%           |        0.043     |      1.0       |
 | ResNet50 + RAINv28 + LSTM |             **43.35**%       |        1.0       |      1.0       |
 | ResNet50 + RAINv29 + LSTM |             42.61%           |        1.0       |      0.66      |
 | ResNet50 + RAINv30 + LSTM |             --.--%           |        -.-       |      -.-       |
@@ -339,123 +375,123 @@ Progress
 ### Experiment 1 NOTES:
 
 
-#### RAINv21
+#### RAIN v21
 
 Output: phi = 0.1104, alpha = 1.0 (-0.0303)
 
-![ RAINv21.0 Input and Output ](images/Combined_RAINv21.gif)
+![ RAIN v21.0 Input and Output ](images/Combined_RAINv21.gif)
 
 The left gif is the input video, the right gif is the output of RAINv21.
 
 
 
-#### RAINv22
+#### RAIN v22
 
 Output: phi = 1.0 (-0.00795), alpha = 0.9395
 
 Phi = 1.0 states that the output video will begin at frame N-L, then alpha will uniformly sample to frame (N-L)*0.9395
 
-![ RAINv22.0 Input and Output ](images/Combined_RAINv22.gif)
+![ RAIN v22.0 Input and Output ](images/Combined_RAINv22.gif)
 
 The left gif is the input video, the right gif is the output of RAINv22.
 
 
 
-#### RAINv23
+#### RAIN v23
 
 Output: alpha ~ 0.462
 
 Sample only the first 46% of the input video.
 
-![ RAINv23.0 Input and Output ](images/Combined_RAINv23.gif)
+![ RAIN v23.0 Input and Output ](images/Combined_RAINv23.gif)
 
 The left gif is the input video, the right gif is the output of RAINv23.
 
 
-RAINv23 LSTM
+RAIN v23 LSTM
 
 Median Output: alpha = 1.0 (before negative exponent alpha = 0.0)
 
 Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
 
 
-RAINv23.1
+RAIN v23.1
 
 Output: alpha = 1.0 (-0.0803)
 
 
-RAINv23.2
+RAIN v23.2
 
 Output: alpha ~ IN PROGRESS 
 
 
-RAINv23.3
+RAIN v23.3
 
 Output: alpha ~ IN PROGRESS 
 
-#### RAINv24
+#### RAIN v24
 
 Output: alpha = 1.0 (-0.0280)
 
 Uniform sampling of input
 
 
-RAINv24.1
+RAIN v24.1
 
 Output: alpha = IN PROGRESS
 
 
-RAINv24 LSTM
+RAIN v24 LSTM
 
 Output: alpha = 1.0 (before negative exponent alpha = 0.0)
 
 Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
 
 
-#### RAINv25
+#### RAIN v25
 
 Output: phi = 1.0 (-0.0272)
 
 Output video is the last 50 frames of the input video.
 
 
-#### RAINv26
+#### RAIN v26
 
 Output: phi ~ 0.6075
 
 Phi ~ 0.6 means that phi has chosen the frame located 40% of the way from frame 0 to frame N-L. The output video then starts at this frame and uniformly samples L (50) frames until the end of the video (frame N)
 
-![ RAINv26.0 Input and Output ](images/Combined_RAINv26.gif)
+![ RAIN v26.0 Input and Output ](images/Combined_RAINv26.gif)
 
 The left gif is the input video, the right gif is the output of RAINv26.
 
 
-#### RAINv27
+#### RAIN v27
 
 Output: phi = 1.0 (-0.104), alpha = 0.0426
 
 Phi selects that the output video starts at frame N-L, but alpha is low enough for it to choose approximately 2.1 (50 * 0.0426) frames starting at frame N-L, then interpolates these 2.1 frames to 50.
 
-![ RAINv27.0 Input and Output ](images/Combined_RAINv27.gif)
+![ RAIN v27.0 Input and Output ](images/Combined_RAINv27.gif)
 
 The left gif is the input video, the right gif is the output of RAINv27.
 
 
-#### RAINv28
+#### RAIN v28
 
 Output: phi = 1.0 (-0.0132), alpha = 1.0 (-0.00335)
 
 The output video consists of the last 50 frames of the input video.
 
 
-#### RAINv29
+#### RAIN v29
 
 Output: phi = 0.655, alpha = 1.0 (-0.0917)
 
 Phi ~ 0.6 means that phi has chosen the frame located about 40% of the way from frame 0 to frame N-L. The output video then starts at this frame and uniformly samples L (50) frames until the end of the video (frame N) because alpha = 1.0.
 
 
-#### RAINv30
+#### RAIN v30
 
 Output: phi = IN PROGRESS, alpha ~ IN PROGRESS 
 
