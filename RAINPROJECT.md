@@ -390,13 +390,17 @@ Progress
 | ResNet50 + RAINv23 + LSTM |             **44.64**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23_LSTM + LSTM |             **44.25**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv23.1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23.2 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv23.3 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv24 + LSTM |             41.96%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv24.1 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv24_LSTM + LSTM |             41.96%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv25 + LSTM |             41.11%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv26 + LSTM |             **43.76**%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv27 + LSTM |             34.90%           |             --.--%         |          --.--%           |
 | ResNet50 + RAINv28 + LSTM |             **43.35**%           |             --.--%         |          --.--%           |
-| ResNet50 + RAINv29 + LSTM |             --.--%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv29 + LSTM |             42.61%           |             --.--%         |          --.--%           |
+| ResNet50 + RAINv30 + LSTM |             --.--%           |             --.--%         |          --.--%           |
 *-models were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -605,11 +609,25 @@ RAINv23.1
 Output: alpha ~ IN PROGRESS (currently alpha = 1.0 (-0.0803))
 
 
+RAINv23.2
+
+Output: alpha ~ IN PROGRESS 
+
+
+RAINv23.3
+
+Output: alpha ~ IN PROGRESS 
+
 #### RAINv24
 
 Output: alpha = 1.0 (-0.0280)
 
 Uniform sampling of input
+
+
+RAINv24.1
+
+Output: alpha = IN PROGRESS
 
 
 RAINv24 LSTM
@@ -657,7 +675,17 @@ The output video consists of the last 50 frames of the input video.
 
 #### RAINv29
 
-Output: phi = IN PROGRESS (currently phi = 0.646), alpha = IN PROGRESS (currently alpha = 1.0 (-0.0917)
+Output: phi = 0.655, alpha = 1.0 (-0.0917)
+
+Phi ~ 0.6 means that phi has chosen the frame located about 40% of the way from frame 0 to frame N-L. The output video then starts at this frame and uniformly samples L (50) frames until the end of the video (frame N) because alpha = 1.0.
+
+
+#### RAINv30
+
+Output: phi = IN PROGRESS, alpha ~ IN PROGRESS 
+
+
+
 
 
 <a name="expt2"/>
@@ -865,8 +893,20 @@ Ideas for Future Versions of RAIN Layer
     * Idea: (v23 + tanh) ReLu with a negative exponential function causes any negative value to default to 1.0.  Switching the activation function to tanh will allow negative values to remain valid
     * Variables learned directly
 
+* V23.2:
+    * Idea: (v23 + sigmoid) ReLu with a negative exponential function causes any negative value to default to 1.0.  Switching the activation function to sigmoid will allow negative values to remain valid
+    * Variables learned directly
+
+* V23.3:
+    * Idea: (v23 + initial alpha = 0.25) The model may be able to learn to not default to 1.0 is the initialization of alpha starts lower.
+    * Variables learned directly
+
 * V24:
     * Idea: (alpha as a variable, based off of v2 + v22) Initialize alpha as a variable and let it learn based solely off of backpropagation. Inputs to extraction layer come from the end of the model, similar to v22.
+    * Variables learned directly
+
+* V24.1:
+    * Idea: (v24 + initial alpha = 0.25) The model may be able to learn to not default to 1.0 is the initialization of alpha starts lower.
     * Variables learned directly
 
 * V24 LSTM:
@@ -890,7 +930,11 @@ Ideas for Future Versions of RAIN Layer
     * Variables learned directly
 
 * V29:
-    * Idea: (Define alpha on top, then phi on bottom) Initialize alpha at the beginning of the model and sample the input video, then pass this through the network until the end where phi gets initialized and offsets the video and samples to L frames.
+    * Idea: (Define alpha on top, then phi on bottom) Initialize alpha at the beginning of the model and sample the input video, then pass this through the network until the end where phi gets initialized and offsets the video and uniformly samples to L frames.
+    * Variables learned directly
+
+* V30:
+    * Idea: (Define phi on top, then alpha on bottom) Initialize phi at the beginning of the model and offset the input video, then pass this through the network until the end where alpha gets initialized and samples the video to L frames.
     * Variables learned directly
 
 * Alternate:
