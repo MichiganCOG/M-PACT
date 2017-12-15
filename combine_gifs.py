@@ -4,18 +4,18 @@ import matplotlib.animation as animation
 import tensorflow as tf
 from utils import make_dir
 import os
-from models.resnet_RIL.resnet_RIL_interp_mean_model_v1  import ResNet_RIL_Interp_Mean_v1
-from models.resnet_RIL.resnet_RIL_interp_median_model_v1  import ResNet_RIL_Interp_Median_v1
-from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
-
-from models.resnet_RIL.resnet_RIL_interp_mean_model_v2  import ResNet_RIL_Interp_Mean_v2
-from models.resnet_RIL.resnet_RIL_interp_median_model_v2  import ResNet_RIL_Interp_Median_v2
-from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
-
-from models.resnet_RIL.resnet_RIL_interp_mean_model_v3  import ResNet_RIL_Interp_Mean_v3
-from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Interp_Median_v3
-
-from models.resnet_RIL.resnet_RIL_interp_median_model_v14  import ResNet_RIL_Interp_Median_v14
+# from models.resnet_RIL.resnet_RIL_interp_mean_model_v1  import ResNet_RIL_Interp_Mean_v1
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v1  import ResNet_RIL_Interp_Median_v1
+# from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
+#
+# from models.resnet_RIL.resnet_RIL_interp_mean_model_v2  import ResNet_RIL_Interp_Mean_v2
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v2  import ResNet_RIL_Interp_Median_v2
+# from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
+#
+# from models.resnet_RIL.resnet_RIL_interp_mean_model_v3  import ResNet_RIL_Interp_Mean_v3
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Interp_Median_v3
+#
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v14  import ResNet_RIL_Interp_Median_v14
 from models.resnet_RIL.resnet_RIL_interp_median_model_v21  import ResNet_RIL_Interp_Median_v21
 from models.resnet_RIL.resnet_RIL_interp_median_model_v22  import ResNet_RIL_Interp_Median_v22
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23  import ResNet_RIL_Interp_Median_v23
