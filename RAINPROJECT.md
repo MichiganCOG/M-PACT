@@ -426,26 +426,29 @@ Sample only the first 46% of the input video.
 The left gif is the input video, the right gif is the output of RAINv23.
 
 
-RAIN v23 LSTM
+#### RAIN v23 LSTM
 
 Median Output: alpha = 1.0 (before negative exponent alpha = 0.0)
 
 Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
 
 
-RAIN v23.1
+#### RAIN v23.1
 
 Output: alpha = 1.0 (-0.0803)
 
 
-RAIN v23.2
+#### RAIN v23.3
 
-Output: alpha ~ IN PROGRESS 
+Output: alpha = 1.0 (-0.0491)  
 
+The output video is a uniformly sampled version of the entire input video.
 
-RAIN v23.3
+#### RAIN v23.2
 
-Output: alpha ~ IN PROGRESS 
+Output: alpha ~ 0.5136
+
+The output video is sampled from every 2.5 frames of the original input. This means that videos upto the 125th frame are contained in the output. The output indices are [0, 2.5, 5.0, ..., 125].
 
 #### RAIN v24
 
@@ -454,18 +457,18 @@ Output: alpha = 1.0 (-0.0280)
 Uniform sampling of input
 
 
-RAIN v24 LSTM
+#### RAIN v24 LSTM
 
 Output: alpha = 1.0 (before negative exponent alpha = 0.0)
 
 Uniform sampling of input, alpha could have different values for various input videos but it is always 1.0.
 
 
-RAIN v24.1
+#### RAIN v24.1
 
-Output: alpha = IN PROGRESS
+Output: alpha = 1.0 (-0.0164)
 
-
+Output video is uniform sampling of 100 frames into 50 which means every alternate frame is picked up in the final outcome.
 
 
 
@@ -514,9 +517,9 @@ Phi ~ 0.6 means that phi has chosen the frame located about 40% of the way from 
 
 #### RAIN v30
 
-Output: phi = IN PROGRESS, alpha ~ IN PROGRESS 
+Output: phi = 1.0 (-0.0187), alpha = By default 1.0
 
-
+Phi =1.0 means that phi has chosen the (N-L)th frame with alpha uniformly sampling from thereon in. Thus, the last 50 frames from the input 100 frames are taken as the input to the classification network.
 
 
 
