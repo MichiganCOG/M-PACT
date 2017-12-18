@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23_1_1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -12,7 +12,7 @@ from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp_Median_v23_1_1():
+class ResNet_RIL_Interp_Median_v23_2_2():
 
     def __init__(self, verbose=True):
         """
@@ -20,8 +20,8 @@ class ResNet_RIL_Interp_Median_v23_1_1():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v23_1_1'
-        print "resnet RIL interp median v23_1_1 initialized"
+        self.name = 'resnet_RIL_interp_median_model_v23_2_2'
+        print "resnet RIL interp median v23_2_2 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -38,7 +38,7 @@ class ResNet_RIL_Interp_Median_v23_1_1():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.tanh(tf.nn.relu(params[0]))*0.5 + 0.5
+        sample_alpha_tick = tf.nn.sigmoid(-tf.nn.relu(params[0]))
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
@@ -294,7 +294,7 @@ class ResNet_RIL_Interp_Median_v23_1_1():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RAIN INTERP MEDIAN v23_1_1 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2 network layers')
 
         # END IF
 

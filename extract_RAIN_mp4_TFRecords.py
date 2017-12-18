@@ -59,8 +59,12 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v22 import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23 import ResNet_RIL_Interp_Median_v23
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_lstm import ResNet_RIL_Interp_Median_v23_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1 import ResNet_RIL_Interp_Median_v23_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_1 import ResNet_RIL_Interp_Median_v23_1_1
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2 import ResNet_RIL_Interp_Median_v23_2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1 import ResNet_RIL_Interp_Median_v23_2_1
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_3 import ResNet_RIL_Interp_Median_v23_3
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_4 import ResNet_RIL_Interp_Median_v23_4
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_5 import ResNet_RIL_Interp_Median_v23_5
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24 import ResNet_RIL_Interp_Median_v24
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24_1 import ResNet_RIL_Interp_Median_v24_1
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24_lstm import ResNet_RIL_Interp_Median_v24_lstm
@@ -890,11 +894,23 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v23_1':
         model = ResNet_RIL_Interp_Median_v23_1()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_1_1':
+        model = ResNet_RIL_Interp_Median_v23_1_1()
+
     elif model_name == 'resnet_RIL_interp_median_v23_2':
         model = ResNet_RIL_Interp_Median_v23_2()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_2_1':
+        model = ResNet_RIL_Interp_Median_v23_2_1()
+
     elif model_name == 'resnet_RIL_interp_median_v23_3':
         model = ResNet_RIL_Interp_Median_v23_3()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_4':
+        model = ResNet_RIL_Interp_Median_v23_4()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_5':
+        model = ResNet_RIL_Interp_Median_v23_5()
 
     elif model_name == 'resnet_RIL_interp_median_v23_lstm':
         model = ResNet_RIL_Interp_Median_v23_lstm()

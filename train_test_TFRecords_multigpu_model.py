@@ -30,11 +30,14 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v22      import ResNet_RIL
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23      import ResNet_RIL_Interp_Median_v23
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1    import ResNet_RIL_Interp_Median_v23_1
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_1  import ResNet_RIL_Interp_Median_v23_1_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_2  import ResNet_RIL_Interp_Median_v23_1_2
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2    import ResNet_RIL_Interp_Median_v23_2
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1  import ResNet_RIL_Interp_Median_v23_2_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2  import ResNet_RIL_Interp_Median_v23_2_2
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_3    import ResNet_RIL_Interp_Median_v23_3
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_4    import ResNet_RIL_Interp_Median_v23_4
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_5    import ResNet_RIL_Interp_Median_v23_5
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_6    import ResNet_RIL_Interp_Median_v23_6
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_lstm import ResNet_RIL_Interp_Median_v23_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24      import ResNet_RIL_Interp_Median_v24
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24_1    import ResNet_RIL_Interp_Median_v24_1
@@ -212,6 +215,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         tower_losses  = []
         tower_grads   = []
         tower_slogits = []
+        param_vars    = []
 
         # Define optimizer
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
@@ -220,13 +224,25 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             with tf.device('/gpu:'+str(gpu_idx)):
                 with tf.name_scope('%s_%d' % ('tower', gpu_idx)) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
-                        logits = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
+
+                        param_var, logits = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
                                                  istraining,
                                                  input_dims,
                                                  output_dims,
                                                  seq_length,
                                                  scope, k, j,
+                                                 return_layer = ['Parameterization_Variables', 'logits'],
                                                  weight_decay=wd)
+
+                        # logits = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
+                        #                          istraining,
+                        #                          input_dims,
+                        #                          output_dims,
+                        #                          seq_length,
+                        #                          scope, k, j,
+                        #                          weight_decay=wd)
+
+                        param_vars.append(param_var)
 
                         # Calculating Softmax for probability outcomes : Can be modified
                         # Make function internal to model
@@ -338,9 +354,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             time_pre_train = time.time()
 
-            _, loss_train, predictions, gs, labels = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, alpha = sess.run([train_op, tower_losses,
                                                                            tower_slogits, global_step,
-                                                                           labels_tensor])
+                                                                           labels_tensor, param_vars])
 
 
             for pred_idx in range(len(predictions)):
@@ -364,7 +380,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
-
+            curr_logger.add_scalar_value('train/alpha',     float(np.mean(alpha)), step=gs)
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
 
@@ -647,11 +663,17 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v23_1_1':
         model = ResNet_RIL_Interp_Median_v23_1_1()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_1_2':
+        model = ResNet_RIL_Interp_Median_v23_1_2()
+
     elif model_name == 'resnet_RIL_interp_median_v23_2':
         model = ResNet_RIL_Interp_Median_v23_2()
 
     elif model_name == 'resnet_RIL_interp_median_v23_2_1':
         model = ResNet_RIL_Interp_Median_v23_2_1()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_2_2':
+        model = ResNet_RIL_Interp_Median_v23_2_2()
 
     elif model_name == 'resnet_RIL_interp_median_v23_3':
         model = ResNet_RIL_Interp_Median_v23_3()
@@ -661,6 +683,9 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v23_5':
         model = ResNet_RIL_Interp_Median_v23_5()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_6':
+        model = ResNet_RIL_Interp_Median_v23_6()
 
     elif model_name == 'resnet_RIL_interp_median_v24':
         model = ResNet_RIL_Interp_Median_v24()

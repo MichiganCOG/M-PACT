@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v23_1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -38,7 +38,7 @@ class ResNet_RIL_Interp_Median_v23_1():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.tanh(params[0])
+        sample_alpha_tick = tf.nn.tanh(params[0])*0.5 + 0.5
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
@@ -270,7 +270,7 @@ class ResNet_RIL_Interp_Median_v23_1():
 
         return layers
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer='logits', data_dict=None, weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], data_dict=None, weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -311,7 +311,7 @@ class ResNet_RIL_Interp_Median_v23_1():
             #                           Parameterization Network                       #
             ############################################################################
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.0))]
 
 
             layers['RIlayer'] = self._extraction_layer(inputs=inputs,
@@ -401,7 +401,7 @@ class ResNet_RIL_Interp_Median_v23_1():
 
             # END WITH
 
-        return layers[return_layer]
+        return [layers[x] for x in return_layer]
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
