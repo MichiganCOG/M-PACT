@@ -59,14 +59,17 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v22 import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23 import ResNet_RIL_Interp_Median_v23
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_lstm import ResNet_RIL_Interp_Median_v23_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1 import ResNet_RIL_Interp_Median_v23_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2 import ResNet_RIL_Interp_Median_v23_2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_3 import ResNet_RIL_Interp_Median_v23_3
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24 import ResNet_RIL_Interp_Median_v24
+from models.resnet_RIL.resnet_RIL_interp_median_model_v24_1 import ResNet_RIL_Interp_Median_v24_1
 from models.resnet_RIL.resnet_RIL_interp_median_model_v24_lstm import ResNet_RIL_Interp_Median_v24_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v25 import ResNet_RIL_Interp_Median_v25
 from models.resnet_RIL.resnet_RIL_interp_median_model_v26 import ResNet_RIL_Interp_Median_v26
 from models.resnet_RIL.resnet_RIL_interp_median_model_v27 import ResNet_RIL_Interp_Median_v27
 from models.resnet_RIL.resnet_RIL_interp_median_model_v28 import ResNet_RIL_Interp_Median_v28
 from models.resnet_RIL.resnet_RIL_interp_median_model_v29 import ResNet_RIL_Interp_Median_v29
-# from models.resnet_RIL.resnet_RIL_interp_median_model_v30 import ResNet_RIL_Interp_Median_v30
+from models.resnet_RIL.resnet_RIL_interp_median_model_v30 import ResNet_RIL_Interp_Median_v30
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v31 import ResNet_RIL_Interp_Median_v31
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v32 import ResNet_RIL_Interp_Median_v32
 
@@ -448,9 +451,9 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  seq_length,
                                  scope, k, j,
                                 # return_layer = "RAINlayer")
-                                # return_layer = 'Parameterization_Variables')
+                                 return_layer = 'Parameterization_Variables')
                                 # return_layer = 'Parameterization_Variable_Phi')
-                                 return_layer = 'Parameterization_Variable_Alpha')
+                                # return_layer = 'Parameterization_Variable_Alpha')
                                 # return_layer = 'RAINlayer_lstm_fc_4')
     else:
         # Model Inference
@@ -636,7 +639,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                 frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
                 input_data = input_data[0]
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-        #    import pdb; pdb.set_trace()
+                import pdb; pdb.set_trace()
 
             # return frames, input_data
             #
@@ -887,11 +890,20 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v23_1':
         model = ResNet_RIL_Interp_Median_v23_1()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_2':
+        model = ResNet_RIL_Interp_Median_v23_2()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_3':
+        model = ResNet_RIL_Interp_Median_v23_3()
+
     elif model_name == 'resnet_RIL_interp_median_v23_lstm':
         model = ResNet_RIL_Interp_Median_v23_lstm()
 
     elif model_name == 'resnet_RIL_interp_median_v24':
         model = ResNet_RIL_Interp_Median_v24()
+
+    elif model_name == 'resnet_RIL_interp_median_v24_1':
+        model = ResNet_RIL_Interp_Median_v24_1()
 
     elif model_name == 'resnet_RIL_interp_median_v24_lstm':
         model = ResNet_RIL_Interp_Median_v24_lstm()
@@ -911,9 +923,9 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v29':
         model = ResNet_RIL_Interp_Median_v29()
 
-    # elif model_name == 'resnet_RIL_interp_median_v30':
-    #     model = ResNet_RIL_Interp_Median_v30()
-    #
+    elif model_name == 'resnet_RIL_interp_median_v30':
+        model = ResNet_RIL_Interp_Median_v30()
+    
     # elif model_name == 'resnet_RIL_interp_median_v31':
     #     model = ResNet_RIL_Interp_Median_v31()
     #
