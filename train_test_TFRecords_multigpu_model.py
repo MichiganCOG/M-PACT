@@ -24,7 +24,7 @@ from logger                                           import Logger
 from random                                           import shuffle
 from load_dataset_tfrecords                           import load_dataset
 
-
+from models.resnet_RIL.resnet_RIL_interp_median_model_v6       import ResNet_RIL_Interp_Median_v6
 from models.resnet_RIL.resnet_RIL_interp_median_model_v21      import ResNet_RIL_Interp_Median_v21
 from models.resnet_RIL.resnet_RIL_interp_median_model_v22      import ResNet_RIL_Interp_Median_v22
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23      import ResNet_RIL_Interp_Median_v23
@@ -644,6 +644,9 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_bgr':
         model = ResNet_BGR()
+
+    elif model_name == 'resnet_RIL_interp_median_v6':
+        model = ResNet_RIL_Interp_Median_v6()
 
     elif model_name == 'resnet_RIL_interp_median_v21':
         model = ResNet_RIL_Interp_Median_v21()

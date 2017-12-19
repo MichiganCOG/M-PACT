@@ -40,6 +40,7 @@ from load_dataset_tfrecords                           import load_dataset
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v2  import ResNet_RIL_Interp_Median_v2
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Interp_Median_v3
 # from models.resnet_RIL.resnet_RIL_interp_median_nosort_v4 import ResNet_RIL_Interp_Median_Nosort_v4
+from models.resnet_RIL.resnet_RIL_interp_median_model_v6  import ResNet_RIL_Interp_Median_v6
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v8  import ResNet_RIL_Interp_Median_v8
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v10 import ResNet_RIL_Interp_Median_v10
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v11 import ResNet_RIL_Interp_Median_v11
@@ -454,8 +455,8 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  output_dims,
                                  seq_length,
                                  scope, k, j,
-                                # return_layer = "RAINlayer")
-                                 return_layer = 'Parameterization_Variables')
+                                 return_layer = "RAINlayer")
+                                # return_layer = 'Parameterization_Variables')
                                 # return_layer = 'Parameterization_Variable_Phi')
                                 # return_layer = 'Parameterization_Variable_Alpha')
                                 # return_layer = 'RAINlayer_lstm_fc_4')
@@ -468,8 +469,8 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  seq_length,
                                  scope, k, j)
     # Logits
-    softmax = tf.nn.softmax(logits)
-
+    #softmax = tf.nn.softmax(logits)
+    softmax = logits
     return logits, softmax
 
 def save_gif(frames, name, model, dataset, vid_num):
@@ -643,29 +644,29 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                 frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
                 input_data = input_data[0]
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-                import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
 
             # return frames, input_data
             #
             #
             #
-            print names, frames
+            # print names, frames
             #
-            # if model_label == 'RIL':
-            #     if rate_label == 'Rate':
-            #         save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
-            #         save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
-            #     else:
-            #         save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
-            #         save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
-            # else:
-            #     if rate_label == 'Rate':
-            #     #    import pdb;pdb.set_trace()
-            #         save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
-            #     #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
-            #     else:
-            #         save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
-            #         save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
+            if model_label == 'RIL':
+                if rate_label == 'Rate':
+                    save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+                    save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
+                else:
+                    save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+                    save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
+            else:
+                if rate_label == 'Rate':
+                #    import pdb;pdb.set_trace()
+                    save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+                #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
+                else:
+                    save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+                    save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
             #
             #
             #
@@ -843,6 +844,9 @@ if __name__=="__main__":
     # elif model_name == 'resnet_RIL_interp_median_nosort_v4':
     #     model = ResNet_RIL_Interp_Median_Nosort_v4()
     #
+    elif model_name == 'resnet_RIL_interp_median_v6':
+        model = ResNet_RIL_Interp_Median_v6()
+
     # elif model_name == 'resnet_RIL_interp_median_v8':
     #     model = ResNet_RIL_Interp_Median_v8()
     #
@@ -941,7 +945,7 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v30':
         model = ResNet_RIL_Interp_Median_v30()
-    
+
     # elif model_name == 'resnet_RIL_interp_median_v31':
     #     model = ResNet_RIL_Interp_Median_v31()
     #
