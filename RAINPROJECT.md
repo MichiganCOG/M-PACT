@@ -43,7 +43,8 @@ Our Goal: Submit ASAP
     * [RAIN v28.0](#rainv28)
     * [RAIN v29.0](#rainv29)
     * [RAIN v30.0](#rainv30)
-
+    * [RAIN v31.0](#rainv31)
+    * [RAIN v32.0](#rainv32)
 
 
 
@@ -214,6 +215,18 @@ This model is similar to v29 except that phi is applied to the input videos and 
 
 ![RAINv30 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv30 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+
+<a name="rainv32"/>
+#### RAIN Layer v32.0
+---------------
+The idea is to use frequency modulation exactly like v6 except that it will be applied to the features at the bottom of the model.
+
+![RAINv32 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv32 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
 
 
 
@@ -413,6 +426,15 @@ Initialize phi as a variable and let it learn based solely off of backpropagatio
 
 
 
+<a name="rainv31"/>
+#### RAIN Layer v31.0
+---------------
+Initialize phi at the beginning of the model and then extract the next L (50) frames starting at phi. Phi is a variable with a negative exponential activation function.
+
+![RAINv31 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv31 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
 
 
 
@@ -490,6 +512,7 @@ Progress
 | ResNet50 + RAINv28 + LSTM |             **43.35**%       |        1.0       |      1.0       |
 | ResNet50 + RAINv29 + LSTM |             42.61%           |        1.0       |      0.66      |
 | ResNet50 + RAINv30 + LSTM |             42.75%           |        1.0       |      1.0       |
+| ResNet50 + RAINv32 + LSTM |             --.--%           |        -.-       |      -.-       |
 | | | |
 |    Alpha Only Experiments        |      Extract Layer MRA        |    Alpha Value   |    
 | ResNet50 + RAINv23 + LSTM |             **44.64**%       |        0.46      |   
@@ -512,6 +535,7 @@ Progress
 |    Phi Only Experiments   |      Extract Layer MRA       |    Phi Value   |    
 | ResNet50 + RAINv25 + LSTM |             41.11%           |      1.0       |
 | ResNet50 + RAINv26 + LSTM |             **43.76**%       |      0.61      |
+| ResNet50 + RAINv31 + LSTM |             --.--%           |      -.-       |
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -947,6 +971,14 @@ Ideas for Future Versions of RAIN Layer
 
 * V30:
     * Idea: (Define phi on top, then alpha on bottom) Initialize phi at the beginning of the model and offset the input video, then pass this through the network until the end where alpha gets initialized and samples the video to L frames.
+    * Variables learned directly
+
+* V31:
+    * Idea: (Phi only, extract next 50 frames) Initialize phi at the beginning of the model and then extract the next L (50) frames starting at phi. Phi is a variable with a negative exponential activation function.
+    * Variables learned directly
+
+* V32:
+    * Idea: (FM at the bottom) The idea is to use frequency modulation exactly like v6 except that it will be applied to the features at the bottom of the model.
     * Variables learned directly
 
 * Alternate:
