@@ -19,6 +19,7 @@ Our Goal: Submit ASAP
 * [Baseline Models](#baselinemodels)
 * [RAIN Layers](#rainlayers)
     * [RAIN v6.0](#rainv6)
+    * [RAIN v6.1](#rainv6.1)
     * [RAIN v21.0](#rainv21)
     * [RAIN v22.0](#rainv22)
     * [RAIN v23.0](#rainv23)
@@ -28,7 +29,10 @@ Our Goal: Submit ASAP
             * [RAIN v23.1.2](#rainv23.1.2)
         * [RAIN v23.2](#rainv23.2)
             * [RAIN v23.2.1](#rainv23.2.1)
+                * [RAIN v23.2.1.1](#rainv23.2.1.1)
+                * [RAIN v23.2.1.2](#rainv23.2.1.2)
             * [RAIN v23.2.2](#rainv23.2.2)
+                * [RAIN v23.2.2.1](#rainv23.2.2.1)
         * [RAIN v23.3](#rainv23.3)
         * [RAIN v23.4](#rainv23.4)
         * [RAIN v23.5](#rainv23.5)
@@ -45,8 +49,8 @@ Our Goal: Submit ASAP
     * [RAIN v30.0](#rainv30)
     * [RAIN v31.0](#rainv31)
     * [RAIN v32.0](#rainv32)
-
-
+    * [RAIN v33.0](#rainv33)
+    * [RAIN v34.0](#rainv34)
 
 
 * [Experiment 1 - Models trained using original datasets](#expt1)
@@ -158,6 +162,16 @@ Allow the output of the extract layer to be parameters used to modify the input 
 ![RAINv6 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
+<a name="rainv6.1"/>
+##### RAIN Layer v6.1
+---------------
+The original v6 model may have had a poor initialization for learning alpha and phi so they will both be reinitialized to sigmoid(1.0) and trained again.
+
+![RAINv6.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv6.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
 <a name="rainv21"/>
 #### RAIN Layer v21.0
 ---------------
@@ -226,6 +240,17 @@ The idea is to use frequency modulation exactly like v6 except that it will be a
 
 ![RAINv32 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv32 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+<a name="rainv33"/>
+#### RAIN Layer v33.0
+---------------
+This formulation is similar to the other FM model except that alpha and phi dictate the location and rate of the input video that gets slowed down.  The output dimension of this slowed down section is L/2, where the other L/2 frames are the remaining beginning and end of the input video uniformly sampled.
+
+![RAINv33 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv33 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
 
 
 
@@ -298,7 +323,7 @@ We pass alpha through an ReLu activation before passing it through the sigmoid. 
 
 
 <a name="rainv23.2.1.1"/>
-##### RAIN Layer v23.2.1.1
+###### RAIN Layer v23.2.1.1
 ---------------
 We set alpha to be a constant 0.73. Since the best performance is reached when alpha is held constant for the majority of training, this model will determine the impact of learning different initializations of the constant alpha.
 
@@ -309,7 +334,7 @@ We set alpha to be a constant 0.73. Since the best performance is reached when a
 
 
 <a name="rainv23.2.1.2"/>
-##### RAIN Layer v23.2.1.2
+###### RAIN Layer v23.2.1.2
 ---------------
 We set alpha to be a constant 0.5. Since the best performance is reached when alpha is held constant for the majority of training, this model will determine the impact of learning different initializations of the constant alpha.
 
@@ -328,6 +353,18 @@ We pass alpha through a negative ReLu activation before passing it through the s
 
 ![RAINv23.2.2 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23.2.2 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+
+<a name="rainv23.2.2.1"/>
+###### RAIN Layer v23.2.2.1
+---------------
+We set alpha to be a constant 0.27. Since the best performance is reached when alpha is held constant for the majority of training, this model will determine the impact of learning different initializations of the constant alpha.
+
+![RAINv23.2.2.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.2.2.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
 
 
 
@@ -435,6 +472,13 @@ Initialize phi at the beginning of the model and then extract the next L (50) fr
 ![RAINv31 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
+<a name="rainv34"/>
+#### RAIN Layer v34.0
+---------------
+Initialize phi at the end of the model and then extract the next L (50) frames starting at phi. Phi is a variable with a negative exponential activation function.
+
+![RAINv34 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv34 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 
 
@@ -503,39 +547,42 @@ Progress
 
 
     HMDB51 Original RAIN Layer Experiments
-|    Alpha and Phi Experiments        |      Extract Layer MRA        |    Alpha Value   |    Phi Value   |
-|:------------------------:|:----------------------------: |:---------------: |:-------------: |
-| ResNet50 + RAINv6 + LSTM |                38.10%         |        0.31      |      0.51      |
-| ResNet50 + RAINv21 + LSTM |             **43.14**%       |        1.0       |      0.11      |
-| ResNet50 + RAINv22 + LSTM |             **43.33**%       |        0.94      |      1.0       |
-| ResNet50 + RAINv27 + LSTM |             37.32%           |        0.043     |      1.0       |
-| ResNet50 + RAINv28 + LSTM |             **43.35**%       |        1.0       |      1.0       |
-| ResNet50 + RAINv29 + LSTM |             42.61%           |        1.0       |      0.66      |
-| ResNet50 + RAINv30 + LSTM |             42.75%           |        1.0       |      1.0       |
-| ResNet50 + RAINv32 + LSTM |             --.--%           |        -.-       |      -.-       |
-| | | |
-|    Alpha Only Experiments        |      Extract Layer MRA        |    Alpha Value   |    
-| ResNet50 + RAINv23 + LSTM |             **44.64**%       |        0.46      |   
-| ResNet50 + RAINv23.1 + LSTM |           42.16%           |        0.32       |  
-| ResNet50 + RAINv23.1.1 + LSTM |         **44.05**%           |        0.50       |  
-| ResNet50 + RAINv23.1.2 + LSTM |         **44.38**%           |        0.50      | 
-| ResNet50 + RAINv23.2 + LSTM |           **43.46**%       |        0.51      |  
-| ResNet50 + RAINv23.2.1 + LSTM |         **46.01**%       |        0.50      |   
-| ResNet50 + RAINv23.2.1.1 + LSTM |         --.--%       |        -.-      |   
-| ResNet50 + RAINv23.2.1.2 + LSTM |         --.--%       |        -.-      |   
-| ResNet50 + RAINv23.2.2 + LSTM |         42.03%       |        0.25      | 
-| ResNet50 + RAINv23.3 + LSTM |           **44.51**%       |        1.0       |   
-| ResNet50 + RAINv23.4 + LSTM |           **45.62**%       |        1.0       |   
-| ResNet50 + RAINv23.5 + LSTM |           43.07%           |        0.33      |   
-| ResNet50 + RAINv23.6 + LSTM |           41.96%           |        0.31       |  
-| ResNet50 + RAINv24 + LSTM |             41.96%           |        1.0       |   
-| ResNet50 + RAINv24.1 + LSTM |           **43.59**%       |        1.0       |   
-|
-| | | |
-|    Phi Only Experiments   |      Extract Layer MRA       |    Phi Value   |    
-| ResNet50 + RAINv25 + LSTM |             41.11%           |      1.0       |
-| ResNet50 + RAINv26 + LSTM |             **43.76**%       |      0.61      |
-| ResNet50 + RAINv31 + LSTM |             --.--%           |      -.-       |
+|    Alpha and Phi Experiments        |      Extract Layer MRA        |    Alpha Value   |    Phi Value   |     Rate Modified Dataset MRA     |
+|:------------------------:|:----------------------------: |:---------------: |:-------------: |:--------------------------------: |
+| ResNet50 + RAINv6 + LSTM |                38.10%         |        0.31      |      0.51      |                --.--%             |
+| ResNet50 + RAINv6.1 + LSTM |              --.--%         |        -.-       |      -.-       |                --.--%             |
+| ResNet50 + RAINv21 + LSTM |             **43.14**%       |        1.0       |      0.11      |                --.--%             |                
+| ResNet50 + RAINv22 + LSTM |             **43.33**%       |        0.94      |      1.0       |                --.--%             |                
+| ResNet50 + RAINv27 + LSTM |             37.32%           |        0.043     |      1.0       |                --.--%             |                
+| ResNet50 + RAINv28 + LSTM |             **43.35**%       |        1.0       |      1.0       |                --.--%             |
+| ResNet50 + RAINv29 + LSTM |             42.61%           |        1.0       |      0.66      |                --.--%             |
+| ResNet50 + RAINv30 + LSTM |             42.75%           |        1.0       |      1.0       |                --.--%             |
+| ResNet50 + RAINv32 + LSTM |             37.84%           |        0.27       |      0.47       |                --.--%             |
+| ResNet50 + RAINv33 + LSTM |             --.--%           |        -.-       |      -.-       |                --.--%             |
+| | | | |
+|    Alpha Only Experiments        |      Extract Layer MRA        |    Alpha Value   |     Rate Modified Dataset MRA     |    
+| ResNet50 + RAINv23 + LSTM |             **44.64**%       |        0.46      |                **42.78**%             |   
+| ResNet50 + RAINv23.1 + LSTM |           42.16%           |        0.32       |                --.--%             |  
+| ResNet50 + RAINv23.1.1 + LSTM |         **44.05**%           |        0.50       |                **43.38**%             |  
+| ResNet50 + RAINv23.1.2 + LSTM |         **44.38**%           |        0.50      |                --.--%             | 
+| ResNet50 + RAINv23.2 + LSTM |           **43.46**%       |        0.51      |                **42.24**%             |  
+| ResNet50 + RAINv23.2.1 + LSTM |         **46.01**%       |        0.50      |                **44.41**%             |   
+| ResNet50 + RAINv23.2.1.1 + LSTM |         **43.92**%       |    Constant 0.73      |                --.--%             |   
+| ResNet50 + RAINv23.2.1.2 + LSTM |         43.01%       |        Constant 0.5      |                --.--%             |   
+| ResNet50 + RAINv23.2.2 + LSTM |         42.03%       |        0.25      |                --.--%             | 
+| ResNet50 + RAINv23.2.2.1 + LSTM |         41.24%       |        Constant 0.27      |                --.--%             |   
+| ResNet50 + RAINv23.3 + LSTM |           **44.51**%       |        1.0       |                **43.87**%             |   
+| ResNet50 + RAINv23.4 + LSTM |           **45.62**%       |        1.0       |                **44.29**%             |   
+| ResNet50 + RAINv23.5 + LSTM |           43.07%           |        0.33                      --.--%             ||   
+| ResNet50 + RAINv23.6 + LSTM |           41.96%           |        0.31       |                --.--%             |  
+| ResNet50 + RAINv24 + LSTM |             41.96%           |        1.0       |                --.--%             |   
+| ResNet50 + RAINv24.1 + LSTM |           **43.59**%       |        1.0       |                **42.63**%             |   
+| | | | |
+|    Phi Only Experiments   |      Extract Layer MRA       |    Phi Value   |     Rate Modified Dataset MRA     |    
+| ResNet50 + RAINv25 + LSTM |             41.11%           |      1.0       |                --.--%             |
+| ResNet50 + RAINv26 + LSTM |             **43.76**%       |      0.61      |                --.--%             |
+| ResNet50 + RAINv31 + LSTM |             **43.53**%           |      1.0       |                --.--%             |
+| ResNet50 + RAINv34 + LSTM |             --.--%           |        -.-     |                --.--%             |
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -790,9 +837,12 @@ Ideas for Future Versions of RAIN Layer
     * Max of Extract Layer
 * V6:
     * Idea: (nonlinear rate transform) Allow the output of the extract layer to be parameters used to modify the input video by gradually slowing down the video from the default rate to some learned rate until it reaches the main action and then speeding it back up to the default rate. The beginning and end points of this sampling will still be the beginning and end of the input video.
-    * Mean of Extract Layer
-    * Median of Extract Layer
-    * Max of Extract Layer
+    * Variables learned directly
+
+* V6.1:
+    * Idea: (v6, alpha intiialized to sigmoid(1.0) phi initialized to sigmoid(1.0)) The original v6 model may have had a poor initialization for learning alpha and phi so they will both be reinitialized to sigmoid(1.0) and trained again.
+    * Variables learned directly
+    
 * V7:
     * Idea: (Increase L) When comparing the inputs to the baseline networks, we found that multiple quick cycles are provided as input to the baseline networks. Given this high amount of redundancy, a possible solution to our situation of capturing only a single cycle would be to increase L so that the network has a longer timeframe to look over and make a decision.
     * Mean of Extract Layer
@@ -919,7 +969,11 @@ Ideas for Future Versions of RAIN Layer
         * V23.2.2:
             * Idea: (v23 + -relu + sigmoid) v23.2.1 forces alpha to have values from 0.5 to 1.0, this method will allow alpha to have values from 0.0 to 0.5 to see if it still results in alpha=0.5.
             * Variables learned directly
-    
+        
+            * V23.2.2.1:
+                * Idea: (v23 + -relu + sigmoid + alpha is constant initialzied to 0.27) Since the best performance is reached when alpha is held constant for the majority of training, this model will determine the impact of learning different initializations of the constant alpha.
+                * Alpha is constant
+
     * V23.3:
         * Idea: (v23 + initialize alpha to 0.25) The model may be able to learn to not default to 1.0 is the initialization of alpha starts lower.
         * Variables learned directly
@@ -980,6 +1034,15 @@ Ideas for Future Versions of RAIN Layer
 * V32:
     * Idea: (FM at the bottom) The idea is to use frequency modulation exactly like v6 except that it will be applied to the features at the bottom of the model.
     * Variables learned directly
+
+* V33:
+    * Idea: (Simplified FM) This formulation is similar to the other FM model except that alpha and phi dictate the location and rate of the input video that gets slowed down.  The output dimension of this slowed down section is L/2, where the other L/2 frames are the remaining beginning and end of the input video uniformly sampled.
+    * Variables learned directly
+
+* V34:
+    * Idea: (Phi only, L only, end of model) Initialize phi at the end of the model and then extract the next L (50) frames starting at phi. Phi is a variable with a negative exponential activation function.
+    * Variables learned directly
+
 
 * Alternate:
     * Pass the parameters through an LSTM before entering the RAIN layer.
