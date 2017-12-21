@@ -24,32 +24,38 @@ from logger                                           import Logger
 from random                                           import shuffle
 from load_dataset_tfrecords                           import load_dataset
 
-from models.resnet_RIL.resnet_RIL_interp_median_model_v6       import ResNet_RIL_Interp_Median_v6
-from models.resnet_RIL.resnet_RIL_interp_median_model_v21      import ResNet_RIL_Interp_Median_v21
-from models.resnet_RIL.resnet_RIL_interp_median_model_v22      import ResNet_RIL_Interp_Median_v22
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23      import ResNet_RIL_Interp_Median_v23
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1    import ResNet_RIL_Interp_Median_v23_1
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_1  import ResNet_RIL_Interp_Median_v23_1_1
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_2  import ResNet_RIL_Interp_Median_v23_1_2
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2    import ResNet_RIL_Interp_Median_v23_2
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1  import ResNet_RIL_Interp_Median_v23_2_1
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2  import ResNet_RIL_Interp_Median_v23_2_2
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_3    import ResNet_RIL_Interp_Median_v23_3
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_4    import ResNet_RIL_Interp_Median_v23_4
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_5    import ResNet_RIL_Interp_Median_v23_5
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_6    import ResNet_RIL_Interp_Median_v23_6
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_lstm import ResNet_RIL_Interp_Median_v23_lstm
-from models.resnet_RIL.resnet_RIL_interp_median_model_v24      import ResNet_RIL_Interp_Median_v24
-from models.resnet_RIL.resnet_RIL_interp_median_model_v24_1    import ResNet_RIL_Interp_Median_v24_1
-from models.resnet_RIL.resnet_RIL_interp_median_model_v24_lstm import ResNet_RIL_Interp_Median_v24_lstm
-from models.resnet_RIL.resnet_RIL_interp_median_model_v25      import ResNet_RIL_Interp_Median_v25
-from models.resnet_RIL.resnet_RIL_interp_median_model_v26      import ResNet_RIL_Interp_Median_v26
-from models.resnet_RIL.resnet_RIL_interp_median_model_v27      import ResNet_RIL_Interp_Median_v27
-from models.resnet_RIL.resnet_RIL_interp_median_model_v28      import ResNet_RIL_Interp_Median_v28
-from models.resnet_RIL.resnet_RIL_interp_median_model_v29      import ResNet_RIL_Interp_Median_v29
-from models.resnet_RIL.resnet_RIL_interp_median_model_v30      import ResNet_RIL_Interp_Median_v30
-
-
+from models.resnet_RIL.resnet_RIL_interp_median_model_v6        import ResNet_RIL_Interp_Median_v6
+from models.resnet_RIL.resnet_RIL_interp_median_model_v6_1        import ResNet_RIL_Interp_Median_v6_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v21       import ResNet_RIL_Interp_Median_v21
+from models.resnet_RIL.resnet_RIL_interp_median_model_v22       import ResNet_RIL_Interp_Median_v22
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23       import ResNet_RIL_Interp_Median_v23
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1     import ResNet_RIL_Interp_Median_v23_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_1   import ResNet_RIL_Interp_Median_v23_1_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_2   import ResNet_RIL_Interp_Median_v23_1_2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2     import ResNet_RIL_Interp_Median_v23_2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1   import ResNet_RIL_Interp_Median_v23_2_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1_1 import ResNet_RIL_Interp_Median_v23_2_1_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1_2 import ResNet_RIL_Interp_Median_v23_2_1_2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2   import ResNet_RIL_Interp_Median_v23_2_2
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2_1 import ResNet_RIL_Interp_Median_v23_2_2_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_3     import ResNet_RIL_Interp_Median_v23_3
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_4     import ResNet_RIL_Interp_Median_v23_4
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_5     import ResNet_RIL_Interp_Median_v23_5
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_6     import ResNet_RIL_Interp_Median_v23_6
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_lstm  import ResNet_RIL_Interp_Median_v23_lstm
+from models.resnet_RIL.resnet_RIL_interp_median_model_v24       import ResNet_RIL_Interp_Median_v24
+from models.resnet_RIL.resnet_RIL_interp_median_model_v24_1     import ResNet_RIL_Interp_Median_v24_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v24_lstm  import ResNet_RIL_Interp_Median_v24_lstm
+from models.resnet_RIL.resnet_RIL_interp_median_model_v25       import ResNet_RIL_Interp_Median_v25
+from models.resnet_RIL.resnet_RIL_interp_median_model_v26       import ResNet_RIL_Interp_Median_v26
+from models.resnet_RIL.resnet_RIL_interp_median_model_v27       import ResNet_RIL_Interp_Median_v27
+from models.resnet_RIL.resnet_RIL_interp_median_model_v28       import ResNet_RIL_Interp_Median_v28
+from models.resnet_RIL.resnet_RIL_interp_median_model_v29       import ResNet_RIL_Interp_Median_v29
+from models.resnet_RIL.resnet_RIL_interp_median_model_v30       import ResNet_RIL_Interp_Median_v30
+from models.resnet_RIL.resnet_RIL_interp_median_model_v31       import ResNet_RIL_Interp_Median_v31
+from models.resnet_RIL.resnet_RIL_interp_median_model_v32       import ResNet_RIL_Interp_Median_v32
+from models.resnet_RIL.resnet_RIL_interp_median_model_v33       import ResNet_RIL_Interp_Median_v33
+from models.resnet_RIL.resnet_RIL_interp_median_model_v34       import ResNet_RIL_Interp_Median_v34
 
 
 def _average_gradients(tower_grads):
@@ -648,6 +654,9 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v6':
         model = ResNet_RIL_Interp_Median_v6()
 
+    elif model_name == 'resnet_RIL_interp_median_v6_1':
+        model = ResNet_RIL_Interp_Median_v6_1()
+
     elif model_name == 'resnet_RIL_interp_median_v21':
         model = ResNet_RIL_Interp_Median_v21()
 
@@ -675,8 +684,17 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v23_2_1':
         model = ResNet_RIL_Interp_Median_v23_2_1()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_2_1_1':
+        model = ResNet_RIL_Interp_Median_v23_2_1_1()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_2_1_2':
+        model = ResNet_RIL_Interp_Median_v23_2_1_2()
+
     elif model_name == 'resnet_RIL_interp_median_v23_2_2':
         model = ResNet_RIL_Interp_Median_v23_2_2()
+
+    elif model_name == 'resnet_RIL_interp_median_v23_2_2_1':
+        model = ResNet_RIL_Interp_Median_v23_2_2_1()
 
     elif model_name == 'resnet_RIL_interp_median_v23_3':
         model = ResNet_RIL_Interp_Median_v23_3()
@@ -716,6 +734,18 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v30':
         model = ResNet_RIL_Interp_Median_v30()
+
+    elif model_name == 'resnet_RIL_interp_median_v31':
+        model = ResNet_RIL_Interp_Median_v31()
+
+    elif model_name == 'resnet_RIL_interp_median_v32':
+        model = ResNet_RIL_Interp_Median_v32()
+
+    elif model_name == 'resnet_RIL_interp_median_v33':
+        model = ResNet_RIL_Interp_Median_v33()
+
+    elif model_name == 'resnet_RIL_interp_median_v34':
+        model = ResNet_RIL_Interp_Median_v34()
 
     else:
         print("Model not found, check the import and elif statements")

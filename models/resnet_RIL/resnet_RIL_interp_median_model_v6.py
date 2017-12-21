@@ -473,7 +473,7 @@ class ResNet_RIL_Interp_Median_v6():
 
             # END WITH
 
-        return [layers['Parameterization_Variables'][0], layers['logits']]
+        return layers[return_layer]#[layers['Parameterization_Variables'][0], layers['logits']]
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

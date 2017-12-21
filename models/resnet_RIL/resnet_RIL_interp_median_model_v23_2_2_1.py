@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2_1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -12,7 +12,7 @@ from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp_Median_v23_2_2():
+class ResNet_RIL_Interp_Median_v23_2_2_1():
 
     def __init__(self, verbose=True):
         """
@@ -20,8 +20,8 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v23_2_2'
-        print "resnet RIL interp median v23_2_2 initialized"
+        self.name = 'resnet_RIL_interp_median_model_v23_2_2_1'
+        print "resnet RIL interp median v23_2_2_1 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -294,7 +294,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2_1 network layers')
 
         # END IF
 
@@ -311,7 +311,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             #                           Parameterization Network                       #
             ############################################################################
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
+            layers['Parameterization_Variables'] = [tf.constant(1.0, name='alpha', dtype=tf.float32)]
 
 
             layers['RIlayer'] = self._extraction_layer(inputs=inputs,
@@ -401,7 +401,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
 
             # END WITH
 
-        return layers[return_layer]#[layers[x] for x in return_layer]
+        return [layers[x] for x in return_layer]
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

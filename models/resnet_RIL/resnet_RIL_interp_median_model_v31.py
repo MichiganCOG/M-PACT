@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v31 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -12,7 +12,7 @@ from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp_Median_v23_2_2():
+class ResNet_RIL_Interp_Median_v31():
 
     def __init__(self, verbose=True):
         """
@@ -20,8 +20,8 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v23_2_2'
-        print "resnet RIL interp median v23_2_2 initialized"
+        self.name = 'resnet_RIL_interp_median_model_v31'
+        print "resnet RIL interp median v31 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -38,21 +38,24 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.sigmoid(-tf.nn.relu(params[0]))
+        sample_phi_tick   = tf.exp(-tf.nn.relu(params[0]))
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+
+
+        # Offset scaling to match inputs temporal dimension
+        sample_phi_tick = sample_phi_tick * tf.cast((sets*K) - L, tf.float32)
+
+        phi_tick = tf.tile([sample_phi_tick], [L])
 
         # Generate indices for output
         output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
 
         output_idx = tf.slice(output_idx, [0],[L])
 
-        # Sampling parameter scaling to match inputs temporal dimension
-        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
-
-        # Include sampling parameter to correct output indices
-        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
+        # Add offset to the output indices
+        output_idx = output_idx + phi_tick
 
         # Clip output index values to >= 1 and <=N (valid cases only)
         output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
@@ -85,6 +88,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
 
         return output
+
 
 
 
@@ -294,7 +298,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v31 network layers')
 
         # END IF
 
@@ -311,8 +315,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             #                           Parameterization Network                       #
             ############################################################################
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
-
+            layers['Parameterization_Variables'] = [tf.get_variable('phi',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
 
             layers['RIlayer'] = self._extraction_layer(inputs=inputs,
                                                        params=layers['Parameterization_Variables'],
@@ -401,7 +404,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
 
             # END WITH
 
-        return layers[return_layer]#[layers[x] for x in return_layer]
+        return [layers[x] for x in return_layer]
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

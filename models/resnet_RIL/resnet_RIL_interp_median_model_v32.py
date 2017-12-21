@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v32 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -12,7 +12,7 @@ from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp_Median_v23_2_2():
+class ResNet_RIL_Interp_Median_v32():
 
     def __init__(self, verbose=True):
         """
@@ -20,8 +20,76 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v23_2_2'
-        print "resnet RIL interp median v23_2_2 initialized"
+        self.name = 'resnet_RIL_interp_median_model_v32'
+        print "resnet RIL interp median v32 initialized"
+
+
+
+    def _condition_phi_0(self, N, sample_phi_tick, alpha_tick):
+
+        # Speed Up Indices
+        su_idx = tf.range(start=tf.floor(N-sample_phi_tick*N), limit=0., delta=-1.)
+
+        # Modulate the frequency of frames to speed up from phi to 1
+        su_idx = 1. - ((su_idx) / (N))**(1./(alpha_tick+1.))
+
+
+        # Force the first and last frame to the output video then gradually slow down and speed up based on previous calculations
+        output_idx = tf.concat([[0.], su_idx, [1.]], axis=0)
+
+        return output_idx
+
+
+
+
+    def _condition_phi_not_0(self, N, sample_phi_tick, alpha_tick):
+
+        output_idx = tf.cond(tf.equal(sample_phi_tick, 1.),
+                            lambda: self._condition_phi_1(N, sample_phi_tick, alpha_tick),
+                            lambda: self._condition_phi_not_1(N, sample_phi_tick, alpha_tick))
+
+        return output_idx
+
+
+
+    def _condition_phi_1(self, N, sample_phi_tick, alpha_tick):
+
+        # Slow Down Indices
+        sd_idx = tf.range(start=1., limit=tf.floor(N + 1.))
+
+        # Modulate the video frequency to slow down from 0 to phi
+        sd_idx = (sd_idx / (N))**(1./(alpha_tick+1.))
+
+        # Force the first and last frame to the output video then gradually slow down and speed up based on previous calculations
+        output_idx = tf.concat([[0.], sd_idx, [1.]], axis=0)
+
+        return output_idx
+
+
+
+
+    def _condition_phi_not_1(self, N, sample_phi_tick, alpha_tick):
+
+        # Slow Down Indices
+        sd_idx = tf.range(start=1., limit=tf.floor(sample_phi_tick * N + 1.))
+
+        # Modulate the video frequency to slow down from 0 to phi
+        sd_idx = sample_phi_tick * (sd_idx / (sample_phi_tick*N))**(1./(alpha_tick+1.))
+
+
+        # Speed Up Indices
+        su_idx = tf.range(start=tf.floor(N-sample_phi_tick*N), limit=0., delta=-1.)
+
+        # Modulate the frequency of frames to speed up from phi to 1
+        su_idx = 1. - (1. - sample_phi_tick) * ((su_idx) / ((1. - sample_phi_tick)*N))**(1./(alpha_tick+1.))
+
+
+        # Force the first and last frame to the output video then gradually slow down and speed up based on previous calculations
+        output_idx = tf.concat([[0.], sd_idx, su_idx, [1.]], axis=0)
+
+        return output_idx
+
+
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -38,21 +106,26 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.sigmoid(-tf.nn.relu(params[0]))
+        sample_alpha_tick = tf.nn.sigmoid(params[0])
+        sample_phi_tick   = tf.nn.sigmoid(params[1])
 
         # Extract shape of input signal
-        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+        frames, shp_feat = inputs.get_shape().as_list()
 
-        # Generate indices for output
-        output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
 
-        output_idx = tf.slice(output_idx, [0],[L])
+        N = L - 1.
 
-        # Sampling parameter scaling to match inputs temporal dimension
-        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
+        alpha_tick = sample_alpha_tick*100.
 
-        # Include sampling parameter to correct output indices
-        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
+
+        # Prevent Division by Zero
+        output_idx = tf.cond(tf.equal(sample_phi_tick, 0.),
+                            lambda: self._condition_phi_0(N, sample_phi_tick, alpha_tick),
+                            lambda: self._condition_phi_not_0(N, sample_phi_tick, alpha_tick))
+
+
+        # Scale from 0-1 to 0-sets*K frames
+        output_idx = tf.multiply(tf.tile([tf.to_float(sets*K)], [L]), output_idx)
 
         # Clip output index values to >= 1 and <=N (valid cases only)
         output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
@@ -61,12 +134,11 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
         x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
 
-
         # Deltas :
         d1 = (output_idx - x0)
         d2 = (x1 - x0)
-        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [L,224,224,3])
-        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [L,224,224,3])
+        d1 = tf.reshape(tf.tile(d1, [shp_feat]), [L,shp_feat])
+        d2 = tf.reshape(tf.tile(d2, [shp_feat]), [L,shp_feat])
 
         # Create x0 and x1 indices
         output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
@@ -82,7 +154,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
 
         output = tf.add_n([(d1/d2)*d3, output_0])
 
-        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
+        output = tf.reshape(output, (L, shp_feat), name='RIlayeroutput')
 
         return output
 
@@ -270,7 +342,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
 
         return layers
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], data_dict=None, weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer='logits', data_dict=None, weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -294,7 +366,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v32 network layers')
 
         # END IF
 
@@ -311,16 +383,15 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             #                           Parameterization Network                       #
             ############################################################################
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
-
-
-            layers['RIlayer'] = self._extraction_layer(inputs=inputs,
-                                                       params=layers['Parameterization_Variables'],
-                                                       sets=j, L=seq_length, K=k)
+            # layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(-1.0)), tf.get_variable('phi',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.0))]
+            #
+            # layers['RAINlayer'] = self._extraction_layer(inputs=inputs,
+            #                                            params=layers['Parameterization_Variables'],
+            #                                            sets=j, L=seq_length, K=k)
 
             ############################################################################
 
-            layers['1'] = conv_layer(input_tensor=layers['RIlayer'],
+            layers['1'] = conv_layer(input_tensor=inputs,
                     filter_dims=[7, 7, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='conv1',
@@ -391,7 +462,17 @@ class ResNet_RIL_Interp_Median_v23_2_2():
                             input_layer=layers['116'], data_dict=data_dict))
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
-            layers['125'] = self._LSTM(layers['124'], seq_length, feat_size=2048, cell_size=512)
+
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(-1.0)), tf.get_variable('phi',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.0))]
+
+
+            layers['RAINlayer'] = self._extraction_layer(inputs=layers['124'],
+                                                       params=layers['Parameterization_Variables'],
+                                                       sets=j, L=seq_length, K=k)
+
+            ############################################################################
+
+            layers['125'] = self._LSTM(layers['RAINlayer'], seq_length, feat_size=2048, cell_size=512)
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
 
@@ -399,9 +480,11 @@ class ResNet_RIL_Interp_Median_v23_2_2():
                                                      out_dim=output_dims, non_linear_fn=None,
                                                      name='logits', weight_decay=weight_decay)
 
+
+
             # END WITH
 
-        return layers[return_layer]#[layers[x] for x in return_layer]
+        return [layers['Parameterization_Variables']]#layers['Parameterization_Variables'][0], layers['logits']]
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

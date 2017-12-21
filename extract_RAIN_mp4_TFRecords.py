@@ -63,6 +63,7 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1 import ResNet_RIL_In
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_1_1 import ResNet_RIL_Interp_Median_v23_1_1
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2 import ResNet_RIL_Interp_Median_v23_2
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1 import ResNet_RIL_Interp_Median_v23_2_1
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2 import ResNet_RIL_Interp_Median_v23_2_2
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_3 import ResNet_RIL_Interp_Median_v23_3
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_4 import ResNet_RIL_Interp_Median_v23_4
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_5 import ResNet_RIL_Interp_Median_v23_5
@@ -75,8 +76,9 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v27 import ResNet_RIL_Inte
 from models.resnet_RIL.resnet_RIL_interp_median_model_v28 import ResNet_RIL_Interp_Median_v28
 from models.resnet_RIL.resnet_RIL_interp_median_model_v29 import ResNet_RIL_Interp_Median_v29
 from models.resnet_RIL.resnet_RIL_interp_median_model_v30 import ResNet_RIL_Interp_Median_v30
-# from models.resnet_RIL.resnet_RIL_interp_median_model_v31 import ResNet_RIL_Interp_Median_v31
-# from models.resnet_RIL.resnet_RIL_interp_median_model_v32 import ResNet_RIL_Interp_Median_v32
+from models.resnet_RIL.resnet_RIL_interp_median_model_v31 import ResNet_RIL_Interp_Median_v31
+from models.resnet_RIL.resnet_RIL_interp_median_model_v32 import ResNet_RIL_Interp_Median_v32
+from models.resnet_RIL.resnet_RIL_interp_median_model_v33 import ResNet_RIL_Interp_Median_v33
 
 # from models.resnet_RIL.resnet_RIL_interp_max_model_v1  import ResNet_RIL_Interp_Max_v1
 # from models.resnet_RIL.resnet_RIL_interp_max_model_v2  import ResNet_RIL_Interp_Max_v2
@@ -455,8 +457,9 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  output_dims,
                                  seq_length,
                                  scope, k, j,
-                                 return_layer = "RAINlayer")
-                                # return_layer = 'Parameterization_Variables')
+                                # return_layer = "RIlayer")
+                                # return_layer = "RAINlayer")
+                                 return_layer = 'Parameterization_Variables')
                                 # return_layer = 'Parameterization_Variable_Phi')
                                 # return_layer = 'Parameterization_Variable_Alpha')
                                 # return_layer = 'RAINlayer_lstm_fc_4')
@@ -644,32 +647,32 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                 frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
                 input_data = input_data[0]
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
 
             # return frames, input_data
             #
             #
             #
-            # print names, frames
+            print names, frames
+
+            # if model_label == 'RIL':
+            #     if rate_label == 'Rate':
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+            #         save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
+            #     else:
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+            #         save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
+            # else:
+            #     if rate_label == 'Rate':
+            #     #    import pdb;pdb.set_trace()
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
+            #     #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
+            #     else:
+            #         save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
+            #         save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
             #
-            if model_label == 'RIL':
-                if rate_label == 'Rate':
-                    save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
-                    save_gif(frames, model_label+'_'+rate_label+'_output'+names[0][-2:-1], model, dataset, names[0][:-4])
-                else:
-                    save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
-                    save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, names[0])
-            else:
-                if rate_label == 'Rate':
-                #    import pdb;pdb.set_trace()
-                    save_gif(input_data, model_label+'_'+rate_label+'_input'+names[0][-2:-1], model, dataset, names[0][:-4])
-                #    save_gif(frames, model_label+'_'+rate_label+'_output'+str(vid_num%(vid_num_orig*10)), model, dataset, vid_num_orig)
-                else:
-                    save_gif(input_data, model_label+'_'+rate_label+'_input', model, dataset, names[0])
-                    save_gif(frames, model_label+'_'+rate_label+'_output', model, dataset, vid_num_orig)
             #
-            #
-            #
+
 
 
 
@@ -907,6 +910,9 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v23_2_1':
         model = ResNet_RIL_Interp_Median_v23_2_1()
 
+    elif model_name == 'resnet_RIL_interp_median_v23_2_2':
+        model = ResNet_RIL_Interp_Median_v23_2_2()
+
     elif model_name == 'resnet_RIL_interp_median_v23_3':
         model = ResNet_RIL_Interp_Median_v23_3()
 
@@ -946,11 +952,14 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v30':
         model = ResNet_RIL_Interp_Median_v30()
 
-    # elif model_name == 'resnet_RIL_interp_median_v31':
-    #     model = ResNet_RIL_Interp_Median_v31()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v32':
-    #     model = ResNet_RIL_Interp_Median_v32()
+    elif model_name == 'resnet_RIL_interp_median_v31':
+        model = ResNet_RIL_Interp_Median_v31()
+
+    elif model_name == 'resnet_RIL_interp_median_v32':
+        model = ResNet_RIL_Interp_Median_v32()
+
+    elif model_name == 'resnet_RIL_interp_median_v33':
+        model = ResNet_RIL_Interp_Median_v33()
 
     else:
         print("Model not found")
