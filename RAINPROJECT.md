@@ -548,41 +548,45 @@ Progress
 
     HMDB51 Original RAIN Layer Experiments
 |    Alpha and Phi Experiments        |      Extract Layer MRA        |    Alpha Value   |    Phi Value   |     Rate Modified Dataset MRA     |
-|:------------------------:|:----------------------------: |:---------------: |:-------------: |:--------------------------------: |
-| ResNet50 + RAINv6 + LSTM |                38.10%         |        0.31      |      0.51      |                --.--%             |
-| ResNet50 + RAINv6.1 + LSTM |              --.--%         |        -.-       |      -.-       |                --.--%             |
-| ResNet50 + RAINv21 + LSTM |             **43.14**%       |        1.0       |      0.11      |                --.--%             |                
-| ResNet50 + RAINv22 + LSTM |             **43.33**%       |        0.94      |      1.0       |                --.--%             |                
-| ResNet50 + RAINv27 + LSTM |             37.32%           |        0.043     |      1.0       |                --.--%             |                
-| ResNet50 + RAINv28 + LSTM |             **43.35**%       |        1.0       |      1.0       |                --.--%             |
-| ResNet50 + RAINv29 + LSTM |             42.61%           |        1.0       |      0.66      |                --.--%             |
-| ResNet50 + RAINv30 + LSTM |             42.75%           |        1.0       |      1.0       |                --.--%             |
-| ResNet50 + RAINv32 + LSTM |             37.84%           |        0.27       |      0.47       |                --.--%             |
-| ResNet50 + RAINv33 + LSTM |             --.--%           |        -.-       |      -.-       |                --.--%             |
+|:-----------------------------------:|:----------------------------: |:---------------: |:-------------: |:--------------------------------: |
+| ResNet50 + RAINv6 + LSTM            |              38.10%           |        0.31      |      0.51      |                --.--%             |
+| ResNet50 + RAINv6.1 + LSTM          |              39.87%           |        0.73      |      0.69      |                --.--%             |
+| ResNet50 + RAINv21 + LSTM           |            **43.14**%         |        1.0       |      0.11      |                --.--%             |                
+| ResNet50 + RAINv22 + LSTM           |            **43.33**%         |        0.94      |      1.0       |                --.--%             |                
+| ResNet50 + RAINv27 + LSTM           |              37.32%           |        0.043     |      1.0       |                --.--%             |                
+| ResNet50 + RAINv28 + LSTM           |            **43.35**%         |        1.0       |      1.0       |                --.--%             |
+| ResNet50 + RAINv29 + LSTM           |              42.61%           |        1.0       |      0.66      |                --.--%             |
+| ResNet50 + RAINv30 + LSTM           |              42.75%           |        1.0       |      1.0       |                --.--%             |
+| ResNet50 + RAINv32 + LSTM           |              37.84%           |        0.27      |      0.47      |                --.--%             |
+| ResNet50 + RAINv33 + LSTM           |              36.34%           |        0.5       |      0.5       |                --.--%             |
 | | | | |
-|    Alpha Only Experiments        |      Extract Layer MRA        |    Alpha Value   |     Rate Modified Dataset MRA     |    
-| ResNet50 + RAINv23 + LSTM |             **44.64**%       |        0.46      |                **42.78**%             |   
-| ResNet50 + RAINv23.1 + LSTM |           42.16%           |        0.32       |                --.--%             |  
-| ResNet50 + RAINv23.1.1 + LSTM |         **44.05**%           |        0.50       |                **43.38**%             |  
-| ResNet50 + RAINv23.1.2 + LSTM |         **44.38**%           |        0.50      |                --.--%             | 
-| ResNet50 + RAINv23.2 + LSTM |           **43.46**%       |        0.51      |                **42.24**%             |  
-| ResNet50 + RAINv23.2.1 + LSTM |         **46.01**%       |        0.50      |                **44.41**%             |   
-| ResNet50 + RAINv23.2.1.1 + LSTM |         **43.92**%       |    Constant 0.73      |                --.--%             |   
-| ResNet50 + RAINv23.2.1.2 + LSTM |         43.01%       |        Constant 0.5      |                --.--%             |   
-| ResNet50 + RAINv23.2.2 + LSTM |         42.03%       |        0.25      |                --.--%             | 
-| ResNet50 + RAINv23.2.2.1 + LSTM |         41.24%       |        Constant 0.27      |                --.--%             |   
-| ResNet50 + RAINv23.3 + LSTM |           **44.51**%       |        1.0       |                **43.87**%             |   
-| ResNet50 + RAINv23.4 + LSTM |           **45.62**%       |        1.0       |                **44.29**%             |   
-| ResNet50 + RAINv23.5 + LSTM |           43.07%           |        0.33                      --.--%             ||   
-| ResNet50 + RAINv23.6 + LSTM |           41.96%           |        0.31       |                --.--%             |  
-| ResNet50 + RAINv24 + LSTM |             41.96%           |        1.0       |                --.--%             |   
-| ResNet50 + RAINv24.1 + LSTM |           **43.59**%       |        1.0       |                **42.63**%             |   
+|    Alpha Only Experiments           |      Extract Layer MRA        |    Alpha Value   |    Phi Value   |     Rate Modified Dataset MRA     |    
+| ResNet50 + RAINv23 + LSTM           |             **44.64**%        |        0.46      |      N/A       |            **42.78**%             |   
+| ResNet50 + RAINv23.1 + LSTM         |               42.16%          |        0.32      |      N/A       |              --.--%               |  
+| ResNet50 + RAINv23.1.1 + LSTM       |             **44.05**%        |        0.50      |      N/A       |            **43.38**%             |  
+| ResNet50 + RAINv23.1.2 + LSTM       |             **44.38**%        |        0.50      |      N/A       |              41.65%               | 
+| ResNet50 + RAINv23.2 + LSTM         |             **43.46**%        |        0.51      |      N/A       |            **42.24**%             |  
+| ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |   
+| ResNet50 + RAINv23.2.1.1 + LSTM     |             **43.92**%        |    C   0.73      |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.2.1.2 + LSTM     |               43.01%          |    C   0.5       |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.2.2 + LSTM       |               42.03%          |        0.25      |      N/A       |              --.--%               | 
+| ResNet50 + RAINv23.2.2.1 + LSTM     |               41.24%          |    C   0.27      |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.3 + LSTM         |             **44.51**%        |        1.0       |      N/A       |            **43.87**%             |   
+| ResNet50 + RAINv23.4 + LSTM         |             **45.62**%        |        1.0       |      N/A       |            **44.29**%             |   
+| ResNet50 + RAINv23.5 + LSTM         |               43.07%          |        0.33      |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.6 + LSTM         |               41.96%          |        0.31      |      N/A       |              --.--%               |  
+| ResNet50 + RAINv23.7.1 + LSTM       |             **44.77**%        |        0.83      |      N/A       |              --.--%               |
+| ResNet50 + RAINv23.7.2 + LSTM       |               42.61%          |        0.39      |      N/A       |              --.--%               |
+| ResNet50 + RAINv23.8.1 + LSTM       |               42.47%          |        0.70      |      N/A       |              --.--%               |
+| ResNet50 + RAINv23.8.2 + LSTM       |               42.71%          |        0.23      |      N/A       |              --.--%               |
+| ResNet50 + RAINv24 + LSTM           |               41.96%          |        1.0       |      N/A       |              --.--%               |   
+| ResNet50 + RAINv24.1 + LSTM         |             **43.59**%        |        1.0       |      N/A       |            **42.63**%             |   
 | | | | |
-|    Phi Only Experiments   |      Extract Layer MRA       |    Phi Value   |     Rate Modified Dataset MRA     |    
-| ResNet50 + RAINv25 + LSTM |             41.11%           |      1.0       |                --.--%             |
-| ResNet50 + RAINv26 + LSTM |             **43.76**%       |      0.61      |                --.--%             |
-| ResNet50 + RAINv31 + LSTM |             **43.53**%           |      1.0       |                --.--%             |
-| ResNet50 + RAINv34 + LSTM |             --.--%           |        -.-     |                --.--%             |
+|    Phi Only Experiments             |      Extract Layer MRA        |    Alpha Value   |   Phi Value    |     Rate Modified Dataset MRA     |    
+| ResNet50 + RAINv25 + LSTM           |               41.11%          |        N/A       |      1.0       |              --.--%               |
+| ResNet50 + RAINv26 + LSTM           |             **43.76**%        |        N/A       |      0.61      |              --.--%               |
+| ResNet50 + RAINv31 + LSTM           |             **43.53**%        |        N/A       |      1.0       |            **42.32**%             |
+| ResNet50 + RAINv34 + LSTM           |             **43.43**%        |        N/A       |      1.0       |              --.--%               |
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
