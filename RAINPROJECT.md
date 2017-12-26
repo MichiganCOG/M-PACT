@@ -7,7 +7,16 @@ Our Goal: Submit ASAP
 
 
 ## Takeaways
-
+* For Alpha only models
+    * Best perfoming model is v23.2.1 (on both HMDB51 and HMDB51Rate). The activation function is sigmoid(relu(parameter)).
+        * The parameter was initialized to a high value but eventually decreased to 0.5 and remained constant.
+        * If the model is initialized and fixed at 0.5 performance is not sufficient to even beat baseline performance.
+        * If model is initialized and fixed at a higher value (0.73) performance beats baseline but is not the highest possible.
+        * Thus, the initialized learning period is important for these models to adjust their representation before saturating to a value of 0.5.
+    * The 2nd best performing model is v23.4 (on both HMDB51 and HMDB51Rate). The activation function is exp(-relu(parameter)).
+        * The alpha was initialized to 0.7788 when compared to v23. This forced it to saturate at 1.0 instead of 0.5.
+    * The 3rd best performing model is v23.7.1 (on HMDB51). The activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+        * The only model where free roam on positive and negative sides of the parameter space was allowed and performance is so high. 
 
 
 
@@ -29,14 +38,20 @@ Our Goal: Submit ASAP
             * [RAIN v23.1.2](#rainv23.1.2)
         * [RAIN v23.2](#rainv23.2)
             * [RAIN v23.2.1](#rainv23.2.1)
-                * [RAIN v23.2.1.1](#rainv23.2.1.1)
-                * [RAIN v23.2.1.2](#rainv23.2.1.2)
+            * [RAIN v23.2.1.1](#rainv23.2.1.1)
+            * [RAIN v23.2.1.2](#rainv23.2.1.2)
             * [RAIN v23.2.2](#rainv23.2.2)
-                * [RAIN v23.2.2.1](#rainv23.2.2.1)
+            * [RAIN v23.2.2.1](#rainv23.2.2.1)
         * [RAIN v23.3](#rainv23.3)
         * [RAIN v23.4](#rainv23.4)
         * [RAIN v23.5](#rainv23.5)
         * [RAIN v23.6](#rainv23.6)
+        * [RAIN v23.7](#rainv23.7)
+            * [RAIN v23.7.1](#rainv23.7.1)
+            * [RAIN v23.7.2](#rainv23.7.2)
+        * [RAIN v23.8](#rainv23.8)
+            * [RAIN v23.8.1](#rainv23.8.1)
+            * [RAIN v23.8.2](#rainv23.8.2)
     * [RAIN v24.0](#rainv24)
         * [RAIN v24.0 LSTM](#rainv24_lstm)
         * [RAIN v24.1](#rainv24.1)
@@ -151,7 +166,7 @@ Incomplete -  &#9974;
 This section contains the implemented ideas for various versions of RAIN layers and their descriptions.  The versions begin at v21 because versions 1-20 used an different parameterization network that was deemed inferior to the current method.  The previous method incorporated the parameterization network directly into the model attempting to learn alpha and phi through multiple convolutional and fully connected layers before passing them into the extraction layer. Versions 21 and onward instead simply initialize variables alpha and phi and allow them to learn through backpropagation.  This new method causes a single alpha and phi value to be learned for every video.  This is addressed by incorporating an LSTM to process the input videos and learning alpha and phi from the hidden states of this LSTM. This LSTM formulation for the parameterization network will be implemented once various extraction layer versions have been tested and optimized. 
 
 ### RAIN Layers incorporating alpha and phi
-
+----------------------------------------------
 
 <a name="rainv6"/>
 #### RAIN Layer v6.0
@@ -257,7 +272,7 @@ This formulation is similar to the other FM model except that alpha and phi dict
 
 
 ### RAIN Layers incorporating alpha only
-
+-----------------------------------------
 
 <a name="rainv23"/>
 #### RAIN Layer v23.0
@@ -404,8 +419,39 @@ The exponential activation used in v23 allows for a more gradual transition from
 ![RAINv23.6 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23.6 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
+<a name="rainv23.7"/>
+<a name="rainv23.7.1"/>
+#### RAIN Layer v23.7.1
+---------------
+Tanh activation used with an internal relu activation function. Since relu forces the removal of -ve parameters, we have included a condition that changes negative values to positive so that they are not negated by the relu activation.
 
+![RAINv23.7.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.7.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
+<a name="rainv23.7.2"/>
+#### RAIN Layer v23.7.2
+---------------
+Tanh activation used with an internal  -ve relu activation function. Since relu forces the removal of -ve parameters, we have included a condition that changes negative values to positive so that they are not negated by the relu activation.
+
+![RAINv23.7.2 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.7.2 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+<a name="rainv23.8"/>
+<a name="rainv23.8.1"/>
+#### RAIN Layer v23.8.1
+---------------
+Sigmoid activation used with an internal relu activation function. Since relu forces the removal of -ve parameters, we have included a condition that changes negative values to positive so that they are not negated by the relu activation.
+
+![RAINv23.8.1 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.8.1 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+<a name="rainv23.8.2"/>
+#### RAIN Layer v23.8.2
+---------------
+Sigmoid activation used with an internal  -ve relu activation function. Since relu forces the removal of -ve parameters, we have included a condition that changes negative values to positive so that they are not negated by the relu activation.
+
+![RAINv23.8.2 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv23.8.2 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
 
 <a name="rainv24"/>
 #### RAIN Layer v24.0
@@ -435,13 +481,8 @@ This model is idential to v24.0 except that the initialization for alpha is set 
 
 
 
-
-
-
-
-
 ### RAIN Layers incorporating phi only
-
+---------------------------------------
 <a name="rainv25"/>
 #### RAIN Layer v25.0
 ---------------
@@ -551,10 +592,10 @@ Progress
 |:-----------------------------------:|:----------------------------: |:---------------: |:-------------: |:--------------------------------: |
 | ResNet50 + RAINv6 + LSTM            |              38.10%           |        0.31      |      0.51      |                --.--%             |
 | ResNet50 + RAINv6.1 + LSTM          |              39.87%           |        0.73      |      0.69      |                --.--%             |
-| ResNet50 + RAINv21 + LSTM           |            **43.14**%         |        1.0       |      0.11      |                --.--%             |                
-| ResNet50 + RAINv22 + LSTM           |            **43.33**%         |        0.94      |      1.0       |                --.--%             |                
+| ResNet50 + RAINv21 + LSTM           |            **43.14**%         |        1.0       |      0.11      |                41.29%             |                
+| ResNet50 + RAINv22 + LSTM           |            **43.33**%         |        0.94      |      1.0       |              **41.81**%           |                
 | ResNet50 + RAINv27 + LSTM           |              37.32%           |        0.043     |      1.0       |                --.--%             |                
-| ResNet50 + RAINv28 + LSTM           |            **43.35**%         |        1.0       |      1.0       |                --.--%             |
+| ResNet50 + RAINv28 + LSTM           |              42.81%           |        1.0       |      1.0       |                --.--%             |
 | ResNet50 + RAINv29 + LSTM           |              42.61%           |        1.0       |      0.66      |                --.--%             |
 | ResNet50 + RAINv30 + LSTM           |              42.75%           |        1.0       |      1.0       |                --.--%             |
 | ResNet50 + RAINv32 + LSTM           |              37.84%           |        0.27      |      0.47      |                --.--%             |
@@ -564,10 +605,10 @@ Progress
 | ResNet50 + RAINv23 + LSTM           |             **44.64**%        |        0.46      |      N/A       |            **42.78**%             |   
 | ResNet50 + RAINv23.1 + LSTM         |               42.16%          |        0.32      |      N/A       |              --.--%               |  
 | ResNet50 + RAINv23.1.1 + LSTM       |             **44.05**%        |        0.50      |      N/A       |            **43.38**%             |  
-| ResNet50 + RAINv23.1.2 + LSTM       |             **44.38**%        |        0.50      |      N/A       |              41.65%               | 
+| ResNet50 + RAINv23.1.2 + LSTM       |             **44.38**%        |        0.50      |      N/A       |            **41.65**%             | 
 | ResNet50 + RAINv23.2 + LSTM         |             **43.46**%        |        0.51      |      N/A       |            **42.24**%             |  
 | ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |   
-| ResNet50 + RAINv23.2.1.1 + LSTM     |             **43.92**%        |    C   0.73      |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.2.1.1 + LSTM     |             **43.92**%        |    C   0.73      |      N/A       |            **41.96**%             |   
 | ResNet50 + RAINv23.2.1.2 + LSTM     |               43.01%          |    C   0.5       |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.2.2 + LSTM       |               42.03%          |        0.25      |      N/A       |              --.--%               | 
 | ResNet50 + RAINv23.2.2.1 + LSTM     |               41.24%          |    C   0.27      |      N/A       |              --.--%               |   
@@ -575,18 +616,18 @@ Progress
 | ResNet50 + RAINv23.4 + LSTM         |             **45.62**%        |        1.0       |      N/A       |            **44.29**%             |   
 | ResNet50 + RAINv23.5 + LSTM         |               43.07%          |        0.33      |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.6 + LSTM         |               41.96%          |        0.31      |      N/A       |              --.--%               |  
-| ResNet50 + RAINv23.7.1 + LSTM       |             **44.77**%        |        0.83      |      N/A       |              --.--%               |
+| ResNet50 + RAINv23.7.1 + LSTM       |             **44.77**%        |        0.83      |      N/A       |            **43.33**%             |
 | ResNet50 + RAINv23.7.2 + LSTM       |               42.61%          |        0.39      |      N/A       |              --.--%               |
-| ResNet50 + RAINv23.8.1 + LSTM       |               42.47%          |        0.70      |      N/A       |              --.--%               |
-| ResNet50 + RAINv23.8.2 + LSTM       |               42.71%          |        0.23      |      N/A       |              --.--%               |
+| ResNet50 + RAINv23.8.1 + LSTM       |               42.48%          |        0.70      |      N/A       |              --.--%               |
+| ResNet50 + RAINv23.8.2 + LSTM       |               42.75%          |        0.23      |      N/A       |              --.--%               |
 | ResNet50 + RAINv24 + LSTM           |               41.96%          |        1.0       |      N/A       |              --.--%               |   
 | ResNet50 + RAINv24.1 + LSTM         |             **43.59**%        |        1.0       |      N/A       |            **42.63**%             |   
 | | | | |
 |    Phi Only Experiments             |      Extract Layer MRA        |    Alpha Value   |   Phi Value    |     Rate Modified Dataset MRA     |    
 | ResNet50 + RAINv25 + LSTM           |               41.11%          |        N/A       |      1.0       |              --.--%               |
-| ResNet50 + RAINv26 + LSTM           |             **43.76**%        |        N/A       |      0.61      |              --.--%               |
+| ResNet50 + RAINv26 + LSTM           |             **43.73**%        |        N/A       |      0.61      |            **42.10**%             |
 | ResNet50 + RAINv31 + LSTM           |             **43.53**%        |        N/A       |      1.0       |            **42.32**%             |
-| ResNet50 + RAINv34 + LSTM           |             **43.43**%        |        N/A       |      1.0       |              --.--%               |
+| ResNet50 + RAINv34 + LSTM           |             **43.43**%        |        N/A       |      1.0       |            **42.74**%             |
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
@@ -952,8 +993,6 @@ Ideas for Future Versions of RAIN Layer
         * V23.1.2:
             * Idea: (v23 + -relu + tanh) v23.1.1 forces alpha to have values from 0.5 to 1.0, this method will allow alpha to have values from 0.0 to 0.5 to see if it still results in alpha=0.5.
             * Variables learned directly
-
-
     * V23.2:
         * Idea: (v23 + sigmoid) ReLu with a negative exponential function causes any negative value to default to 1.0.  Switching the activation function to sigmoid will allow negative values to remain valid
         * Variables learned directly
@@ -977,7 +1016,6 @@ Ideas for Future Versions of RAIN Layer
             * V23.2.2.1:
                 * Idea: (v23 + -relu + sigmoid + alpha is constant initialzied to 0.27) Since the best performance is reached when alpha is held constant for the majority of training, this model will determine the impact of learning different initializations of the constant alpha.
                 * Alpha is constant
-
     * V23.3:
         * Idea: (v23 + initialize alpha to 0.25) The model may be able to learn to not default to 1.0 is the initialization of alpha starts lower.
         * Variables learned directly
@@ -992,6 +1030,24 @@ Ideas for Future Versions of RAIN Layer
     * V23.6:
         * Idea: (v23 + double exponential activation) The exponential activation used in v23 allows for a more gradual transition from zero to one than tanh or sigmoid, however using relu limits the values learned by the parameterization network to be poisitive otherwise all negative values get defaulted to alpha=1.0. Using another exponential function for negative values allows them to result in alpha values between zero and one as well.
         * Variables learned directly
+        
+    * V23.7:
+        
+        * V23.7.1:
+            * Idea: (tanh(relu) * 0.5 + 0.5) Allowing both positive and negative values to have an impact in training and choice of alpha.
+            * Variables learned directly
+        * V23.7.2:
+            * Idea: (tanh(-relu) * 0.5 + 0.5) Allowing both positive and negative values to have an impact in training and choice of alpha.
+            * Variables learned directly
+    * V23.8:
+        
+        * V23.8.1:
+            * Idea: (sigmoid(relu)) Allowing both positive and negative values to have an impact in training and choice of alpha.
+            * Variables learned directly
+        * V23.8.2:
+            * Idea: (sigmoid(-relu)) Allowing both positive and negative values to have an impact in training and choice of alpha.
+            * Variables learned directly
+            
     
 
 * V24:
