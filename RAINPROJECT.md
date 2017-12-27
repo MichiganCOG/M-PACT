@@ -626,8 +626,18 @@ Progress
 |    Phi Only Experiments             |      Extract Layer MRA        |    Alpha Value   |   Phi Value    |     Rate Modified Dataset MRA     |    
 | ResNet50 + RAINv25 + LSTM           |               41.11%          |        N/A       |      1.0       |              --.--%               |
 | ResNet50 + RAINv26 + LSTM           |             **43.73**%        |        N/A       |      0.61      |            **42.10**%             |
+| ResNet50 + RAINv26.1 + LSTM         |             **43.59**%        |        N/A       |      0.69      |              --.--%               |
+| ResNet50 + RAINv26.2 + LSTM         |               41.44%          |        N/A       |      0.83      |              --.--%               |
+| ResNet50 + RAINv26.3 + LSTM         |               40.52%          |        N/A       |      0.77      |              --.--%               |
 | ResNet50 + RAINv31 + LSTM           |             **43.53**%        |        N/A       |      1.0       |            **42.32**%             |
+| ResNet50 + RAINv31.1 + LSTM         |               42.94%          |        N/A       |      0.5       |              --.--%               |
+| ResNet50 + RAINv31.2 + LSTM         |               42.88%          |        N/A       |      0.07      |              --.--%               |
+| ResNet50 + RAINv31.3 + LSTM         |               --.--%          |        N/A       |      -.-       |              --.--%               |
 | ResNet50 + RAINv34 + LSTM           |             **43.43**%        |        N/A       |      1.0       |            **42.74**%             |
+| ResNet50 + RAINv34.1 + LSTM         |               --.--%          |        N/A       |      -.-       |              --.--%               |
+| ResNet50 + RAINv34.2 + LSTM         |               --.--%          |        N/A       |      -.-       |              --.--%               |
+| ResNet50 + RAINv34.3 + LSTM         |               --.--%          |        N/A       |      -.-       |              --.--%               |
+
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
 
