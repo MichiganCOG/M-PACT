@@ -609,7 +609,7 @@ Progress
 | ResNet50 + RAINv23.1.2 + LSTM       |             **44.38**%        |        0.50      |      N/A       |            **41.65**%             | 
 | ResNet50 + RAINv23.2 + LSTM         |             **43.46**%        |        0.51      |      N/A       |            **42.24**%             |  
 | ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |
-| ResNet50 + RAINv23.2.1.lstm + LSTM  |             **44.25**%        |        -.--      |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.2.1.lstm + LSTM  |             **44.25**%        |        -.--      |      N/A       |            **41.43**%             |   
 | ResNet50 + RAINv23.2.1.1 + LSTM     |             **43.92**%        |    C   0.73      |      N/A       |            **41.96**%             |   
 | ResNet50 + RAINv23.2.1.2 + LSTM     |               43.01%          |    C   0.5       |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.2.2 + LSTM       |               42.03%          |        0.25      |      N/A       |              --.--%               | 
@@ -641,7 +641,7 @@ Progress
 | ResNet50 + RAINv34.1 + LSTM         |             **43.46**%        |        N/A       |      0.67      |              40.80%               |
 | ResNet50 + RAINv34.2 + LSTM         |               42.16%          |        N/A       |      0.99      |              --.--%               |
 | ResNet50 + RAINv34.3 + LSTM         |             **43.92**%        |        N/A       |      0.75      |            **42.46**%             |
-| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |      -.--      |              --.--%               |
+| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |      -.--      |            **42.89**%             |
 
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
