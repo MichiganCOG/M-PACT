@@ -17,7 +17,17 @@ Our Goal: Submit ASAP
         * The alpha was initialized to 0.7788 when compared to v23. This forced it to saturate at 1.0 instead of 0.5.
     * The 3rd best performing model is v23.7.1 (on HMDB51). The activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
         * The only model where free roam on positive and negative sides of the parameter space was allowed and performance is so high. 
+
 * For Phi only models
+    * Best performing model is v 34.3.lstm (on both HMDB51 and HMDB51Rate). The activation function used is tanh(relu(+-parameter)) *0.5 + 0.5. 
+        * The value of phi chosen is not by saturation and there is a steady learning process.
+        * The layer is placed at the bottom.
+    * 2nd best performing model is v31.3.lstm (on both HMDB51 and HMDB51Rate). The activation function used is tanh(relu(+-parameter)) *0.5 + 0.5. 
+        * The value of phi chosen is not by saturation and there is a steady learning process. 
+        * The layer is placed at the top. 
+    * Both models use LSTMs.
+    * Both models do not use uniform sampling after phi is used.
+    
 * For Alpha + Phi models
 
 
@@ -609,7 +619,7 @@ Progress
 | ResNet50 + RAINv23.1.2 + LSTM       |             **44.38**%        |        0.50      |      N/A       |            **41.65**%             | 
 | ResNet50 + RAINv23.2 + LSTM         |             **43.46**%        |        0.51      |      N/A       |            **42.24**%             |  
 | ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |
-| ResNet50 + RAINv23.2.1.lstm + LSTM  |             **44.25**%        |        -.--      |      N/A       |            **41.43**%             |   
+| ResNet50 + RAINv23.2.1.lstm + LSTM  |             **44.25**%        |        0.50      |      N/A       |            **41.43**%             |   
 | ResNet50 + RAINv23.2.1.1 + LSTM     |             **43.92**%        |    C   0.73      |      N/A       |            **41.96**%             |   
 | ResNet50 + RAINv23.2.1.2 + LSTM     |               43.01%          |    C   0.5       |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.2.2 + LSTM       |               42.03%          |        0.25      |      N/A       |              --.--%               | 
@@ -629,6 +639,7 @@ Progress
 |    Phi Only Experiments             |      Extract Layer MRA        |    Alpha Value   |   Phi Value    |     Rate Modified Dataset MRA     |    
 | ResNet50 + RAINv25 + LSTM           |               41.11%          |        N/A       |      1.0       |              --.--%               |
 | ResNet50 + RAINv26 + LSTM           |             **43.73**%        |        N/A       |      0.61      |            **42.10**%             |
+| ResNet50 + RAINv26.lstm + LSTM      |               --.--%          |        N/A       |      -.--      |              --.--%               |
 | ResNet50 + RAINv26.1 + LSTM         |             **43.59**%        |        N/A       |      0.69      |              40.38%               |
 | ResNet50 + RAINv26.2 + LSTM         |               41.44%          |        N/A       |      0.83      |              --.--%               |
 | ResNet50 + RAINv26.3 + LSTM         |               40.52%          |        N/A       |      0.77      |              --.--%               |
@@ -636,12 +647,12 @@ Progress
 | ResNet50 + RAINv31.1 + LSTM         |               42.94%          |        N/A       |      0.5       |              --.--%               |
 | ResNet50 + RAINv31.2 + LSTM         |               42.88%          |        N/A       |      0.07      |              --.--%               |
 | ResNet50 + RAINv31.3 + LSTM         |             **44.25**%        |        N/A       |      0.97      |            **42.82**%             |
-| ResNet50 + RAINv31.3.lstm + LSTM    |               43.07%          |        N/A       |      -.--      |              --.--%               |
+| ResNet50 + RAINv31.3.lstm + LSTM    |               43.07%          |        N/A       |      0.99      |              --.--%               |
 | ResNet50 + RAINv34 + LSTM           |             **43.43**%        |        N/A       |      1.0       |            **42.74**%             |
 | ResNet50 + RAINv34.1 + LSTM         |             **43.46**%        |        N/A       |      0.67      |              40.80%               |
 | ResNet50 + RAINv34.2 + LSTM         |               42.16%          |        N/A       |      0.99      |              --.--%               |
 | ResNet50 + RAINv34.3 + LSTM         |             **43.92**%        |        N/A       |      0.75      |            **42.46**%             |
-| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |      -.--      |            **42.89**%             |
+| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |    > 0.97      |            **42.89**%             |
 
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
