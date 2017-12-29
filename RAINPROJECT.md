@@ -608,14 +608,15 @@ Progress
 | ResNet50 + RAINv23.1.1 + LSTM       |             **44.05**%        |        0.50      |      N/A       |            **43.38**%             |  
 | ResNet50 + RAINv23.1.2 + LSTM       |             **44.38**%        |        0.50      |      N/A       |            **41.65**%             | 
 | ResNet50 + RAINv23.2 + LSTM         |             **43.46**%        |        0.51      |      N/A       |            **42.24**%             |  
-| ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |   
+| ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |
+| ResNet50 + RAINv23.2.1.lstm + LSTM  |             **44.25**%        |        -.--      |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.2.1.1 + LSTM     |             **43.92**%        |    C   0.73      |      N/A       |            **41.96**%             |   
 | ResNet50 + RAINv23.2.1.2 + LSTM     |               43.01%          |    C   0.5       |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.2.2 + LSTM       |               42.03%          |        0.25      |      N/A       |              --.--%               | 
 | ResNet50 + RAINv23.2.2.1 + LSTM     |               41.24%          |    C   0.27      |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.3 + LSTM         |             **44.51**%        |        1.0       |      N/A       |            **43.87**%             |   
 | ResNet50 + RAINv23.4 + LSTM         |             **45.62**%        |        1.0       |      N/A       |            **44.29**%             |
-| ResNet50 + RAINv23.4.lstm + LSTM    |             **43.99**%        |        1.0       |      N/A       |              --.--%               |   
+| ResNet50 + RAINv23.4.lstm + LSTM    |             **43.99**%        |        1.0       |      N/A       |            **41.65**%             |   
 | ResNet50 + RAINv23.5 + LSTM         |               43.07%          |        0.33      |      N/A       |              --.--%               |   
 | ResNet50 + RAINv23.6 + LSTM         |               41.96%          |        0.31      |      N/A       |              --.--%               |  
 | ResNet50 + RAINv23.7.1 + LSTM       |             **44.77**%        |        0.83      |      N/A       |            **43.33**%             |
@@ -634,11 +635,13 @@ Progress
 | ResNet50 + RAINv31 + LSTM           |             **43.53**%        |        N/A       |      1.0       |            **42.32**%             |
 | ResNet50 + RAINv31.1 + LSTM         |               42.94%          |        N/A       |      0.5       |              --.--%               |
 | ResNet50 + RAINv31.2 + LSTM         |               42.88%          |        N/A       |      0.07      |              --.--%               |
-| ResNet50 + RAINv31.3 + LSTM         |             **44.25**%        |        N/A       |      0.97      |              --.--%               |
+| ResNet50 + RAINv31.3 + LSTM         |             **44.25**%        |        N/A       |      0.97      |            **42.82**%             |
+| ResNet50 + RAINv31.3.lstm + LSTM    |               43.07%          |        N/A       |      -.--      |              --.--%               |
 | ResNet50 + RAINv34 + LSTM           |             **43.43**%        |        N/A       |      1.0       |            **42.74**%             |
-| ResNet50 + RAINv34.1 + LSTM         |             **43.46**%        |        N/A       |      0.67      |              --.--%               |
+| ResNet50 + RAINv34.1 + LSTM         |             **43.46**%        |        N/A       |      0.67      |              40.80%               |
 | ResNet50 + RAINv34.2 + LSTM         |               42.16%          |        N/A       |      0.99      |              --.--%               |
-| ResNet50 + RAINv34.3 + LSTM         |             **43.92**%        |        N/A       |      0.75      |              --.--%               |
+| ResNet50 + RAINv34.3 + LSTM         |             **43.92**%        |        N/A       |      0.75      |            **42.46**%             |
+| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |      -.--      |              --.--%               |
 
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
