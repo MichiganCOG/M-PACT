@@ -269,7 +269,7 @@ Progress
 | | | | |
 |    Phi Only Experiments             |      Extract Layer MRA        |    Alpha Value   |   Phi Value    |     Rate Modified Dataset MRA     | Rate Bin 1 Accuracy (Slow Down) | Rate Bin 2 Accuracy (Slow Down) | Rate Bin 3 Accuracy (Speed Up) | Rate Bin 4 Accuracy (Speed Up) |    
 | ResNet50 + RAINv31.3 + LSTM         |             **44.25**%        |        N/A       |      0.97      |            **42.82**%             |             41.36%              |             42.32%              |           **44.82%**           |             42.79%             |
-| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |    > 0.97      |            **42.89**%             |             40.86%              |             42.37%              |           **44.32%**           |           **43.99%**           |
+| ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |    > 0.94      |            **42.89**%             |             40.86%              |             42.37%              |           **44.32%**           |           **43.99%**           |
 
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
 
@@ -293,6 +293,7 @@ Progress
 
 #### Original Video
 
+![ Original HMDB51 Video ](images/Original_Dataset_Video.gif)
     
 This gif is the original video in the HMDB51 dataset.
 
@@ -300,9 +301,14 @@ This gif is the original video in the HMDB51 dataset.
 
 #### Baseline Preprocessed Example
 
-This gif shows the video afer undergoing the baselines preprocessing.  The original video is looped to reach 250 frames, then it is uniformly sampled down to 50 frames.  The uniform sampling causes an apparent five times speed up of the video. 
+![ Original Video Preprocessed ](images/Original_Video_Looped.gif)
 
-Every model we use recieves the original datasets video looped to 250 frames as input to the RAIN layer.
+The above gif shows the video afer undergoing the standard preprocessing. This preprocessing consists of cropping the video and looping it starting at an offset until it reaches 250 frames.  
+
+![ Baseline Preprocessed ](images/Baseline_Preprocessed.gif)
+The above video is the preprocessing undergone for the baseline which includes our standard preprocessing and then uniform sampling down to 50 frames.  The uniform sampling causes an apparent five times speed up of the video. 
+
+Every RAIN model we use recieves the original datasets video looped to 250 frames as input to the RAIN layer.
 
 
 
@@ -310,7 +316,8 @@ Every model we use recieves the original datasets video looped to 250 frames as 
 
 Output: alpha = 0.5
 
-The output video is the first half of the input video uniformly sampled down to L (50) frames.
+The video below on the left is the input to the RAIN layer and the right is the output.
+The output video contains the first half of the input video uniformly sampled down to L (50) frames.
 
 ![ RAIN v23.2.1 Input and Output ](images/Combined_RAINv23_2_1.gif)
 
@@ -320,6 +327,7 @@ The output video is the first half of the input video uniformly sampled down to 
 
 Output: alpha = 1.0 
 
+The video below on the left is the input to the RAIN layer and the right is the output.
 The output video is a uniformly sampled version of the entire input video.
 
 ![ RAIN v23.4 Input and Output ](images/Combined_RAINv23_4.gif)
@@ -332,6 +340,7 @@ Since alpha = 1.0 reduces
 
 Output: alpha = 0.83
 
+The video below on the left is the input to the RAIN layer and the right is the output.
 The output video is the first 83% of the input video uniformly sampled down to L (50) frames.
 
 ![ RAIN v23.7.1 Input and Output ](images/Combined_RAINv23_7_1.gif)
@@ -344,7 +353,8 @@ The output video is the first 83% of the input video uniformly sampled down to L
 
 Output: phi = 0.97
 
-The output video begins at the frame 0.97*(N-L) and takes the next L (50) consecutive frames.
+The video below on the left is the input to the RAIN layer and the right is the output.
+The output video begins at the frame 0.97*(N-L) and takes the next L (50) consecutive frames. In this case N=250 and L=50.
 
 
 ![ RAIN v31.3 Input and Output ](images/Combined_RAINv31_3.gif)
@@ -354,13 +364,21 @@ The output video begins at the frame 0.97*(N-L) and takes the next L (50) consec
 
 #### RAIN v34.3.lstm
 
-Output: phi > 0.97
+Output: phi > 0.94
 
-When phi = 0.97, the output video begins at the frame 0.97*(N-L) and takes the next L (50) consecutive frames. However, since and LSTM is incorporated, the value of phi will vary from video to video ranging from 0.97 to 1.0.  This means that it takes 50 frames starting from frame 0.98 *(N=L) to the last 50 frames, aka 50 frames starting at frame 1.0 *(N-L).
+When phi = 0.94, the output video begins at the frame 0.94*(N-L) and takes the next L (50) consecutive frames. However, since an LSTM is incorporated the value of phi will vary from video to video ranging from 0.94 to 0.99.  
+In this case N=100 and L=50.
 
 
+The video below on the left is the input to the RAIN layer and the right is the output.
+In the output video phi=0.99 which is nearly the last 50 frames.
 ![ RAIN v34.3.lstm Input and Output ](images/Combined_RAINv34_3_lstm.gif)
 
+
+
+phi = 0.9469 in the example gif below. The right video is the output of the RAIN layer given the left video as input. The output is composed of 50 consecutive frames of the input video starting at the frame 94.69% of the way from frame 0 to (N-L), in this case (100-50), of the input video.
+
+![ RAIN v34.3.lstm 2 Input and Output ](images/Combined_RAINv34_3_lstm_2.gif)
 
 
 
