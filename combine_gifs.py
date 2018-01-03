@@ -16,13 +16,18 @@ import os
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v3  import ResNet_RIL_Interp_Median_v3
 #
 # from models.resnet_RIL.resnet_RIL_interp_median_model_v14  import ResNet_RIL_Interp_Median_v14
-from models.resnet_RIL.resnet_RIL_interp_median_model_v21  import ResNet_RIL_Interp_Median_v21
-from models.resnet_RIL.resnet_RIL_interp_median_model_v22  import ResNet_RIL_Interp_Median_v22
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23  import ResNet_RIL_Interp_Median_v23
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v21  import ResNet_RIL_Interp_Median_v21
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v22  import ResNet_RIL_Interp_Median_v22
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v23  import ResNet_RIL_Interp_Median_v23
 from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_1  import ResNet_RIL_Interp_Median_v23_2_1
-from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2  import ResNet_RIL_Interp_Median_v23_2_2
-from models.resnet_RIL.resnet_RIL_interp_median_model_v26  import ResNet_RIL_Interp_Median_v26
-from models.resnet_RIL.resnet_RIL_interp_median_model_v27  import ResNet_RIL_Interp_Median_v27
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_4  import ResNet_RIL_Interp_Median_v23_4
+from models.resnet_RIL.resnet_RIL_interp_median_model_v23_7_1  import ResNet_RIL_Interp_Median_v23_7_1
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v23_2_2  import ResNet_RIL_Interp_Median_v23_2_2
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v26  import ResNet_RIL_Interp_Median_v26
+# from models.resnet_RIL.resnet_RIL_interp_median_model_v27  import ResNet_RIL_Interp_Median_v27
+
+from models.resnet_RIL.resnet_RIL_interp_median_model_v31_3  import ResNet_RIL_Interp_Median_v31_3
+from models.resnet_RIL.resnet_RIL_interp_median_model_v34_3_lstm  import ResNet_RIL_Interp_Median_v34_3_lstm
 
 from extract_RAIN_mp4_TFRecords import test
 
@@ -46,21 +51,21 @@ _B_MEAN = 103.94
 #
 # tf.reset_default_graph()
 
-extractEnd = 0
+extractEnd = 1
 
 if extractEnd == 0:
     inputDims = 250
 else:
     inputDims = 100
 
-framesMedian, input_data = test( model             = ResNet_RIL_Interp_Median_v23_2_2(),
+framesMedian, input_data = test( model             = ResNet_RIL_Interp_Median_v34_3_lstm(),
                 input_dims        = inputDims,
                 output_dims       = 51,
                 seq_length        = 50,
                 size              = [224,224],
                 dataset           = 'HMDB51',
                 loaded_dataset    = 'HMDB51',
-                experiment_name   = 'tfrecords_resnet_rain_interp_median_v23_2_2_HMDB51',
+                experiment_name   = 'tfrecords_resnet_rain_interp_median_v34_3_lstm_HMDB51',
                 num_vids          = 1530,
                 split             = 1,
                 base_data_path    = '/z/dat',
@@ -136,7 +141,7 @@ framesMedian = np.concatenate([framesMedian, zer], axis=0)
 #frames = np.concatenate([input_data, framesMedian, framesMean], axis = 2)
 #import pdb; pdb.set_trace()
 frames = np.concatenate([input_data, framesMedian], axis = 2)
-save_gif(frames, 'Combined', "RAINv23_2_2", 'HMDB51', str(1))
+save_gif(frames, 'Combined', "RAINv34_3_lstm", 'HMDB51', str(1))
 
 
 

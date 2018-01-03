@@ -48,7 +48,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
         sample_phi_tick   = tf.cond(params[0][0] > 0, lambda: tf.tanh(tf.nn.relu(params[0][0]))*0.5 + 0.5, lambda: tf.tanh(tf.nn.relu(-params[0][0]))*0.5 + 0.5)
-       
+
 
         # Extract shape of input signal
         frames, shp_feat = inputs.get_shape().as_list()
@@ -436,7 +436,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
 
             layers['RAINlayer_step1']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step1'], sets=j, K=k, L=seq_length)
 
-            # Step 2 
+            # Step 2
             layers['RAINlayer_lstm_step2']    = self._LSTM2(layers['RAINlayer_step1'], seq_length, nfilters=1, feat_size=2048, cell_size=128, reuse=True)
 
             layers['RAINlayer_lstm_fc_step2'] = self.FClayer(inputs=layers['RAINlayer_lstm_step2'],
@@ -444,7 +444,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
 
             layers['RAINlayer_step2']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step2'], sets=j, K=k, L=seq_length)
 
-            # Step 3 
+            # Step 3
             layers['RAINlayer_lstm_step3']    = self._LSTM2(layers['RAINlayer_step2'], seq_length, nfilters=1, feat_size=2048, cell_size=128, reuse=True)
 
             layers['RAINlayer_lstm_fc_step3'] = self.FClayer(inputs=layers['RAINlayer_lstm_step3'],
@@ -452,7 +452,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
 
             layers['RAINlayer_step3']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step3'], sets=j, K=k, L=seq_length)
 
-            # Step 4 
+            # Step 4
             layers['RAINlayer_lstm_step4']    = self._LSTM2(layers['RAINlayer_step3'], seq_length, nfilters=1, feat_size=2048, cell_size=128, reuse=True)
 
             layers['Parameterization_Variables'] = self.FClayer(inputs=layers['RAINlayer_lstm_step4'],
