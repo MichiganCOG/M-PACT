@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v26_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -12,7 +12,7 @@ from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp_Median_v23_2_2():
+class ResNet_RIL_Interp_Median_v26_2():
 
     def __init__(self, verbose=True):
         """
@@ -20,8 +20,8 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v23_2_2'
-        print "resnet RIL interp median v23_2_2 initialized"
+        self.name = 'resnet_RIL_interp_median_model_v26_2'
+        print "resnet RAIN interp median v26_2 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -38,18 +38,27 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.sigmoid(-tf.nn.relu(params[0]))
+        sample_phi_tick   = tf.exp(-tf.nn.relu(params[0]))
 
         # Extract shape of input signal
-        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+        frames, shp_feat = inputs.get_shape().as_list()
+
+
+        # Offset scaling to match inputs temporal dimension
+        sample_phi_tick = sample_phi_tick * tf.cast((sets*K) - L, tf.float32)
+
+        phi_tick = tf.tile([sample_phi_tick], [L])
 
         # Generate indices for output
         output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
 
         output_idx = tf.slice(output_idx, [0],[L])
 
+        # Add offset to the output indices
+        output_idx = output_idx + phi_tick
+
         # Sampling parameter scaling to match inputs temporal dimension
-        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
+        alpha_tick = tf.cast(K * sets, tf.float32) / (float(L) + sample_phi_tick)
 
         # Include sampling parameter to correct output indices
         output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
@@ -65,13 +74,15 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         # Deltas :
         d1 = (output_idx - x0)
         d2 = (x1 - x0)
-        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [L,224,224,3])
-        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [L,224,224,3])
+
+        d1 = tf.reshape(tf.tile(d1, [shp_feat]), [L,shp_feat])
+        d2 = tf.reshape(tf.tile(d2, [shp_feat]), [L,shp_feat])
 
         # Create x0 and x1 indices
         output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
         output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
         output_idx   = tf.cast(output_idx, 'int32')
+
 
 	# Create y0 and y1 outputs
         output_0 = tf.gather(inputs, output_idx_0-1)
@@ -82,9 +93,10 @@ class ResNet_RIL_Interp_Median_v23_2_2():
 
         output = tf.add_n([(d1/d2)*d3, output_0])
 
-        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
+        output = tf.reshape(output, (L, shp_feat), name='RAINlayeroutput')
 
         return output
+
 
 
 
@@ -294,7 +306,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v26_2 network layers')
 
         # END IF
 
@@ -311,16 +323,54 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             #                           Parameterization Network                       #
             ############################################################################
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
+            #layers['Conv1'] = conv_layer(input_tensor=inputs,
+            #        filter_dims=[7, 7, 64], stride_dims=[2,2],
+            #        padding = 'VALID',
+            #        name='Conv1',
+            #        kernel_init=tf.constant_initializer(data_dict['conv1']['conv1_W:0'].value),
+            #        bias_init=tf.constant_initializer(data_dict['conv1']['conv1_b:0'].value),
+            #        weight_decay = weight_decay, non_linear_fn=None)
 
+            #layers['Conv1_bn'] = tf.layers.batch_normalization(layers['Conv1'],
+            #        name='bn_Conv1',
+            #        moving_mean_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_mean:0'].value),
+            #        moving_variance_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_std:0'].value),
+            #        beta_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_beta:0'].value),
+            #        gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_gamma:0'].value)
+            #        )
+	    #layers['RELU'] = tf.nn.relu(layers['Conv1_bn'])
 
-            layers['RIlayer'] = self._extraction_layer(inputs=inputs,
-                                                       params=layers['Parameterization_Variables'],
-                                                       sets=j, L=seq_length, K=k)
+            #layers['Conv2'] = conv_layer(input_tensor=layers['RELU'],
+            #        filter_dims=[5, 5, 64], stride_dims=[2,2],
+            #        padding = 'VALID',
+            #        name='Conv2',
+            #        weight_decay = weight_decay, non_linear_fn=tf.nn.relu)
+
+            #layers['Reshape1'] = tf.reshape(layers['Conv2'], (-1, k, 53, 53, 64))
+
+            #layers['Dimshuffle1'] = tf.transpose(layers['Reshape1'], (0,2,3,4,1))
+
+            #layers['Reshape2'] = tf.reshape(layers['Dimshuffle1'], (-1, 64*k))
+
+            #layers['FC1'] = fully_connected_layer(input_tensor=layers['Reshape2'],
+            #        out_dim=512, non_linear_fn=tf.nn.relu,
+            #        name='FC1', weight_decay=weight_decay)
+
+            #layers['Reshape3'] = tf.reshape(layers['FC1'], (-1, 53, 53, 512))
+
+            #layers['Reshape4'] = tf.reshape(layers['Reshape3'], (-1, 53*53*512))
+
+            #layers['FC2'] = fully_connected_layer(input_tensor=layers['Reshape4'],
+            #        out_dim=2, non_linear_fn=tf.nn.sigmoid,
+            #        name='FC2', weight_decay=weight_decay)
+
+            #layers['RIlayer'] = self._extraction_layer(inputs=inputs,
+            #                                           params=layers['FC2'],
+            #                                           sets=j, L=seq_length, K=k)
 
             ############################################################################
 
-            layers['1'] = conv_layer(input_tensor=layers['RIlayer'],
+            layers['1'] = conv_layer(input_tensor=inputs,
                     filter_dims=[7, 7, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='conv1',
@@ -391,7 +441,48 @@ class ResNet_RIL_Interp_Median_v23_2_2():
                             input_layer=layers['116'], data_dict=data_dict))
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
-            layers['125'] = self._LSTM(layers['124'], seq_length, feat_size=2048, cell_size=512)
+
+            # Input shape:  [(K frames in a set x J number of sets) x 2048]
+            # Output shape: [(J number of sets) x 2]
+
+            ############################################################################
+            #                           Parameterization Network                       #
+            ############################################################################
+
+            #layers['Conv1'] = conv_layer(input_tensor=inputs,
+            #        filter_dims=[7, 7, 64], stride_dims=[2,2],
+            #        padding = 'VALID',
+            #        name='Conv1',
+            #        kernel_init=tf.constant_initializer(data_dict['conv1']['conv1_W:0'].value),
+            #        bias_init=tf.constant_initializer(data_dict['conv1']['conv1_b:0'].value),
+            #        weight_decay = weight_decay, non_linear_fn=None)
+
+            #layers['Conv1_bn'] = tf.layers.batch_normalization(layers['Conv1'],
+            #        name='bn_Conv1',
+            #        moving_mean_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_mean:0'].value),
+            #        moving_variance_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_std:0'].value),
+            #        beta_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_beta:0'].value),
+            #        gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_gamma:0'].value)
+            #        )
+	    #layers['RELU'] = tf.nn.relu(layers['Conv1_bn'])
+
+            #layers['Conv2'] = conv_layer(input_tensor=layers['RELU'],
+            #        filter_dims=[5, 5, 64], stride_dims=[2,2],
+            #        padding = 'VALID',
+            #        name='Conv2',
+            #        weight_decay = weight_decay, non_linear_fn=tf.nn.relu)
+
+
+            layers['Parameterization_Variables'] = [tf.get_variable('phi',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.25))]
+
+
+            layers['RAINlayer'] = self._extraction_layer(inputs=layers['124'],
+                                                       params=layers['Parameterization_Variables'],
+                                                       sets=j, L=seq_length, K=k)
+
+            ############################################################################
+
+            layers['125'] = self._LSTM(layers['RAINlayer'], seq_length, feat_size=2048, cell_size=512)
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
 

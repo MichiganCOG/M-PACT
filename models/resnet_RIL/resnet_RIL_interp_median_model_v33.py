@@ -284,7 +284,7 @@ class ResNet_RIL_Interp_Median_v33():
 
         return layers
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer='logits', data_dict=None, weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], data_dict=None, weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -420,7 +420,8 @@ class ResNet_RIL_Interp_Median_v33():
 
             # END WITH
 
-        return [layers['Parameterization_Variables'][0], layers['logits']]
+        #return [layers['Parameterization_Variables'][0], layers['logits']]
+        return [layers[x] for x in return_layer]
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

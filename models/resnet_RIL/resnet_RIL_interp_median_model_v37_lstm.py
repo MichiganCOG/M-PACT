@@ -1,4 +1,4 @@
-" RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN + LSTM) v37 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import sys
@@ -12,7 +12,7 @@ from tensorflow.contrib.rnn          import static_rnn
 from layers_utils                    import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_RIL_Interp_Median_v23_2_2():
+class ResNet_RIL_Interp_Median_v37_lstm():
 
     def __init__(self, verbose=True):
         """
@@ -20,8 +20,16 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v23_2_2'
-        print "resnet RIL interp median v23_2_2 initialized"
+        self.name = 'resnet_RIL_interp_median_model_v37_lstm'
+        print "resnet RIL interp median v37_lstm initialized"
+
+    def FClayer(self, inputs, op_dims, reuse=False):
+        std_fc = tf.layers.dense(inputs=inputs,
+                                 units=op_dims,
+                                 activation=None,
+                                 name='alpha_params',
+                                 reuse=reuse)
+        return std_fc
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         """
@@ -38,7 +46,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.sigmoid(-tf.nn.relu(params[0]))
+        sample_alpha_tick = tf.exp(-tf.nn.relu(params[0]))
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
@@ -82,9 +90,107 @@ class ResNet_RIL_Interp_Median_v23_2_2():
 
         output = tf.add_n([(d1/d2)*d3, output_0])
 
+        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput2')
+
+        return output
+
+
+    def _extraction_layer_2(self, inputs, params, sets, K, L):
+        """
+        Args:
+            :inputs: Original inputs to the model
+            :params: Offset and sampling parameter estimates from Parameterization Network
+            :sets:   Number of non overlapping sets obtained from applying a temporal slid
+                     ing window over the input
+            :K:      Size of temporal sliding window
+            :L:      Expected number of output frames
+
+        Return:
+            :output:
+        """
+
+        # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
+        sample_phi_tick   = tf.cond(params[0][0] > 0, lambda: tf.tanh(tf.nn.relu(params[0][0]))*0.5 + 0.5, lambda: tf.tanh(tf.nn.relu(-params[0][0]))*0.5 + 0.5)
+
+        # Extract shape of input signal
+        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+
+
+        # Offset scaling to match inputs temporal dimension
+        sample_phi_tick = sample_phi_tick * tf.cast((sets*K) - L, tf.float32)
+
+        phi_tick = tf.tile([sample_phi_tick], [L])
+
+        # Generate indices for output
+        output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
+
+        output_idx = tf.slice(output_idx, [0],[L])
+
+        # Add offset to the output indices
+        output_idx = output_idx + phi_tick
+
+        # Clip output index values to >= 1 and <=N (valid cases only)
+        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
+
+        # Create x0 and x1 float
+        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
+        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
+
+
+        # Deltas :
+        d1 = (output_idx - x0)
+        d2 = (x1 - x0)
+        d1 = tf.reshape(tf.tile(d1, [54*54*256]), [L,54,54,256])
+        d2 = tf.reshape(tf.tile(d2, [54*54*256]), [L,54,54,256])
+
+        # Create x0 and x1 indices
+        output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
+        output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
+        output_idx   = tf.cast(output_idx, 'int32')
+
+	# Create y0 and y1 outputs
+        output_0 = tf.gather(inputs, output_idx_0-1)
+        output_1 = tf.gather(inputs, output_idx_1-1)
+        output   = tf.gather(inputs, output_idx-1)
+
+        d3     = output_1 - output_0
+
+        output = tf.add_n([(d1/d2)*d3, output_0])
+
         output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
 
         return output
+
+
+    def _LSTM2(self, inputs, seq_length, feat_size, nfilters, cell_size=1024, reuse=False):
+        """
+        Args:
+            :inputs:       List of length input_dims where each element is of shape [batch_size x feat_size]
+            :seq_length:   Length of output sequence
+            :feat_size:    Size of input to LSTM
+            :cell_size:    Size of internal cell (output of LSTM)
+
+        Return:
+            :lstn_outputs:  Output list of length seq_length where each element is of shape [batch_size x cell_size]
+        """
+
+        # Unstack input tensor to match shape:
+        # list of n_time_steps items, each item of size (batch_size x featSize)
+        inputs = tf.transpose(inputs, (0,3,1,2))
+        inputs = tf.reshape(inputs, [seq_length, nfilters, -1])
+        inputs = tf.unstack(inputs, seq_length, axis=0)
+
+        # LSTM cell definition
+        lstm_cell            = tf.contrib.rnn.LSTMCell(cell_size, reuse=reuse)
+        lstm_outputs, states = static_rnn(lstm_cell, inputs, dtype=tf.float32)
+
+        # Condense output shape from:
+        # list of n_time_steps items, each item of size (batch_size x cellSize)
+        # To:
+        # Tensor: [(n_time_steps x 1), cellSize] (Specific to our case)
+        lstm_outputs = tf.reshape(tf.reduce_mean(states[-1], axis=0), [-1, cell_size])
+
+        return lstm_outputs
 
 
 
@@ -294,7 +400,7 @@ class ResNet_RIL_Interp_Median_v23_2_2():
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET RAIN INTERP MEDIAN v23_2_2 network layers')
+            print('Generating RESNET RAIN INTERP MEDIAN v37_lstm network layers')
 
         # END IF
 
@@ -311,12 +417,12 @@ class ResNet_RIL_Interp_Median_v23_2_2():
             #                           Parameterization Network                       #
             ############################################################################
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.25))]
 
 
             layers['RIlayer'] = self._extraction_layer(inputs=inputs,
                                                        params=layers['Parameterization_Variables'],
-                                                       sets=j, L=seq_length, K=k)
+                                                       sets=j, L=seq_length*2, K=k)
 
             ############################################################################
 
@@ -349,8 +455,43 @@ class ResNet_RIL_Interp_Median_v23_2_2():
                             input_layer=layers['19'], data_dict=data_dict))
 
             #########
+
+            # Step 1
+            layers['RAINlayer_lstm_step1']    = self._LSTM2(layers['26'][:seq_length, :, :, :], seq_length, nfilters=256, feat_size=2916, cell_size=128, reuse=False)
+
+            layers['RAINlayer_lstm_fc_step1'] = self.FClayer(inputs=layers['RAINlayer_lstm_step1'],
+                                                     op_dims=1, reuse=False)
+
+            layers['RAINlayer_step1']         = self._extraction_layer_2(inputs=layers['26'], params=layers['RAINlayer_lstm_fc_step1'], sets=j, K=k, L=seq_length)
+
+            # Step 2 
+            layers['RAINlayer_lstm_step2']    = self._LSTM2(layers['RAINlayer_step1'], seq_length, nfilters=256, feat_size=2916, cell_size=128, reuse=True)
+
+            layers['RAINlayer_lstm_fc_step2'] = self.FClayer(inputs=layers['RAINlayer_lstm_step2'],
+                                                     op_dims=1, reuse=True)
+
+            layers['RAINlayer_step2']         = self._extraction_layer_2(inputs=layers['26'], params=layers['RAINlayer_lstm_fc_step2'], sets=j, K=k, L=seq_length)
+
+            # Step 3 
+            layers['RAINlayer_lstm_step3']    = self._LSTM2(layers['RAINlayer_step2'], seq_length, nfilters=256, feat_size=2916, cell_size=128, reuse=True)
+
+            layers['RAINlayer_lstm_fc_step3'] = self.FClayer(inputs=layers['RAINlayer_lstm_step3'],
+                                                     op_dims=1, reuse=True)
+
+            layers['RAINlayer_step3']         = self._extraction_layer_2(inputs=layers['26'], params=layers['RAINlayer_lstm_fc_step3'], sets=j, K=k, L=seq_length)
+
+            # Step 4 
+            layers['RAINlayer_lstm_step4']    = self._LSTM2(layers['RAINlayer_step3'], seq_length, nfilters=256, feat_size=2916, cell_size=128, reuse=True)
+
+            layers['Parameterization_Variables_phi'] = self.FClayer(inputs=layers['RAINlayer_lstm_step4'],
+                                                     op_dims=1, reuse=True)
+
+            layers['RAINlayer_step4']         = self._extraction_layer_2(inputs=layers['26'], params=layers['Parameterization_Variables_phi'], sets=j, K=k, L=seq_length)
+
+
+            #########
             layers.update(self._conv_block([128,128,512], kernel_size=3, name='3a', layer_numbers=['27','28','29','30','31','32','33','34','35'],
-                            input_layer=layers['26'], data_dict=data_dict))
+                            input_layer=layers['RAINlayer_step4'], data_dict=data_dict))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3b', layer_numbers=['36','37','38','39','40','41','42'],
                             input_layer=layers['35'], data_dict=data_dict))
