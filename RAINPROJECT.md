@@ -306,6 +306,7 @@ This gif is the original video in the HMDB51 dataset.
 The above gif shows the video afer undergoing the standard preprocessing. This preprocessing consists of cropping the video and looping it starting at an offset until it reaches 250 frames.  
 
 ![ Baseline Preprocessed ](images/Baseline_Preprocessed.gif)
+
 The above video is the preprocessing undergone for the baseline which includes our standard preprocessing and then uniform sampling down to 50 frames.  The uniform sampling causes an apparent five times speed up of the video. 
 
 Every RAIN model we use recieves the original datasets video looped to 250 frames as input to the RAIN layer.
@@ -372,6 +373,7 @@ In this case N=100 and L=50.
 
 The video below on the left is the input to the RAIN layer and the right is the output.
 In the output video phi=0.99 which is nearly the last 50 frames.
+
 ![ RAIN v34.3.lstm Input and Output ](images/Combined_RAINv34_3_lstm.gif)
 
 
