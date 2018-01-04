@@ -129,11 +129,76 @@ Incomplete -  &#9974;
 ## RAIN Layers
 This section contains the implemented ideas for various versions of RAIN layers and their descriptions.  The versions begin at v21 because versions 1-20 used an different parameterization network that was deemed inferior to the current method.  The previous method incorporated the parameterization network directly into the model attempting to learn alpha and phi through multiple convolutional and fully connected layers before passing them into the extraction layer. Versions 21 and onward instead simply initialize variables alpha and phi and allow them to learn through backpropagation.  This new method causes a single alpha and phi value to be learned for every video.  This is addressed by incorporating an LSTM to process the input videos and learning alpha and phi from the hidden states of this LSTM. This LSTM formulation for the parameterization network will be implemented once various extraction layer versions have been tested and optimized. 
 
+
 ### RAIN Layers incorporating alpha and phi
 ----------------------------------------------
 
-
 The use of sampling and phase offset akin to 1D signals should be sufficient to characterize a given action signal. Initialize alpha and phi as variables and let them learn based solely off of backpropagation. Inputs to extraction layer come from the beginning of the model directly from the input videos.
+
+
+
+<a name="rainv35"/>
+#### RAIN Layer v35
+---------------
+The best models using alpha only and phi only are combined. Alpha is defined at the beginning of the model and its' activation function is sigmoid(relu(parameter)). Phi is defined at the end of the model using an lstm and it's activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+
+![RAINv35 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv35 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+<a name="rainv36"/>
+#### RAIN Layer v36
+---------------
+Alpha is defined at the beginning of the model and its' activation function is exp(-relu(parameter)). Phi is defined at the end of the model using an lstm and its' activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+
+![RAINv36 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv36 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+
+<a name="rainv37"/>
+#### RAIN Layer v37
+---------------
+Alpha is defined at the beginning of the model and its' activation function is sigmoid(relu(parameter)). Phi is defined at the end of the model using an lstm and its' activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+
+![RAINv37 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv37 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+
+<a name="rainv38"/>
+#### RAIN Layer v38
+---------------
+Alpha is defined at the beginning of the model and its' activation function is  tanh(relu(+-parameter))  * 0.5 + 0.5. Phi is defined at the beginnning of the model without an lstm and its' activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+
+![RAINv38 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv38 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+<a name="rainv39"/>
+#### RAIN Layer v39
+---------------
+Alpha is defined at the beginning of the model and its' activation function is exp(-relu(parameter)). Phi is defined at the beginnning of the model without an lstm and its' activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+
+![RAINv39 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv39 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
+<a name="rainv40"/>
+#### RAIN Layer v40
+---------------
+Alpha is defined at the beginning of the model and its' activation function is  tanh(relu(+-parameter))  * 0.5 + 0.5. Phi is defined at the beginnning of the model without an lstm and its' activation function is tanh(relu(+-parameter))  * 0.5 + 0.5.
+
+![RAINv40 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
+![RAINv40 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
+
+
 
 
 
@@ -154,7 +219,7 @@ We pass alpha through an ReLu activation before passing it through a sigmoid fun
 <a name="rainv23.4"/>
 #### RAIN Layer v23.4
 ---------------
-Determine the impace of raising the initialization of alpha. The activation used is the ReLu function with a negative exponential function.
+Determine the impact of raising the initialization of alpha. The activation used is the ReLu function with a negative exponential function.
 
 ![RAINv23.4 Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv23.4 extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
@@ -190,6 +255,7 @@ Initialize phi at the end of the model and then extract the next L (50) frames s
 
 ![RAINv34.3.lstm Paramnw PLACEHOLDER] (/images/Paramnw.pdf)
 ![RAINv34.3.lstm extractlayer PLACEHOLDER] (/images/extractlayer.pdf)
+
 
 
 
@@ -261,6 +327,11 @@ Progress
 |    Alpha and Phi Experiments        |      Extract Layer MRA        |    Alpha Value   |    Phi Value   |     Rate Modified Dataset MRA     | Rate Bin 1 Accuracy (Slow Down) | Rate Bin 2 Accuracy (Slow Down) | Rate Bin 3 Accuracy (Speed Up) | Rate Bin 4 Accuracy (Speed Up) |
 |:-----------------------------------:|:----------------------------: |:---------------: |:-------------: |:--------------------------------: |:-------------------------------:|:-------------------------------:|:------------------------------:|:------------------------------:|
 | ResNet50 + RAINv35 + LSTM           |              --.--%           |        -.--      |      -.--      |                --.--%             |             --.--%              |             --.--%              |             --.--%             |             --.--%             |
+| ResNet50 + RAINv36 + LSTM           |              --.--%           |        -.--      |      -.--      |                --.--%             |             --.--%              |             --.--%              |             --.--%             |             --.--%             |
+| ResNet50 + RAINv37 + LSTM           |              --.--%           |        -.--      |      -.--      |                --.--%             |             --.--%              |             --.--%              |             --.--%             |             --.--%             |
+| ResNet50 + RAINv38 + LSTM           |              --.--%           |        -.--      |      -.--      |                --.--%             |             --.--%              |             --.--%              |             --.--%             |             --.--%             |
+| ResNet50 + RAINv39 + LSTM           |              --.--%           |        -.--      |      -.--      |                --.--%             |             --.--%              |             --.--%              |             --.--%             |             --.--%             |
+| ResNet50 + RAINv40 + LSTM           |              --.--%           |        -.--      |      -.--      |                --.--%             |             --.--%              |             --.--%              |             --.--%             |             --.--%             |
 | | | | |
 |    Alpha Only Experiments           |      Extract Layer MRA        |    Alpha Value   |    Phi Value   |     Rate Modified Dataset MRA     | Rate Bin 1 Accuracy (Slow Down) | Rate Bin 2 Accuracy (Slow Down) | Rate Bin 3 Accuracy (Speed Up) | Rate Bin 4 Accuracy (Speed Up) |
 | ResNet50 + RAINv23.2.1 + LSTM       |             **46.01**%        |        0.50      |      N/A       |            **44.41**%             |           **44.44%**            |             44.09%              |           **44.87%**           |             44.25%             |
