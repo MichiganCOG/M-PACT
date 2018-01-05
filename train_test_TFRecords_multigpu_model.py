@@ -33,10 +33,11 @@ from models.resnet_RIL.resnet_RIL_interp_median_model_v31_3        import ResNet
 from models.resnet_RIL.resnet_RIL_interp_median_model_v34_3_lstm   import ResNet_RIL_Interp_Median_v34_3_lstm
 
 from models.resnet_RIL.resnet_RIL_interp_median_model_v35_lstm     import ResNet_RIL_Interp_Median_v35_lstm
-from models.resnet_RIL.resnet_RIL_interp_median_model_v35_1_lstm   import ResNet_RIL_Interp_Median_v35_1_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v36_lstm     import ResNet_RIL_Interp_Median_v36_lstm
 from models.resnet_RIL.resnet_RIL_interp_median_model_v37_lstm     import ResNet_RIL_Interp_Median_v37_lstm
-from models.resnet_RIL.resnet_RIL_interp_median_model_v37_1_lstm   import ResNet_RIL_Interp_Median_v37_1_lstm
+from models.resnet_RIL.resnet_RIL_interp_median_model_v38     import ResNet_RIL_Interp_Median_v38
+from models.resnet_RIL.resnet_RIL_interp_median_model_v39     import ResNet_RIL_Interp_Median_v39
+from models.resnet_RIL.resnet_RIL_interp_median_model_v40     import ResNet_RIL_Interp_Median_v40
 
 def _average_gradients(tower_grads):
     """
@@ -649,17 +650,20 @@ if __name__=="__main__":
     elif model_name == 'resnet_RIL_interp_median_v35_lstm':
         model = ResNet_RIL_Interp_Median_v35_lstm()
 
-    elif model_name == 'resnet_RIL_interp_median_v35_1_lstm':
-        model = ResNet_RIL_Interp_Median_v35_1_lstm()
-
     elif model_name == 'resnet_RIL_interp_median_v36_lstm':
         model = ResNet_RIL_Interp_Median_v36_lstm()
 
     elif model_name == 'resnet_RIL_interp_median_v37_lstm':
         model = ResNet_RIL_Interp_Median_v37_lstm()
 
-    elif model_name == 'resnet_RIL_interp_median_v37_1_lstm':
-        model = ResNet_RIL_Interp_Median_v37_1_lstm()
+    elif model_name == 'resnet_RIL_interp_median_v38':
+        model = ResNet_RIL_Interp_Median_v38()
+
+    elif model_name == 'resnet_RIL_interp_median_v39':
+        model = ResNet_RIL_Interp_Median_v39()
+
+    elif model_name == 'resnet_RIL_interp_median_v40':
+        model = ResNet_RIL_Interp_Median_v40()
 
     else:
         print("Model not found, check the import and elif statements")
