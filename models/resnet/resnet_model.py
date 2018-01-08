@@ -77,60 +77,60 @@ class ResNet():
                 filter_dims=[1,1,n_filters[0]], stride_dims=[strides,strides],
                 padding = 'VALID',
                 name='res'+name+'_branch2a',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[1]] = tf.layers.batch_normalization(layers[layer_numbers[0]],
                 name='bn'+name+'_branch2a',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['gamma']))
 
         layers[layer_numbers[2]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[1]]),
                 filter_dims=[kernel_size, kernel_size, n_filters[1]], padding='SAME',
                 name='res'+name+'_branch2b',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[3]] = tf.layers.batch_normalization(layers[layer_numbers[2]],
                 name='bn'+name+'_branch2b',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['gamma']))
 
         layers[layer_numbers[4]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[3]]),
                 filter_dims=[1,1,n_filters[2]], padding = 'VALID',
                 name='res'+name+'_branch2c',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[5]] = tf.layers.batch_normalization(layers[layer_numbers[4]],
                 name='bn'+name+'_branch2c',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['gamma']))
 
         # Shortcuts
         layers[layer_numbers[6]] = conv_layer(input_tensor=input_layer,
                 filter_dims=[1,1,n_filters[2]], stride_dims=[strides, strides],
                 padding = 'VALID',
                 name='res'+name+'_branch1',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch1']['res'+name+'_branch1_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch1']['res'+name+'_branch1_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch1']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch1']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[7]] = tf.layers.batch_normalization(layers[layer_numbers[6]],
                 name='bn'+name+'_branch1',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['gamma']))
 
         # END OF CONV BLOCK
 
@@ -161,44 +161,44 @@ class ResNet():
         layers[layer_numbers[0]] = conv_layer(input_tensor=input_layer,
                 filter_dims=[1, 1, n_filters[0]], padding='VALID',
                 name='res'+name+'_branch2a',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[1]] = tf.layers.batch_normalization(layers[layer_numbers[0]],
                 name='bn'+name+'_branch2a',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['gamma']))
 
         layers[layer_numbers[2]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[1]]),
                 filter_dims=[kernel_size, kernel_size, n_filters[1]], padding='SAME',
                 name='res'+name+'_branch2b',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[3]] = tf.layers.batch_normalization(layers[layer_numbers[2]],
                 name='bn'+name+'_branch2b',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['gamma']))
 
         layers[layer_numbers[4]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[3]]),
                 filter_dims=[1,1,n_filters[2]], padding='VALID',
                 name='res'+name+'_branch2c',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_b:0'].value),
+                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['kernel']),
+                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['bias']),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[5]] = tf.layers.batch_normalization(layers[layer_numbers[4]],
                 name='bn'+name+'_branch2c',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_gamma:0'].value))
+                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['moving_variance']),
+                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['beta']),
+                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['gamma']))
 
         # END OF IDENTITY BLOCK
 
@@ -235,8 +235,10 @@ class ResNet():
 
         # END IF
 
-        # Must exist within current model directory
-        data_dict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
+        if data_dict == None:
+            # Must exist within current model directory
+            #data_dict = h5py.File('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
+            data_dict = np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy').tolist()
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
@@ -245,16 +247,16 @@ class ResNet():
                     filter_dims=[7, 7, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='conv1',
-                    kernel_init=tf.constant_initializer(data_dict['conv1']['conv1_W:0'].value),
-                    bias_init=tf.constant_initializer(data_dict['conv1']['conv1_b:0'].value),
+                    kernel_init=tf.constant_initializer(data_dict['conv1']['kernel']),
+                    bias_init=tf.constant_initializer(data_dict['conv1']['bias']),
                     weight_decay = weight_decay, non_linear_fn=None)
 
             layers['2'] = tf.layers.batch_normalization(layers['1'],
                     name='bn_conv1',
-                    moving_mean_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_mean:0'].value),
-                    moving_variance_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_std:0'].value),
-                    beta_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_beta:0'].value),
-                    gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_gamma:0'].value))
+                    moving_mean_initializer=tf.constant_initializer(data_dict['bn_conv1']['moving_mean']),
+                    moving_variance_initializer=tf.constant_initializer(data_dict['bn_conv1']['moving_variance']),
+                    beta_initializer=tf.constant_initializer(data_dict['bn_conv1']['beta']),
+                    gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['gamma']))
 
             layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
                                          filter_dims=[3, 3], stride_dims=[2,2],

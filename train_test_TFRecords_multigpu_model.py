@@ -508,7 +508,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         count      = 0
 
         print "Begin Testing"
-
+        #import pdb; pdb.set_trace()
         for vid_num in range(num_vids):
             count +=1
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
@@ -596,7 +596,7 @@ if __name__=="__main__":
     parser.add_argument('--split', action='store', type=int, default=1,
             help = 'Dataset split to use')
 
-    parser.add_argument('--baseDataPath', action='store', default='/z/home/madantrg/Datasets',
+    parser.add_argument('--baseDataPath', action='store', default='/z/dat',
             help = 'Path to datasets')
 
     parser.add_argument('--fName', action='store',
