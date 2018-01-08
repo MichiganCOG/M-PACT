@@ -348,7 +348,7 @@ Progress
 | ResNet50 + RAINv34.3.lstm + LSTM    |             **44.71**%        |        N/A       |    > 0.94      |            **42.89**%             |             40.86%              |             42.37%              |           **44.32%**           |           **43.99%**           |
 
 *-models denoted with a star were not trained to completion due to having already learned either one or zero for phi and alpha.
-
+Bold Rate Bins - That bin had a higher accuracy than the total rate modified dataset
 
 
     UCF101 Experiments
