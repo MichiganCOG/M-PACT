@@ -1,12 +1,23 @@
-import tensorflow as tf
-import numpy as np
-import argparse
 import os
+import argparse
+
+import numpy      as np
+import tensorflow as tf
 
 
 
-def checkpoint_filename(model, dataset, expName):
-	checkpoints_file = os.path.join('results', model, dataset, expName, 'checkpoints', 'checkpoint')
+def checkpoint_filename(model, dataset, exp_name):
+    """
+    Return checkpoint file name for chosen model, dataset and experiment name combination 
+    Args:
+        :model: String indicating name of model
+        :dataset: String indicating dataset 
+        :exp_name: String indicating name of experiment for selected combination of model and dataset
+
+    Returns:
+        String reflecting checkpoint filename
+    """
+	checkpoints_file = os.path.join('results', model, dataset, exp_name, 'checkpoints', 'checkpoint')
 	f = open(checkpoints_file, 'r')
 	filename = f.readline()
 	f.close()
@@ -14,11 +25,18 @@ def checkpoint_filename(model, dataset, expName):
 	return filename
 
 
-
-
-
-
 def add_tensor(tensor, keys_list, original_key, reader):
+    """
+    Return contents of selected file
+    Args:
+        :tensor:       Dictionary containing name and model parameters
+        :keys_list:    String list indiciating depth of keys
+        :original_key: Original key from meta graph
+        :reader:       CheckpointReader instance
+
+    Returns:
+        Dictionary of Model parameters
+    """
 	if len(keys_list) == 0:
 		return reader.get_tensor(original_key)
 

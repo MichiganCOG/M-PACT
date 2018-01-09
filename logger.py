@@ -1,6 +1,8 @@
 """ BASIC LOGGER WRAPPER CLASS FOR TENSORBOARD USED IN THIS FRAMEWORK """
+
 # Copied from https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py
 # Code referenced from https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
+
 import tensorflow as tf
 import numpy as np
 import scipy.misc

@@ -198,9 +198,13 @@ def pad(input_tensor,
         padding):
 
     """
-    :param input_tensor:
-    :param padding:
-    :return:
+    Function to return padded tensors upto a specified thickness
+    Args:
+        :param input_tensor: Input tensor
+        :param padding: Number of padding zeros on 1 side
+
+    Returns:
+        Padded output tensor
     """
     # Pad all four sides of each frame with "padding" amount of zeros
     if len(input_tensor.shape) == 3:

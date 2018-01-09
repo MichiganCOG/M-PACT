@@ -14,16 +14,35 @@ from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 class ResNet_RIL_Interp_Median_v34_3_lstm():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_dims, k, verbose=True):
         """
         Args:
-            :verbose: Setting verbose command
+            :k:          Temporal window width
+            :verbose:    Setting verbose command
+            :input_dims: Input dimensions (number of frames)
+
+        Return:
+            Does not return anything
         """
-        self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v34_3_lstm'
+        self.k          = k
+        self.verbose    = verbose
+        self.input_dims = input_dims
+        self.j          = input_dims / k
+        self.name       = 'resnet_RIL_interp_median_model_v34_3_lstm'
+
         print "resnet RAIN interp median v34_3_lstm initialized"
 
     def FClayer(self, inputs, op_dims, reuse=False):
+        """
+        Wrapper to use standard FC layer
+        Args:
+            :inputs:  Input features
+            :op_dims: Number of output nodes
+            :reuse:   Boolean flag to reuse FC layer variables
+
+        Return:
+            Full connected feature representations
+        """
         std_fc = tf.layers.dense(inputs=inputs,
                                  units=op_dims,
                                  activation=None,
@@ -43,7 +62,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             :L:      Expected number of output frames
 
         Return:
-            :output:
+            :output: Extracted features
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
@@ -273,7 +292,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
 
         return layers
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -282,8 +301,6 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             :output_dims:  Integer indicating total number of classes in final prediction
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
-            :k:            Width of sliding window (temporal width)
-            :j:            Integer number of disjoint sets the sliding window over the input has generated
             :dropout_rate: Value indicating proability of keep inputs
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
@@ -383,7 +400,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             layers['RAINlayer_lstm_fc_step1'] = self.FClayer(inputs=layers['RAINlayer_lstm_step1'],
                                                      op_dims=1, reuse=False)
 
-            layers['RAINlayer_step1']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step1'], sets=j, K=k, L=seq_length)
+            layers['RAINlayer_step1']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step1'], sets=self.j, K=self.k, L=seq_length)
 
             # Step 2
             layers['RAINlayer_lstm_step2']    = self._LSTM2(layers['RAINlayer_step1'], seq_length, nfilters=1, feat_size=2048, cell_size=128, reuse=True)
@@ -391,7 +408,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             layers['RAINlayer_lstm_fc_step2'] = self.FClayer(inputs=layers['RAINlayer_lstm_step2'],
                                                      op_dims=1, reuse=True)
 
-            layers['RAINlayer_step2']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step2'], sets=j, K=k, L=seq_length)
+            layers['RAINlayer_step2']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step2'], sets=self.j, K=self.k, L=seq_length)
 
             # Step 3
             layers['RAINlayer_lstm_step3']    = self._LSTM2(layers['RAINlayer_step2'], seq_length, nfilters=1, feat_size=2048, cell_size=128, reuse=True)
@@ -399,7 +416,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             layers['RAINlayer_lstm_fc_step3'] = self.FClayer(inputs=layers['RAINlayer_lstm_step3'],
                                                      op_dims=1, reuse=True)
 
-            layers['RAINlayer_step3']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step3'], sets=j, K=k, L=seq_length)
+            layers['RAINlayer_step3']         = self._extraction_layer(inputs=layers['124'], params=layers['RAINlayer_lstm_fc_step3'], sets=self.j, K=self.k, L=seq_length)
 
             # Step 4
             layers['RAINlayer_lstm_step4']    = self._LSTM2(layers['RAINlayer_step3'], seq_length, nfilters=1, feat_size=2048, cell_size=128, reuse=True)
@@ -407,7 +424,7 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             layers['Parameterization_Variables'] = self.FClayer(inputs=layers['RAINlayer_lstm_step4'],
                                                      op_dims=1, reuse=True)
 
-            layers['RAINlayer_step4']         = self._extraction_layer(inputs=layers['124'], params=layers['Parameterization_Variables'], sets=j, K=k, L=seq_length)
+            layers['RAINlayer_step4']         = self._extraction_layer(inputs=layers['124'], params=layers['Parameterization_Variables'], sets=self.j, K=self.k, L=seq_length)
 
 
             ############################################################################
@@ -441,6 +458,9 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
+        
+        Return:
+            Pointer to preprocessing function of current model
         """
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
 
@@ -450,6 +470,9 @@ class ResNet_RIL_Interp_Median_v34_3_lstm():
         Args:
             :logits: Unscaled logits returned from final layer in model
             :labels: True labels corresponding to loaded data
+
+        Return:
+            Cross entropy loss value
         """
         labels = tf.cast(labels, tf.int64)
 

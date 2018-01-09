@@ -7,22 +7,31 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils import *
-
+from layers_utils                  import *
+from tensorflow.contrib.rnn        import static_rnn
 from vgg16_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
 
 class VGG16():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_dims, k, verbose=True):
         """
         Args:
-            :verbose: Setting verbose command
+            :k:          Temporal window width
+            :verbose:    Setting verbose command
+            :input_dims: Input dimensions (number of frames)
+
+        Return:
+            Does not return anything
         """
-        self.verbose=verbose
-        self.name = 'vgg16'
-        print "vgg16 initialized"
+        self.k          = k
+        self.name       = 'vgg16'
+        self.verbose    = verbose
+        self.input_dims = input_dims
+        self.j          = input_dims / k
+
+        print "VGG16 + LSTM initialized"
 
     def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
         """
@@ -55,7 +64,7 @@ class VGG16():
         return lstm_outputs
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, weight_decay=0.0, return_layer=['logits']):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, weight_decay=0.0, return_layer=['logits']):
 
         """
         Args:
@@ -65,8 +74,6 @@ class VGG16():
             :output_dims:  Integer indicating total number of classes in final prediction
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
-            :k:            Width of sliding window (temporal width)
-            :j:            Integer number of disjoint sets the sliding window over the input has generated
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
 
@@ -277,6 +284,9 @@ class VGG16():
         Args:
             :logits: Unscaled logits returned from final layer in model
             :labels: True labels corresponding to loaded data
+
+        Return:
+            Cross entropy loss value
         """
 
         labels = tf.cast(labels, tf.int64)
@@ -295,5 +305,8 @@ class VGG16():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
+
+        Return:
+            Pointer to preprocessing function of current model
         """
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)

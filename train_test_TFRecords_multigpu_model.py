@@ -68,7 +68,7 @@ def _average_gradients(tower_grads):
 
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, k=25):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, k=25, verbose=0):
 
     """
     Training function used to train or fine-tune a chosen model
@@ -93,6 +93,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :val_freq:           Frequency, in epochs, with which to run validaton
         :return_layer:       Layers to be tracked during training
         :k:                  Width of temporal sliding window
+        :verbose:            Boolean to indicate if all print statement should be procesed or not 
 
     Returns:
         Does not return anything
@@ -114,10 +115,12 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         if load_model:
             try:
                 ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
-                print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+                if verbose:
+                    print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
 
             except:
-                print "Failed loading checkpoint requested. Please check."
+                if verbose:
+                    print "Failed loading checkpoint requested. Please check."
                 exit()
 
             # END TRY
@@ -135,9 +138,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         tower_losses       = []
         tower_grads        = []
         tower_slogits      = []
-
-        # Make this a part of the model initialization itself instead of here (to make training function generic)
-        j               = input_dims / k
 
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
@@ -159,7 +159,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                  input_dims,
                                                  output_dims,
                                                  seq_length,
-                                                 scope, k, j,
+                                                 scope,
                                                  return_layer = return_layer,
                                                  weight_decay=wd)
 
@@ -259,7 +259,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     epoch_acc   = 0
 
                     if epoch_count % save_freq == 0 and tot_count > 0:
-                        print "Saving..."
+                        if verbose:
+                            print "Saving..."
+
                         save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, global_step.eval(session=sess))
 
                     # END IF
@@ -294,9 +296,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             time_post_train = time.time()
             tot_train_time += time_post_train - time_pre_train
 
-
-            print 'train_time: ', time_post_train-time_pre_train
-            print 'step, loss: ', gs, loss_train
+            if verbose:
+                print 'train_time: ', time_post_train-time_pre_train
+                print 'step, loss: ', gs, loss_train
 
             curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
@@ -307,21 +309,23 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             # END FOR 
 
         # END FOR
+        
+        if verbose:
+            print "Saving..."
 
-        print "Saving..."
         save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, gs)
         coord.request_stop()
         coord.join(threads)
 
-
-        print "Tot train time: ", tot_train_time
-        print "Tot time:       ", time.time()-time_init
+        if verbose:
+            print "Tot train time: ", tot_train_time
+            print "Tot time:       ", time.time()-time_init
 
     # END WITH
 
 
 
-def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j):
+def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope):
     """
     Function used to return logits and softmax(logits) from a chosen model for clip inputs
     Args:
@@ -332,8 +336,6 @@ def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, 
         :output_dims:        Integer number of classes in current dataset
         :seq_length:         Length of output sequence expected from LSTM
         :scope:              String indicating current scope name
-        :k:                  Width of temporal sliding window
-        :j:                  Number of sets in input data once temporal window of length k is applied
 
     Returns:
         logits from network and Softmax(logits)
@@ -344,14 +346,14 @@ def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, 
                              input_dims,
                              output_dims,
                              seq_length,
-                             scope, k, j)[0], input_data_tensor[0,:,:,:,:,:])
+                             scope)[0], input_data_tensor[0,:,:,:,:,:])
 
     # Logits
     softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
 
     return logits_list, softmax
 
-def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j):
+def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope):
     """
     Function used to return logits and softmax(logits) from a chosen model  for a single input
     Args:
@@ -375,14 +377,14 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                              input_dims,
                              output_dims,
                              seq_length,
-                             scope, k, j)[0]
+                             scope)[0]
 
     # Logits
     softmax = tf.nn.softmax(logits)
 
     return logits, softmax
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, k=25):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, k=25, verbose=0):
 
     """
     Function used to test the performance and analyse a chosen model
@@ -400,6 +402,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :base_data_path:     Full path to root directory containing datasets
         :f_name:             Specific video directory within a chosen split of a dataset 
         :k:                  Width of temporal sliding window
+        :verbose:            Boolean to indicate if all print statement should be procesed or not 
 
     Returns:
         Does not return anything
@@ -415,10 +418,12 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         if load_model:
             try:
                 ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
-                print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+                if verbose:
+                    print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
 
             except:
-                print "Failed loading checkpoint requested. Please check."
+                if verbose:
+                    print "Failed loading checkpoint requested. Please check."
                 exit()
 
             # END TRY
@@ -431,19 +436,16 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         istraining  = False
         global_step = tf.Variable(gs_init, name='global_step', trainable=False)
 
-        j           = input_dims / k
-
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
-        # If number of return values in data tensor > 5 implies multiple clips of a video are being returned (since our cluster has a max capacity of 4)
         if len(input_data_tensor.shape) > 5:
-            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
+            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
 
         else:
-            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
+            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
 
         # END IF
 
@@ -468,7 +470,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         count      = 0
         total_pred = []
 
-        print "Begin Testing"
+        if verbose:
+            print "Begin Testing"
 
         for vid_num in range(num_vids):
             count +=1
@@ -484,10 +487,11 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
             guess = np.mean(output_predictions, 0).argmax()
 
-            print "vidNum: ", vid_num
-            print "vidName: ",names
-            print "label:  ", label
-            print "prediction: ", guess
+            if verbose:
+                print "vidNum: ", vid_num
+                print "vidName: ",names
+                print "label:  ", label
+                print "prediction: ", guess
 
             total_pred.append((guess, label))
 
@@ -505,10 +509,12 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     coord.request_stop()
     coord.join(threads)
 
-    print "Total accuracy : ", acc/float(count)
-    print total_pred
+    if verbose:
+        print "Total accuracy : ", acc/float(count) 
+        print total_pred 
 
-    #np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
+    # Save results in numpy format
+    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -575,6 +581,9 @@ if __name__=="__main__":
 
     parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'])
 
+    parser.add_argument('--verbose', action='store', type=int, default=0,
+            help = 'Boolean switch to display all print statements or not')
+
     args = parser.parse_args()
 
     print "Setup of current experiments: ",args
@@ -582,43 +591,43 @@ if __name__=="__main__":
 
     # Associating models
     if model_name == 'vgg16':
-        model = VGG16()
+        model = VGG16(args.inputDims, 25)
 
     elif model_name == 'resnet':
-        model = ResNet()
+        model = ResNet(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v23_2_1':
-        model = ResNet_RIL_Interp_Median_v23_2_1()
+        model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v23_4':
-        model = ResNet_RIL_Interp_Median_v23_4()
+        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v23_7_1':
-        model = ResNet_RIL_Interp_Median_v23_7_1()
+        model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v31_3':
-        model = ResNet_RIL_Interp_Median_v31_3()
+        model = ResNet_RIL_Interp_Median_v31_3(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v34_3_lstm':
-        model = ResNet_RIL_Interp_Median_v34_3_lstm()
+        model = ResNet_RIL_Interp_Median_v34_3_lstm(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v35_lstm':
-        model = ResNet_RIL_Interp_Median_v35_lstm()
+        model = ResNet_RIL_Interp_Median_v35_lstm(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v36_lstm':
-        model = ResNet_RIL_Interp_Median_v36_lstm()
+        model = ResNet_RIL_Interp_Median_v36_lstm(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v37_lstm':
-        model = ResNet_RIL_Interp_Median_v37_lstm()
+        model = ResNet_RIL_Interp_Median_v37_lstm(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v38':
-        model = ResNet_RIL_Interp_Median_v38()
+        model = ResNet_RIL_Interp_Median_v38(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v39':
-        model = ResNet_RIL_Interp_Median_v39()
+        model = ResNet_RIL_Interp_Median_v39(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v40':
-        model = ResNet_RIL_Interp_Median_v40()
+        model = ResNet_RIL_Interp_Median_v40(args.inputDims, 25)
 
     else:
         print("Model not found, check the import and elif statements")
@@ -644,7 +653,8 @@ if __name__=="__main__":
                 wd                  = args.wd,
                 save_freq           = args.saveFreq,
                 val_freq            = args.valFreq,
-                return_layer        = args.returnLayer)
+                return_layer        = args.returnLayer,
+                verbose             = args.verbose)
 
     else:
         test(   model             = model,
@@ -659,6 +669,5 @@ if __name__=="__main__":
                 split             = args.split,
                 base_data_path    = args.baseDataPath,
                 f_name            = args.fName,
-                load_model        = args.load)
-
-# Offer a non verbose option to remove all print statements
+                load_model        = args.load,
+                verbose           = args.verbose)

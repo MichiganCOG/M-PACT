@@ -9,20 +9,29 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from tensorflow.contrib.rnn         import static_rnn
 from layers_utils                   import *
+from tensorflow.contrib.rnn         import static_rnn
 from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 class ResNet():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_dims, k, verbose=True):
         """
         Args:
-            :verbose: Setting verbose command
+            :k:          Temporal window width
+            :verbose:    Setting verbose command
+            :input_dims: Input dimensions (number of frames)
+
+        Return:
+            Does not return anything
         """
-        self.verbose=verbose
-        self.name = 'resnet'
-        print "resnet initialized"
+        self.k          = k
+        self.name       = 'resnet'
+        self.verbose    = verbose
+        self.input_dims = input_dims
+        self.j          = input_dims / k
+
+        print "ResNet50 + LSTM initialized"
 
     def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
         """
@@ -163,7 +172,7 @@ class ResNet():
         return layers
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -172,10 +181,8 @@ class ResNet():
             :output_dims:  Integer indicating total number of classes in final prediction
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
-            :k:            Width of sliding window (temporal width)
-            :j:            Integer number of disjoint sets the sliding window over the input has generated
             :dropout_rate: Value indicating proability of keep inputs
-            :return_layer: String matching name of a layer in current model
+            :return_layer: List of strings matching name of a layer in current model
             :weight_decay: Double value of weight decay
 
         Return:
@@ -260,6 +267,7 @@ class ResNet():
                             input_layer=layers['116']))
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
+
             layers['125'] = self._LSTM(layers['124'], seq_length, feat_size=2048, cell_size=512)
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
@@ -285,6 +293,9 @@ class ResNet():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
+        
+        Return:
+            Pointer to preprocessing function of current model
         """
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
 
@@ -294,6 +305,9 @@ class ResNet():
         Args:
             :logits: Unscaled logits returned from final layer in model
             :labels: True labels corresponding to loaded data
+
+        Return:
+            Cross entropy loss value
         """
 
         labels = tf.cast(labels, tf.int64)

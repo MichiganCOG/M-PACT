@@ -336,40 +336,72 @@ def preprocess_image(image, output_height, output_width, is_training=False,
                                resize_side_min)
 
 
-
-
-
-def _loop_video(input_data_tensor, frames, height, width, channel, input_dims):
-    # Loop the video the number of times necessary for the number of frames to be > input_dims
-    loop_factor = tf.cast(tf.add(tf.divide(input_dims, frames), 1), tf.int32)
-    loop_stack = tf.stack([loop_factor,1,1,1])
-    input_data_tensor = tf.tile(input_data_tensor, loop_stack)
-    reshape_stack = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
-    return tf.reshape(input_data_tensor, reshape_stack)
-
-
 def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
-    # Loop the video the number of times necessary for the number of frames to be > footprint
-    loop_factor = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
-    loop_stack = tf.stack([loop_factor,1,1,1])
+    """
+    Loop the video the number of times necessary for the number of frames to be > footprint
+    Args:
+        :offset_tensor:     Raw input data from offset frame number  
+        :input_data_tensor: Raw input data 
+        :frames:            Total number of frames
+        :height:            Height of frame
+        :width:             Width of frame
+        :channel:           Total number of color channels
+        :footprint:         Total length of video to be extracted before sampling down
+
+    Return:
+        Looped video 
+    """
+
+    loop_factor       = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
+    loop_stack        = tf.stack([loop_factor,1,1,1])
     input_data_tensor = tf.tile(input_data_tensor, loop_stack)
-    reshape_stack = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
+    reshape_stack     = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
     input_data_looped = tf.reshape(input_data_tensor, reshape_stack)
-    output_data = tf.concat([offset_tensor, input_data_looped], axis = 0)
+
+    output_data       = tf.concat([offset_tensor, input_data_looped], axis = 0)
+
     return output_data
 
 
 def _sample_video(video, frame_count, offset):
-    # Return frame_count number of frames from video at every offset
+    """
+    Return frame_count number of frames from video at every offset
+    Args:
+        :video:       Raw input data 
+        :frame_count: Total number of frames
+        :offset:      Sampling interval
+
+    Return:
+        Sampled video 
+    """
+
     indices = range(0, frame_count, offset)
-    output = tf.gather(video, tf.convert_to_tensor(indices))
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+
     return output
 
 
 
 
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+    """
+    Preprocessing function corresponding to the chosen model
+    Args:
+        :input_data_tensor: Raw input data 
+        :frames:            Total number of frames
+        :height:            Height of frame
+        :width:             Width of frame
+        :channel:           Total number of color channels
+        :input_dims:        Number of frames to be provided as input to model 
+        :output_dims:       Total number of labels
+        :seq_length:        Number of frames expected as output of model
+        :size:              Output size of preprocessed frames
+        :label:             Label of current sample
+        :istraining:        Boolean indicating training or testing phase
 
+    Return:
+        Preprocessing input data and labels tensor
+    """
 
 
     footprint = input_dims

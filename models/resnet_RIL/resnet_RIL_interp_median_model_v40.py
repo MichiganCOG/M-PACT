@@ -14,13 +14,22 @@ from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 class ResNet_RIL_Interp_Median_v40():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_dims, k, verbose=True):
         """
         Args:
-            :verbose: Setting verbose command
+            :k:          Temporal window width
+            :verbose:    Setting verbose command
+            :input_dims: Input dimensions (number of frames)
+
+        Return:
+            Does not return anything
         """
-        self.verbose=verbose
-        self.name = 'resnet_RIL_interp_median_model_v40'
+        self.k          = k
+        self.verbose    = verbose
+        self.input_dims = input_dims
+        self.j          = input_dims / k
+        self.name       = 'resnet_RIL_interp_median_model_v40'
+
         print "resnet RIL interp median v40 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
@@ -35,7 +44,7 @@ class ResNet_RIL_Interp_Median_v40():
             :L:      Expected number of output frames
 
         Return:
-            :output:
+            :output: Extracted features
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
@@ -99,7 +108,7 @@ class ResNet_RIL_Interp_Median_v40():
             :L:      Expected number of output frames
 
         Return:
-            :output:
+            :output: Extracted features
         """
 
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
@@ -296,7 +305,7 @@ class ResNet_RIL_Interp_Median_v40():
 
         return layers
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -305,8 +314,6 @@ class ResNet_RIL_Interp_Median_v40():
             :output_dims:  Integer indicating total number of classes in final prediction
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
-            :k:            Width of sliding window (temporal width)
-            :j:            Integer number of disjoint sets the sliding window over the input has generated
             :dropout_rate: Value indicating proability of keep inputs
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
@@ -340,10 +347,10 @@ class ResNet_RIL_Interp_Median_v40():
 
             layers['RIlayer'] = self._extraction_layer(inputs=inputs,
                                                        params=layers['Parameterization_Variables'],
-                                                       sets=j, L=seq_length*2, K=k)
+                                                       sets=self.j, L=seq_length*2, K=self.k)
             layers['RIlayer_2'] = self._extraction_layer(inputs=layers['RIlayer'],
                                                        params=layers['Parameterization_Variables_phi'],
-                                                       sets=seq_length*2/k, L=seq_length, K=k)
+                                                       sets=seq_length*2/self.k, L=seq_length, K=self.k)
 
 
             ############################################################################
@@ -439,6 +446,9 @@ class ResNet_RIL_Interp_Median_v40():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
+        
+        Return:
+            Pointer to preprocessing function of current model
         """
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
 
@@ -448,6 +458,9 @@ class ResNet_RIL_Interp_Median_v40():
         Args:
             :logits: Unscaled logits returned from final layer in model
             :labels: True labels corresponding to loaded data
+
+        Return:
+            Cross entropy loss value
         """
         labels = tf.cast(labels, tf.int64)
 
