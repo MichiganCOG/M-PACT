@@ -86,20 +86,24 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :n_epochs:           Total number of epochs to train
         :split:              Split of dataset being used
         :base_data_path:     Full path to root directory containing datasets
-        :f_name:             Specific video directory within a chosen split of a dataset 
+        :f_name:             Specific video directory within a chosen split of a dataset
         :learning_rate_init: Initializer for learning rate
         :wd:                 Weight decay
         :save_freq:          Frequency, in epochs, with which to save
         :val_freq:           Frequency, in epochs, with which to run validaton
         :return_layer:       Layers to be tracked during training
         :k:                  Width of temporal sliding window
-        :verbose:            Boolean to indicate if all print statement should be procesed or not 
+        :verbose:            Boolean to indicate if all print statement should be procesed or not
 
     Returns:
         Does not return anything
     """
 
     with tf.name_scope("my_scope") as scope:
+
+        # Ensure that the default return layer is logits
+        if len(return_layer) == 0:
+            return_layer = ['logits']
 
         # Ensure first layer requested in return sequence is "logits" always
         if return_layer[0] != 'logits':
@@ -135,6 +139,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         reuse_variables    = None
 
         model_params_array = []
+        for rl in range(len(return_layer)-1):
+            model_params_array.append([])
+
+        # END FOR
+
         tower_losses       = []
         tower_grads        = []
         tower_slogits      = []
@@ -151,7 +160,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                              2) Setup tower name scope for variables
         """
         for gpu_idx in range(num_gpus):
-            with tf.device('/gpu:'+str(gpu_idx)):   
+            with tf.device('/gpu:'+str(gpu_idx)):
                 with tf.name_scope('%s_%d' % ('tower', gpu_idx)) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
                         returned_layers = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
@@ -164,9 +173,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                  weight_decay=wd)
 
                         logits       = returned_layers[0]
-                        model_params = returned_layers[1:]
 
-                        model_params_array.append(model_params)
+                        for rl in range(len(returned_layers[1:])):
+                            model_params_array[rl].append(returned_layers[1:][rl])
+
+                        # END FOR
 
                         # Calculating Softmax for probability outcomes : Can be modified, make function internal to model
                         slogits = tf.nn.softmax(logits)
@@ -196,7 +207,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END FOR
 
-        model_params_array = np.array(model_params_array).T.tolist()
 
         """  After: 1) Computing gradients and losses need to be stored and averaged
                     2) Clip gradients by norm to required value
@@ -233,6 +243,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Model variables initialized from previous saved models
         initialize_from_dict(sess, ckpt)
+        del ckpt
 
         acc            = 0
         epoch_count    = 0
@@ -277,7 +288,23 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             _, loss_train, predictions, gs, labels, params = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array])
-            params = np.array(params)
+
+            # Transpose the extracted layers such that the mean is taken across the gpus and over any matrix with more than 1 dimension
+            params_array = []
+            for rl in range(len(return_layer[1:])):
+                curr_params = np.array(params[rl])
+                if len(curr_params.shape) > 1:
+                    indices = np.arange(len(curr_params.shape)) + 1
+                    indices[-1] = 0
+                    curr_params = curr_params.transpose(indices)
+                    params_array.append(np.mean(curr_params, axis=tuple(range(len(curr_params.shape))[1:])))
+
+                else:
+                    params_array.append([np.mean(curr_params)])
+
+                # END IF
+
+            # END FOR
 
 
             # Compute training epoch accuracy
@@ -300,16 +327,23 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 print 'train_time: ', time_post_train-time_pre_train
                 print 'step, loss: ', gs, loss_train
 
+            # END IF
+
+
             curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
-            for p in range(params.shape[0]):
-                curr_logger.add_scalar_value('train/'+str(return_layer[1:][p]), float(np.mean(params[p])), step=gs)
 
-            # END FOR 
+            for layer in range(len(params_array)):
+                for p in range(len(params_array[layer])):
+                    curr_logger.add_scalar_value('tracked_training_variables/'+str(return_layer[1:][layer]+'_'+str(p)), float(params_array[layer][p]), step=gs)
+
+                # END FOR
+
+            # END FOR
 
         # END FOR
-        
+
         if verbose:
             print "Saving..."
 
@@ -331,7 +365,7 @@ def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, 
     Args:
         :model:              tf-activity-recognition framework model object
         :input_data_tensor:  Tensor containing input data
-        :istraining:         Boolean variable indicating training/testing phase 
+        :istraining:         Boolean variable indicating training/testing phase
         :input_dims:         Number of frames used in input
         :output_dims:        Integer number of classes in current dataset
         :seq_length:         Length of output sequence expected from LSTM
@@ -359,7 +393,7 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
     Args:
         :model:              tf-activity-recognition framework model object
         :input_data_tensor:  Tensor containing input data
-        :istraining:         Boolean variable indicating training/testing phase 
+        :istraining:         Boolean variable indicating training/testing phase
         :input_dims:         Number of frames used in input
         :output_dims:        Integer number of classes in current dataset
         :seq_length:         Length of output sequence expected from LSTM
@@ -400,9 +434,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :num_vids:           Number of videos to be used for training
         :split:              Split of dataset being used
         :base_data_path:     Full path to root directory containing datasets
-        :f_name:             Specific video directory within a chosen split of a dataset 
+        :f_name:             Specific video directory within a chosen split of a dataset
         :k:                  Width of temporal sliding window
-        :verbose:            Boolean to indicate if all print statement should be procesed or not 
+        :verbose:            Boolean to indicate if all print statement should be procesed or not
 
     Returns:
         Does not return anything
@@ -465,6 +499,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Model variables initialized from previous saved models
         initialize_from_dict(sess, ckpt)
+        del ckpt
 
         acc        = 0
         count      = 0
@@ -510,8 +545,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     coord.join(threads)
 
     if verbose:
-        print "Total accuracy : ", acc/float(count) 
-        print total_pred 
+        print "Total accuracy : ", acc/float(count)
+        print total_pred
 
     # Save results in numpy format
     np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))

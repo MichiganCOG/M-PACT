@@ -81,7 +81,7 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
         :gs:              Current global step
 
     Return:
-       Does not return anything 
+       Does not return anything
     """
 
     filename = 'checkpoint-'+str(gs)
@@ -107,29 +107,29 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
 
 def _add_tensor(data_dict, keys_list, data):
     """
-    Function recursively builds the dictionary with a layered structure 
+    Function recursively builds the dictionary with a layered structure
     Args:
         :data_dict: Data dictionary to be updated
-        :keys_list: List of string indicating depth of dictionary to be built and corresponding items 
+        :keys_list: List of string indicating depth of dictionary to be built and corresponding items
         :data:      String indicating selected dataset
 
     Return:
-        Returns a dictionary containing model parameters 
+        Returns a dictionary containing model parameters
     """
 
-	if len(keys_list) == 0:
-		return data
+    if len(keys_list) == 0:
+    	return data
 
-	else:
-	    try:
-	        curr_data_dict = data_dict[keys_list[0]]
-	    except:
-		curr_data_dict = {}
+    else:
+        try:
+            curr_data_dict = data_dict[keys_list[0]]
+        except:
+            curr_data_dict = {}
 
             # END TRY
 
-	    data_dict[keys_list[0]] = _add_tensor(curr_data_dict, keys_list[1:], data)
-	    return data_dict
+        data_dict[keys_list[0]] = _add_tensor(curr_data_dict, keys_list[1:], data)
+        return data_dict
 
         # END IF
 
@@ -138,14 +138,14 @@ def _add_tensor(data_dict, keys_list, data):
 
 def _assign_tensors(sess, curr_dict, tensor_name):
     """
-    Function recursively assigns model parameters their values from a given dictionary 
+    Function recursively assigns model parameters their values from a given dictionary
     Args:
-        :sess:        Tensorflow session instance 
-        :curr_dict:   Dictionary containing model parameter values 
+        :sess:        Tensorflow session instance
+        :curr_dict:   Dictionary containing model parameter values
         :tensor_name: String indicating name of tensor to be assigned values
 
     Return:
-       Does not return anything 
+       Does not return anything
     """
     try:
         if type(curr_dict) == type({}):
@@ -174,13 +174,13 @@ def _assign_tensors(sess, curr_dict, tensor_name):
 
 def initialize_from_dict(sess, data_dict):
     """
-    Function initializes model parameters from value given in a dictionary 
+    Function initializes model parameters from value given in a dictionary
     Args:
-        :sess:        Tensorflow session instance 
-        :data_dict:   Dictionary containing model parameter values 
+        :sess:        Tensorflow session instance
+        :data_dict:   Dictionary containing model parameter values
 
     Return:
-       Does not return anything 
+       Does not return anything
     """
 
     print 'Initializng model weights...'

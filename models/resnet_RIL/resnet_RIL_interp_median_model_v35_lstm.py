@@ -495,7 +495,7 @@ class ResNet_RIL_Interp_Median_v35_lstm():
             layers['Parameterization_Variables_phi'] = self.FClayer(inputs=layers['RAINlayer_lstm_step4'],
                                                      op_dims=1, reuse=True)
 
-            layers['RAINlayer_step4']         = self._extraction_layer2(inputs=layers['124'], params=layers['Parameterization_Variables_phi'], sets=2*seq_length/self.k, K=self.k L=seq_length)
+            layers['RAINlayer_step4']         = self._extraction_layer2(inputs=layers['124'], params=layers['Parameterization_Variables_phi'], sets=2*seq_length/self.k, K=self.k, L=seq_length)
 
 
             ############################################################################
@@ -529,7 +529,7 @@ class ResNet_RIL_Interp_Median_v35_lstm():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
-        
+
         Return:
             Pointer to preprocessing function of current model
         """
