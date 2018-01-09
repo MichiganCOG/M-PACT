@@ -229,7 +229,7 @@ class ResNet_RIL_Interp_Median_v36_lstm():
 
         return lstm_outputs
 
-    def _conv_block(self, n_filters, kernel_size, name, layer_numbers, input_layer, data_dict, strides=2, weight_decay=0.0):
+    def _conv_block(self, n_filters, kernel_size, name, layer_numbers, input_layer, strides=2, weight_decay=0.0):
         """
         Args:
             :n_filters:     List detailing the number of filters
@@ -237,13 +237,13 @@ class ResNet_RIL_Interp_Median_v36_lstm():
             :name:          Name of the conv_block branch
             :layer_numbers: List detailing the connecting layer indices
             :input_layer:   Input layer to the conv_block
-            :data_dict:     Data dictionary containing initializers
             :strides:       Integer value for stride between filters
             :weight_decay:  Double value of weight decay
 
         Return:
             :layers:        Stack of layers
         """
+
         layers = {}
 
         # Conv block
@@ -251,60 +251,36 @@ class ResNet_RIL_Interp_Median_v36_lstm():
                 filter_dims=[1,1,n_filters[0]], stride_dims=[strides,strides],
                 padding = 'VALID',
                 name='res'+name+'_branch2a',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[1]] = tf.layers.batch_normalization(layers[layer_numbers[0]],
-                name='bn'+name+'_branch2a',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_gamma:0'].value))
+                name='bn'+name+'_branch2a')
 
         layers[layer_numbers[2]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[1]]),
                 filter_dims=[kernel_size, kernel_size, n_filters[1]], padding='SAME',
                 name='res'+name+'_branch2b',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[3]] = tf.layers.batch_normalization(layers[layer_numbers[2]],
-                name='bn'+name+'_branch2b',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_gamma:0'].value))
+                name='bn'+name+'_branch2b')
 
         layers[layer_numbers[4]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[3]]),
                 filter_dims=[1,1,n_filters[2]], padding = 'VALID',
                 name='res'+name+'_branch2c',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[5]] = tf.layers.batch_normalization(layers[layer_numbers[4]],
-                name='bn'+name+'_branch2c',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_gamma:0'].value))
+                name='bn'+name+'_branch2c')
 
         # Shortcuts
         layers[layer_numbers[6]] = conv_layer(input_tensor=input_layer,
                 filter_dims=[1,1,n_filters[2]], stride_dims=[strides, strides],
                 padding = 'VALID',
                 name='res'+name+'_branch1',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch1']['res'+name+'_branch1_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch1']['res'+name+'_branch1_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[7]] = tf.layers.batch_normalization(layers[layer_numbers[6]],
-                name='bn'+name+'_branch1',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch1']['bn'+name+'_branch1_gamma:0'].value))
+                name='bn'+name+'_branch1')
 
         # END OF CONV BLOCK
 
@@ -313,7 +289,7 @@ class ResNet_RIL_Interp_Median_v36_lstm():
         return layers
 
 
-    def _identity_block(self, n_filters, kernel_size, name, layer_numbers, input_layer, data_dict, weight_decay=0.0):
+    def _identity_block(self, n_filters, kernel_size, name, layer_numbers, input_layer, weight_decay=0.0):
         """
         Args:
             :n_filters:     List detailing the number of filters
@@ -321,7 +297,6 @@ class ResNet_RIL_Interp_Median_v36_lstm():
             :name:          Name of the identity_block branch
             :layer_numbers: List detailing the connecting layer indices
             :input_layer:   Input layer to the identity_block
-            :data_dict:     Data dictionary containing initializers
             :strides:       Integer value for stride between filters
             :weight_decay:  Double value of weight decay
 
@@ -335,44 +310,26 @@ class ResNet_RIL_Interp_Median_v36_lstm():
         layers[layer_numbers[0]] = conv_layer(input_tensor=input_layer,
                 filter_dims=[1, 1, n_filters[0]], padding='VALID',
                 name='res'+name+'_branch2a',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2a']['res'+name+'_branch2a_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[1]] = tf.layers.batch_normalization(layers[layer_numbers[0]],
-                name='bn'+name+'_branch2a',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2a']['bn'+name+'_branch2a_gamma:0'].value))
+                name='bn'+name+'_branch2a')
 
         layers[layer_numbers[2]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[1]]),
                 filter_dims=[kernel_size, kernel_size, n_filters[1]], padding='SAME',
                 name='res'+name+'_branch2b',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2b']['res'+name+'_branch2b_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[3]] = tf.layers.batch_normalization(layers[layer_numbers[2]],
-                name='bn'+name+'_branch2b',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2b']['bn'+name+'_branch2b_gamma:0'].value))
+                name='bn'+name+'_branch2b')
 
         layers[layer_numbers[4]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[3]]),
                 filter_dims=[1,1,n_filters[2]], padding='VALID',
                 name='res'+name+'_branch2c',
-                kernel_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_W:0'].value),
-                bias_init=tf.constant_initializer(data_dict['res'+name+'_branch2c']['res'+name+'_branch2c_b:0'].value),
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[5]] = tf.layers.batch_normalization(layers[layer_numbers[4]],
-                name='bn'+name+'_branch2c',
-                moving_mean_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_mean:0'].value),
-                moving_variance_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_running_std:0'].value),
-                beta_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_beta:0'].value),
-                gamma_initializer=tf.constant_initializer(data_dict['bn'+name+'_branch2c']['bn'+name+'_branch2c_gamma:0'].value))
+                name='bn'+name+'_branch2c')
 
         # END OF IDENTITY BLOCK
 
@@ -380,7 +337,7 @@ class ResNet_RIL_Interp_Median_v36_lstm():
 
         return layers
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], data_dict=None, weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -408,8 +365,6 @@ class ResNet_RIL_Interp_Median_v36_lstm():
 
         # END IF
 
-        # Must exist within the current model directory
-        data_dict = h5py.File('models/resnet_RIL/resnet50_weights_tf_dim_ordering_tf_kernels.h5','r')
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
@@ -430,71 +385,65 @@ class ResNet_RIL_Interp_Median_v36_lstm():
                     filter_dims=[7, 7, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='conv1',
-                    kernel_init=tf.constant_initializer(data_dict['conv1']['conv1_W:0'].value),
-                    bias_init=tf.constant_initializer(data_dict['conv1']['conv1_b:0'].value),
                     weight_decay = weight_decay, non_linear_fn=None)
 
             layers['2'] = tf.layers.batch_normalization(layers['1'],
-                    name='bn_conv1',
-                    moving_mean_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_mean:0'].value),
-                    moving_variance_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_running_std:0'].value),
-                    beta_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_beta:0'].value),
-                    gamma_initializer=tf.constant_initializer(data_dict['bn_conv1']['bn_conv1_gamma:0'].value))
+                    name='bn_conv1')
 
             layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
                                          filter_dims=[3, 3], stride_dims=[2,2],
                                          name='pool1', padding='VALID')
 
             layers.update(self._conv_block([64,64,256], kernel_size=3, name='2a', layer_numbers=['4','5','6','7','8','9','10','11','12'],
-                            input_layer=layers['3'], strides=1, data_dict=data_dict))
+                            input_layer=layers['3'], strides=1))
 
             layers.update(self._identity_block([64,64,256], kernel_size=3, name='2b', layer_numbers=['13','14','15','16','17','18','19'],
-                            input_layer=layers['12'], data_dict=data_dict))
+                            input_layer=layers['12']))
 
             layers.update(self._identity_block([64,64,256], kernel_size=3, name='2c', layer_numbers=['20','21','22','23','24','25','26'],
-                            input_layer=layers['19'], data_dict=data_dict))
+                            input_layer=layers['19']))
 
             #########
             layers.update(self._conv_block([128,128,512], kernel_size=3, name='3a', layer_numbers=['27','28','29','30','31','32','33','34','35'],
-                            input_layer=layers['26'], data_dict=data_dict))
+                            input_layer=layers['26']))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3b', layer_numbers=['36','37','38','39','40','41','42'],
-                            input_layer=layers['35'], data_dict=data_dict))
+                            input_layer=layers['35']))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3c', layer_numbers=['43','44','45','46','47','48','49'],
-                            input_layer=layers['42'], data_dict=data_dict))
+                            input_layer=layers['42']))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3d', layer_numbers=['50','51','52','53','54','55','56'],
-                            input_layer=layers['49'], data_dict=data_dict))
+                            input_layer=layers['49']))
 
             #########
             layers.update(self._conv_block([256,256,1024], kernel_size=3, name='4a', layer_numbers=['57','58','59','60','61','62','63','64','65'],
-                            input_layer=layers['56'], data_dict=data_dict))
+                            input_layer=layers['56']))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4b', layer_numbers=['66','67','68','69','70','71','72'],
-                            input_layer=layers['65'], data_dict=data_dict))
+                            input_layer=layers['65']))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4c', layer_numbers=['73','74','75','76','77','78','79'],
-                            input_layer=layers['72'], data_dict=data_dict))
+                            input_layer=layers['72']))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4d', layer_numbers=['80','81','82','83','84','85','86'],
-                            input_layer=layers['79'], data_dict=data_dict))
+                            input_layer=layers['79']))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4e', layer_numbers=['87','88','89','90','91','92','93'],
-                            input_layer=layers['86'], data_dict=data_dict))
+                            input_layer=layers['86']))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4f', layer_numbers=['94','95','96','97','98','99','100'],
-                            input_layer=layers['93'], data_dict=data_dict))
+                            input_layer=layers['93']))
 
             #########
             layers.update(self._conv_block([512,512,2048], kernel_size=3, name='5a', layer_numbers=['101','102','103','104','105','106','107','108','109'],
-                            input_layer=layers['100'], data_dict=data_dict))
+                            input_layer=layers['100']))
 
             layers.update(self._identity_block([512,512,2048], kernel_size=3, name='5b', layer_numbers=['110','111','112','113','114','115','116'],
-                            input_layer=layers['109'], data_dict=data_dict))
+                            input_layer=layers['109']))
 
             layers.update(self._identity_block([512,512,2048], kernel_size=3, name='5c', layer_numbers=['117','118','119','120','121','122','123'],
-                            input_layer=layers['116'], data_dict=data_dict))
+                            input_layer=layers['116']))
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
 
@@ -546,6 +495,13 @@ class ResNet_RIL_Interp_Median_v36_lstm():
             # END WITH
 
         return [layers[x] for x in return_layer]
+
+
+    def load_default_weights(self):
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
+        return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

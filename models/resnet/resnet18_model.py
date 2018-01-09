@@ -167,10 +167,10 @@ class ResNet18():
 
         layers[layer_numbers[5]] = tf.nn.relu(tf.add(layers[layer_numbers[4]], layers[layer_numbers[3]]))
 
-        return layers
+        return [layers[x] for x in return_layer]
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer='logits', data_dict=None, weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, dropout_rate = 0.5, return_layer=['logits'], data_dict=None, weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -258,6 +258,13 @@ class ResNet18():
             # END WITH
 
         return layers[return_layer]
+
+
+    def load_default_weights(self):
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
+        return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
 
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):

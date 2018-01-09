@@ -37,15 +37,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['1x1_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['1x1_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_1_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_1'],
                 name=name+'_1_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['1x1_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['1x1_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['1x1_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['1x1_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_2_reduce'] = conv_layer(input_tensor=inputLayer,
@@ -55,15 +55,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['3x3_reduce_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['3x3_reduce_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_2_reduce_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_2_reduce'],
                 name=name+'_2_reduce_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_2'] = conv_layer(input_tensor=pad(layers[name+'_2_reduce_bn'], 1),
@@ -73,15 +73,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['3x3_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['3x3_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_2_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_2'],
                 name=name+'_2_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_double_reduce'] = conv_layer(input_tensor=inputLayer,
@@ -91,15 +91,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['double_3x3_reduce_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['double_3x3_reduce_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_double_reduce_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_double_reduce'],
                 name=name+'_double_reduce_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_double_1'] = conv_layer(input_tensor=pad(layers[name+'_double_reduce_bn'], 1),
@@ -109,15 +109,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['double_3x3_1_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['double_3x3_1_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_double_1_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_double_1'],
                 name=name+'_double_1_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_double_2'] = conv_layer(input_tensor=pad(layers[name+'_double_1_bn'], 1),
@@ -127,15 +127,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['double_3x3_2_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['double_3x3_2_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_double_2_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_double_2'],
                 name=name+'_double_2_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         if poolType == "AVG":
@@ -153,15 +153,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['pool_proj_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['pool_proj_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_pool_proj_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_pool_proj'],
                 name=name+'_pool_proj_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['pool_proj_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['pool_proj_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['pool_proj_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['pool_proj_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
         # Axis 3 for concatenation along channels
         layers[name+'_output'] = tf.concat([layers[name+'_1_bn'], layers[name+'_2_bn'], layers[name+'_double_2_bn'], layers[name+'_pool_proj_bn']], axis=3)
@@ -199,10 +199,10 @@ class TSN():
 
         layers[name+'_1_reduce_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_1_reduce'],
                 name=name+'_1_reduce_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['3x3_reduce_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_1'] = conv_layer(input_tensor=pad(layers[name+'_1_reduce_bn'], 1),
@@ -212,15 +212,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['3x3_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['3x3_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_1_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_1'],
                 name=name+'_1_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['3x3_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_double_reduce'] = conv_layer(input_tensor=inputLayer,
@@ -230,15 +230,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['double_3x3_reduce_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['double_3x3_reduce_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_double_reduce_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_double_reduce'],
                 name=name+'_double_reduce_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['double_3x3_reduce_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_double_1'] = conv_layer(input_tensor=pad(layers[name+'_double_reduce_bn'], 1),
@@ -248,15 +248,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['double_3x3_1_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['double_3x3_1_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_double_1_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_double_1'],
                 name=name+'_double_1_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['double_3x3_1_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
 
         layers[name+'_double_2'] = conv_layer(input_tensor=pad(layers[name+'_double_1_bn'], 1),
@@ -266,15 +266,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict[name]['double_3x3_2_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict[name]['double_3x3_2_1']))
+                       kernel_init=tf.constant_initializer(dataDict[name]['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict[name]['bias']))
 
         layers[name+'_double_2_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers[name+'_double_2'],
                 name=name+'_double_2_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict[name]['double_3x3_2_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict[name]['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict[name]['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict[name]['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict[name]['gamma'])))
 
         #import pdb;pdb.set_trace()
 
@@ -302,7 +302,7 @@ class TSN():
 
 
 
-    def inference(self, inputs, isTraining, inputDims, outputDims, seqLength, scope, k, j, return_layer='logits', dataDict=None, cpuId = 0, weight_decay=0.0):
+    def inference(self, inputs, isTraining, inputDims, outputDims, seqLength, scope, k, j, return_layer=['logits'], dataDict=None, cpuId = 0, weight_decay=0.0):
 
         ############################################################################
         #                         Creating TSN Network Layers                      #
@@ -311,10 +311,10 @@ class TSN():
         print('Generating TSN network layers')
 
         if outputDims == 51:
-            dataDict = np.load('/z/home/erichof/TF_Activity_Recognition_Framework/models/tsn/tsn_HMDB51.npy').tolist()
+            dataDict = np.load('models/tsn/tsn_HMDB51.npy').tolist()
     #    dataDict = np.load('/z/home/madantrg/RILCode/Code_ND/Utils/vgg16.npy').item()
         else:
-            dataDict = np.load('/z/home/erichof/TF_Activity_Recognition_Framework/models/tsn/tsn_UCF101.npy').tolist()
+            dataDict = np.load('models/tsn/tsn_UCF101.npy').tolist()
 
         if isTraining:
             keep_prob = 0.2
@@ -334,15 +334,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict['conv1']['7x7_s2_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict['conv1']['7x7_s2_1']))
+                       kernel_init=tf.constant_initializer(dataDict['conv1']['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict['conv1']['bias']))
 
         layers['conv1_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers['conv1'],
                 name='conv1_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict['conv1']['7x7_s2_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict['conv1']['7x7_s2_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict['conv1']['7x7_s2_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict['conv1']['7x7_s2_bn_0']),
+                moving_mean_initializer=tf.constant_initializer(dataDict['conv1']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict['conv1']['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict['conv1']['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict['conv1']['gamma']),
                 training=False,
                 momentum=0.1))
 
@@ -364,15 +364,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict['conv2']['3x3_reduce_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict['conv2']['3x3_reduce_1']))
+                       kernel_init=tf.constant_initializer(dataDict['conv2']['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict['conv2']['bias']))
 
         layers['conv2_reduce_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers['conv2_reduce'],
                 name='conv2_reduce_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict['conv2']['3x3_reduce_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict['conv2']['3x3_reduce_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict['conv2']['3x3_reduce_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict['conv2']['3x3_reduce_bn_0']),
+                moving_mean_initializer=tf.constant_initializer(dataDict['conv2']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict['conv2']['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict['conv2']['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict['conv2']['gamma']),
                 training=False))
 
 
@@ -384,15 +384,15 @@ class TSN():
                        weight_decay=weight_decay,
                        padding='VALID',
                        non_linear_fn=None,
-                       kernel_init=tf.constant_initializer(dataDict['conv2']['3x3_0'].transpose((2,3,1,0))),
-                       bias_init=tf.constant_initializer(dataDict['conv2']['3x3_1']))
+                       kernel_init=tf.constant_initializer(dataDict['conv2']['kernel'].transpose((2,3,1,0))),
+                       bias_init=tf.constant_initializer(dataDict['conv2']['bias']))
 
         layers['conv2_bn'] = tf.nn.relu(tf.layers.batch_normalization(layers['conv2'],
                 name='conv2_bn',
-                moving_mean_initializer=tf.constant_initializer(dataDict['conv2']['3x3_bn_2']),
-                moving_variance_initializer=tf.constant_initializer(dataDict['conv2']['3x3_bn_3']),
-                beta_initializer=tf.constant_initializer(dataDict['conv2']['3x3_bn_1']),
-                gamma_initializer=tf.constant_initializer(dataDict['conv2']['3x3_bn_0'])))
+                moving_mean_initializer=tf.constant_initializer(dataDict['conv2']['moving_mean']),
+                moving_variance_initializer=tf.constant_initializer(dataDict['conv2']['moving_variance']),
+                beta_initializer=tf.constant_initializer(dataDict['conv2']['beta']),
+                gamma_initializer=tf.constant_initializer(dataDict['conv2']['gamma'])))
 
         layers['pool2'] = max_pool_layer(layers['conv2_bn'],
                            filter_dims=[3,3],
@@ -476,8 +476,8 @@ class TSN():
                                   name='fc',
                                   weight_decay=weight_decay,
                                   non_linear_fn=None,
-                                  weight_init=tf.constant_initializer(dataDict['fc']['fc-action_0'].T),
-                                  bias_init=tf.constant_initializer(dataDict['fc']['fc-action_1']))
+                                  weight_init=tf.constant_initializer(dataDict['fc']['kernel'].T),
+                                  bias_init=tf.constant_initializer(dataDict['fc']['bias']))
 
         #layers['logits'] = tf.reshape(layers['fc'], [-1, 3, 1, 51])
 
@@ -485,10 +485,13 @@ class TSN():
     #                        stride_dims=[1,1], name='segment_consensus', padding='VALID')
 
 
-        return layers[return_layer]
+        return [layers[x] for x in return_layer]
 
-
-
+    def load_default_weights(self, dataset):
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
+        return np.load('models/tsn/tsn_'+dataset+'.npy')
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

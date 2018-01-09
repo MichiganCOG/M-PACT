@@ -13,7 +13,7 @@ from tensorflow.python.ops      import variable_scope as vs
 from tensorflow.python.ops      import variables as vars_
 from tensorflow.python.training import queue_runner_impl
 
-from utils                                            import *
+from utils                                            import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir
 from Queue                                            import Queue
 from models.lrcn.lrcn_model                           import LRCN
 from models.vgg16.vgg16_model                         import VGG16
@@ -161,7 +161,7 @@ def _average_gradients(tower_grads):
 #    logger.add_scalar_value('val/acc',acc/float(batch_countcount), step=gs)
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, val_num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, k=25):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, val_num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, k=25):
 
     """
     Args:
@@ -184,12 +184,33 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :wd:                 Weight decay
         :save_freq:          Frequency, in epochs, with which to save
         :val_freq:           Frequency, in epochs, with which to run validaton
+        :return_layer:       Layers to be tracked during training
         :k:                  Width of temporal sliding window
 
     """
 
     with tf.name_scope("my_scope") as scope:
-        global_step     = tf.Variable(0, name='global_step', trainable=False)
+        if return_layer[0] != 'logits':
+            return_layer.insert(0, 'logits')
+
+        ckpt = None
+        gs_init = 0
+        if load_model:
+            try:
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
+                print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+
+            except:
+                print "Failed loading checkpoint requested. Please check."
+                exit()
+
+            # END TRY
+        else:
+            ckpt = model.load_default_weights()
+        # END IF
+
+
+        global_step     = tf.Variable(gs_init, name='global_step', trainable=False)
         istraining      = True
         reuse_variables = None
         j               = input_dims / k
@@ -199,10 +220,13 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Setting up tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
-        tower_losses  = []
-        tower_grads   = []
-        tower_slogits = []
-        param_vars    = []
+        tower_losses     = []
+        tower_grads      = []
+        tower_slogits    = []
+        model_params_array = []
+
+
+
 
         # Define optimizer
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
@@ -211,25 +235,18 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             with tf.device('/gpu:'+str(gpu_idx)):
                 with tf.name_scope('%s_%d' % ('tower', gpu_idx)) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
-
-                        param_var, logits = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
+                        #param_var, logits = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
+                        returned_layers = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
                                                  istraining,
                                                  input_dims,
                                                  output_dims,
                                                  seq_length,
                                                  scope, k, j,
-                                                 return_layer = ['Parameterization_Variables', 'logits'],
+                                                 return_layer = return_layer,
                                                  weight_decay=wd)
-
-                        # logits = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
-                        #                          istraining,
-                        #                          input_dims,
-                        #                          output_dims,
-                        #                          seq_length,
-                        #                          scope, k, j,
-                        #                          weight_decay=wd)
-
-                        param_vars.append(param_var)
+                        logits = returned_layers[0]
+                        model_params = returned_layers[1:]
+                        model_params_array.append(model_params)
 
                         # Calculating Softmax for probability outcomes : Can be modified
                         # Make function internal to model
@@ -259,6 +276,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END FOR
 
+        model_params_array = np.array(model_params_array).T.tolist()
+
         """  After: 1) Computing gradients and losses need to be stored and averaged
                     2) Clip gradients by norm to required value
                     3) Apply mean gradient updates
@@ -282,29 +301,21 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
         curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
 
+        # import pdb; pdb.set_trace()
+
         # TF session setup
         config  = tf.ConfigProto(allow_soft_placement=True)
         sess    = tf.Session(config=config)
-        saver   = tf.train.Saver()
         init    = tf.global_variables_initializer()
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
 
+        # Variables get randomly initialized into tf graph
         sess.run(init)
 
-        if load_model:
-            ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, dataset,  experiment_name, 'checkpoints/checkpoint')))
-            if ckpt and ckpt.model_checkpoint_path:
-                saver.restore(sess, ckpt.model_checkpoint_path)
-                print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
+        # The initialized variables get weights set from previous saved models
+        initialize_from_dict(sess, ckpt)
 
-            else:
-                print "Failed loading checkpoint requested. Please check."
-                exit()
-
-            # END IF
-
-        # END IF
 
 
         epoch_count    = 0
@@ -317,7 +328,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         save_data  = []
 
         lr = learning_rate_init
-
+        learning_rate = lr
         # Timing test setup
         time_init = time.time()
 
@@ -331,7 +342,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
                     if epoch_count%save_freq == 0 and tot_count > 0:
                         print "Saving..."
-                        saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
+                        save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, global_step.eval(session=sess))
 
                     # END IF
 
@@ -341,10 +352,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             time_pre_train = time.time()
 
-            _, loss_train, predictions, gs, labels, alpha = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, params = sess.run([train_op, tower_losses,
                                                                            tower_slogits, global_step,
-                                                                           labels_tensor, param_vars])
-
+                                                                           labels_tensor, model_params_array])
+            params = np.array(params)
 
             for pred_idx in range(len(predictions)):
                 pred = np.mean(predictions[pred_idx], 0).argmax()
@@ -367,9 +378,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
-            curr_logger.add_scalar_value('train/alpha',     float(np.mean(alpha)), step=gs)
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
-
+            for p in range(params.shape[0]):
+                curr_logger.add_scalar_value('train/'+str(return_layer[1:][p]), float(np.mean(params[p])), step=gs)
 
             # END IF
 
@@ -379,8 +390,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             ## END IF
 
         print "Saving..."
-        saver.save(sess, os.path.join('results', model.name, dataset, experiment_name,'checkpoints/checkpoint'), global_step.eval(session=sess))
-
+        save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, gs)
         coord.request_stop()
         coord.join(threads)
 
@@ -398,7 +408,7 @@ def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, 
                              input_dims,
                              output_dims,
                              seq_length,
-                             scope, k, j), input_data_tensor[0,:,:,:,:,:])
+                             scope, k, j)[0], input_data_tensor[0,:,:,:,:,:])
     #import pdb; pdb.set_trace()
     # Logits
     softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
@@ -413,7 +423,7 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                              input_dims,
                              output_dims,
                              seq_length,
-                             scope, k, j)
+                             scope, k, j)[0]
 
     # Logits
     softmax = tf.nn.softmax(logits)
@@ -441,8 +451,25 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     """
 
     with tf.name_scope("my_scope") as scope:
+        ckpt = None
+        gs_init = 0
+        if load_model:
+            try:
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
+                print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+
+            except:
+                print "Failed loading checkpoint requested. Please check."
+                exit()
+
+            # END TRY
+        else:
+            ckpt = model.load_default_weights()
+        # END IF
+
+
         istraining  = False
-        global_step = tf.Variable(0, name='global_step', trainable=False)
+        global_step = tf.Variable(gs_init, name='global_step', trainable=False)
         j           = input_dims / k
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
@@ -454,27 +481,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
         else:
             logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
-        # logits, softmax = tf.cond( tf.greater(len(input_data_tensor.shape), tf.constant(5)),
-        #                             lambda: ,
-        #                             lambda:
-        #                          )
-        #
-        # logits_list = tf.map_fn(lambda clip_tensor: model.inference(input_data_tensor[0,:,:,:,:],
-        #                          istraining,
-        #                          input_dims,
-        #                          output_dims,
-        #                          seq_length,
-        #                          scope, k, j), input_data_tensor)
-        # # # Model Inference
-        # # logits = model.inference(input_data_tensor[0,:,:,:,:],
-        # #                          istraining,
-        # #                          input_dims,
-        # #                          output_dims,
-        # #                          seq_length,
-        # #                          scope, k, j)
-        #
-        # # Logits
-        # softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
+        # END IF
 
         # Logger setup
         log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
@@ -484,31 +491,20 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Initialize Variables
         sess    = tf.Session()
-        saver   = tf.train.Saver()
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
         sess.run(init)
+        initialize_from_dict(sess, ckpt)
 
-        if load_model:
-            ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
-            if ckpt and ckpt.model_checkpoint_path:
-                saver.restore(sess, ckpt.model_checkpoint_path)
-                print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
 
-            else:
-                print os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint'))
-                print "Invalid load dataset specified. Please check."
-                exit()
-
-        # END IF
 
         total_pred = []
         acc        = 0
         count      = 0
 
         print "Begin Testing"
-        #import pdb; pdb.set_trace()
+
         for vid_num in range(num_vids):
             count +=1
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
@@ -543,7 +539,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
     print "Total accuracy : ", acc/float(count)
     print total_pred
-    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
+    #np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -610,6 +606,8 @@ if __name__=="__main__":
 
     parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
             help= 'Dataset (UCF101, HMDB51)')
+
+    parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'])
 
     args = parser.parse_args()
 
@@ -689,7 +687,8 @@ if __name__=="__main__":
                 learning_rate_init  = args.lr,
                 wd                  = args.wd,
                 save_freq           = args.saveFreq,
-                val_freq            = args.valFreq)
+                val_freq            = args.valFreq,
+                return_layer        = args.returnLayer)
 
     else:
         test(   model             = model,

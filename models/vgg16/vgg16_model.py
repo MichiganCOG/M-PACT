@@ -55,7 +55,7 @@ class VGG16():
         return lstm_outputs
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, weight_decay=0.0, return_layer='logits'):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, k, j, weight_decay=0.0, return_layer=['logits']):
 
         """
         Args:
@@ -65,11 +65,11 @@ class VGG16():
             :output_dims:  Integer indicating total number of classes in final prediction
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
-            :k:            Width of sliding window (temporal width) 
-            :j:            Integer number of disjoint sets the sliding window over the input has generated 
+            :k:            Width of sliding window (temporal width)
+            :j:            Integer number of disjoint sets the sliding window over the input has generated
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
-    
+
         Return:
             :layers[return_layer]: The requested layer's output tensor
         """
@@ -80,11 +80,9 @@ class VGG16():
 
         if self.verbose:
             print('Generating VGG16 network layers')
-        
+
         # END IF
 
-        # Must exist within current model directory
-        data_dict = np.load('models/vgg16/vgg16.npy').item()
 
         if is_training:
             keep_prob = 0.5
@@ -102,9 +100,7 @@ class VGG16():
                            name='conv1',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv1_1'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv1_1'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv2'] = conv_layer(input_tensor=layers['conv1'],
                            filter_dims=[3,3,64],
@@ -112,9 +108,7 @@ class VGG16():
                            name='conv2',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv1_2'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv1_2'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['pool2'] = max_pool_layer(layers['conv2'],
                                filter_dims=[2,2],
@@ -128,9 +122,7 @@ class VGG16():
                            name='conv3',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv2_1'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv2_1'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv4'] = conv_layer(input_tensor=layers['conv3'],
                            filter_dims=[3,3,128],
@@ -138,9 +130,7 @@ class VGG16():
                            name='conv4',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv2_2'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv2_2'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['pool4'] = max_pool_layer(layers['conv4'],
                                filter_dims=[2,2],
@@ -154,9 +144,7 @@ class VGG16():
                            name='conv5',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv3_1'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv3_1'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv6'] = conv_layer(input_tensor=layers['conv5'],
                            filter_dims=[3,3,256],
@@ -164,9 +152,7 @@ class VGG16():
                            name='conv6',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv3_2'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv3_2'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv7'] = conv_layer(input_tensor=layers['conv6'],
                            filter_dims=[3,3,256],
@@ -174,9 +160,7 @@ class VGG16():
                            name='conv7',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv3_3'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv3_3'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['pool7'] =  max_pool_layer(layers['conv7'],
                                filter_dims=[2,2],
@@ -190,9 +174,7 @@ class VGG16():
                            name='conv8',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv4_1'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv4_1'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv9'] = conv_layer(input_tensor=layers['conv8'],
                            filter_dims=[3,3,512],
@@ -200,9 +182,7 @@ class VGG16():
                            name='conv9',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv4_2'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv4_2'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv10'] = conv_layer(input_tensor=layers['conv9'],
                            filter_dims=[3,3,512],
@@ -210,9 +190,7 @@ class VGG16():
                            name='conv10',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv4_3'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv4_3'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['pool10'] = max_pool_layer(layers['conv10'],
                                filter_dims=[2,2],
@@ -226,9 +204,7 @@ class VGG16():
                            name='conv11',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv5_1'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv5_1'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv12'] = conv_layer(input_tensor=layers['conv11'],
                            filter_dims=[3,3,512],
@@ -236,9 +212,7 @@ class VGG16():
                            name='conv12',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv5_2'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv5_2'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['conv13'] = conv_layer(input_tensor=layers['conv12'],
                            filter_dims=[3,3,512],
@@ -246,9 +220,7 @@ class VGG16():
                            name='conv13',
                            weight_decay=weight_decay,
                            padding='SAME',
-                           non_linear_fn=tf.nn.relu,
-                           kernel_init=tf.constant_initializer(data_dict['conv5_3'][0]),
-                           bias_init=tf.constant_initializer(data_dict['conv5_3'][1]))
+                           non_linear_fn=tf.nn.relu)
 
             layers['pool13'] = max_pool_layer(layers['conv13'],
                                filter_dims=[2,2],
@@ -260,9 +232,7 @@ class VGG16():
                                       out_dim=4096,
                                       name='fc6',
                                       weight_decay=weight_decay,
-                                      non_linear_fn=tf.nn.relu,
-                                      weight_init=tf.constant_initializer(data_dict['fc6'][0]),
-                                      bias_init=tf.constant_initializer(data_dict['fc6'][1]))
+                                      non_linear_fn=tf.nn.relu)
 
             layers['drop6'] = tf.nn.dropout(layers['fc6'], keep_prob=keep_prob)
 
@@ -270,9 +240,7 @@ class VGG16():
                                       out_dim=4096,
                                       name='fc7',
                                       weight_decay=weight_decay,
-                                      non_linear_fn=tf.nn.relu,
-                                      weight_init=tf.constant_initializer(data_dict['fc7'][0]),
-                                      bias_init=tf.constant_initializer(data_dict['fc7'][1]))
+                                      non_linear_fn=tf.nn.relu)
 
             layers['drop7'] = tf.nn.dropout(layers['fc7'], keep_prob=keep_prob)
 
@@ -285,34 +253,30 @@ class VGG16():
 
             layers['drop8'] = tf.nn.dropout(layers['rnn_outputs'], keep_prob=keep_prob)
 
-            if output_dims == data_dict['fc8'][0].shape[1]:
-                layers['logits'] = fully_connected_layer(input_tensor=layers['drop8'],
-                                          out_dim=output_dims,
-                                          name='logits',
-                                          weight_decay=weight_decay,
-                                          non_linear_fn=None,
-                                          weight_init=tf.constant_initializer(data_dict['fc8'][0]),
-                                          bias_init=tf.constant_initializer(data_dict['fc8'][1]))
-            else:
-                layers['logits'] = fully_connected_layer(input_tensor=layers['drop8'],
+            layers['logits'] = fully_connected_layer(input_tensor=layers['drop8'],
                                           out_dim=output_dims,
                                           name='logits',
                                           weight_decay=weight_decay,
                                           non_linear_fn=None)
 
             # END IF
-        
-        # END WITH
-            
-        return layers[return_layer]
 
+        # END WITH
+
+        return [layers[x] for x in return_layer]
+
+    def load_default_weights(self):
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
+        return np.load('models/vgg16/vgg16_new.npy')
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels):
         """
         Args:
-            :logits: Unscaled logits returned from final layer in model 
-            :labels: True labels corresponding to loaded data 
+            :logits: Unscaled logits returned from final layer in model
+            :labels: True labels corresponding to loaded data
         """
 
         labels = tf.cast(labels, tf.int64)
@@ -333,4 +297,3 @@ class VGG16():
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
-

@@ -59,3 +59,8 @@ if __name__ == '__main__':
 			tensors = add_tensor(tensors, key_list, key, reader)
 
 	np.save(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.npy'), tensors)
+	f = open(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.dat' ), 'w')
+	f.write('lr-0.001')
+	f.close()
+
+# python convert_checkpoint.py --model resnet_RIL_interp_median_model_v40 --dataset HMDB51 --expName tfrecords_resnet_rain_interp_median_v40_HMDB51

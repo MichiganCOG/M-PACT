@@ -325,6 +325,11 @@ class ResNet_BGR():
         return layers[return_layer]
 
 
+    def load_default_weights(self):
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
+        return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
 
     def preprocess(self, index, data, labels, size, is_training):
         """
