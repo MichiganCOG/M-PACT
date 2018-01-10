@@ -160,6 +160,11 @@ def _assign_tensors(sess, curr_dict, tensor_name):
 
             # END IF
 
+            if 'weights' in tensor_name:
+                tensor_name = tensor_name.replace('weights', 'kernel')
+
+            # END IF
+
             sess.run(tf.assign(tf.get_default_graph().get_tensor_by_name(tensor_name), curr_dict))
 
         # END IF

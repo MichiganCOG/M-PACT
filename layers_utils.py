@@ -73,6 +73,76 @@ def conv_layer(input_tensor,
     return conv_out
 
 
+def conv3d_layer(input_tensor,
+               filter_dims,
+               name,
+               stride_dims = [1,1,1],
+               weight_decay=0.0,
+               padding='SAME',
+               groups=1,
+               non_linear_fn=tf.nn.relu,
+               kernel_init=tf.truncated_normal_initializer(stddev=0.01),
+               bias_init=tf.constant_initializer(0.1)):
+
+    """
+    Args:
+        :input_tensor:  Input tensor to the convolutional layer
+        :filter_dims:   A list detailing the depth, height, width and number of channels for filters in the layer
+        :stride_dims:   A list detailing the depth, height and width of the stride between filters
+        :name:          Scope name to be provided for current convolutional layer
+        :padding:       Padding type definition (VALID or SAME)
+        :non_linear_fn: Activation function applied to the outcome of the layer
+        :kernel_init:   Tensorflow initialization function used to initialize the kernel
+        :bias_init:     Tensorflow initialization function used to initialize the bias
+
+    Return:
+        :conv_out:      Output of the convolutional layer
+    """
+
+    input_dims = input_tensor.get_shape().as_list()
+
+    # Ensure parameters match required shapes
+    assert (len(input_dims) == 5)
+    assert(len(filter_dims) == 4)
+    assert(len(stride_dims) == 3)
+
+    num_channels_in                                = input_dims[-1]
+    filter_d, filter_h, filter_w, num_channels_out = filter_dims
+    stride_d, stride_h, stride_w                   = stride_dims
+
+    convolve = lambda i, k: tf.nn.conv3d(i, k, [1, stride_d, stride_h, stride_w, 1], padding=padding)
+
+    with tf.variable_scope(name) as scope:
+        if groups == 1:
+            w = tf.get_variable('kernel', shape=[filter_d, filter_h, filter_w, num_channels_in, num_channels_out],
+                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+            output = convolve(input_tensor, w)
+
+        else:
+            w = tf.get_variable('kernel', shape=[filter_d, filter_h, filter_w, int(num_channels_in/groups), num_channels_out],
+                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+
+            input_groups  = tf.split(input_tensor, groups, axis=3)
+            kernel_groups = tf.split(w, groups, axis=3)
+            output_groups = [convolve(i, k) for i, k in zip(input_groups, kernel_groups)]
+            output        = tf.concat(output_groups, 3)
+
+        # END IF
+
+        b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
+        conv_out = output + b
+
+        if non_linear_fn is not None:
+            conv_out = non_linear_fn(conv_out, name=scope.name)
+
+        # END IF
+
+    # END WITH
+
+    return conv_out
+
+
+
 def max_pool_layer(input_tensor,
                    filter_dims,
                    stride_dims,
@@ -106,6 +176,39 @@ def max_pool_layer(input_tensor,
 
     return pool_out
 
+
+def max_pool3d_layer(input_tensor,
+                     filter_dims,
+                     stride_dims,
+                     name,
+                     padding='SAME'):
+
+    """
+    Args:
+        :input_tensor: Input tensor to the max pooling layer
+        :filter_dims:  A list detailing the depth, height, and width for filters in this layer
+        :stride_dims:  A list detailing the depth, height, and width of the stride between filters
+        :name:         Scope name to be provided for current max pooling layer
+        :padding:      Padding type definition (SAME or VALID)
+
+    Return:
+        :pool_out:     Output of max pooling layer
+    """
+
+    # Ensure parameters match required shapes
+    assert(len(filter_dims) == 3)  # filter depth height and width
+    assert(len(stride_dims) == 3)  # stride depth height and width
+
+    filter_d, filter_h, filter_w = filter_dims
+    stride_d, stride_h, stride_w = stride_dims
+
+    with tf.variable_scope(name) as scope:
+        # Define the max pool flow graph and return output
+        pool_out = tf.nn.max_pool3d(input_tensor, ksize=[1, filter_d, filter_h, filter_w, 1],
+                               strides=[1, stride_d, stride_h, stride_w, 1], padding=padding, name=scope.name)
+    # END WITH
+
+    return pool_out
 
 
 def avg_pool_layer(input_tensor,
@@ -178,7 +281,7 @@ def fully_connected_layer(input_tensor,
 
         # END IF
 
-        w      = tf.get_variable('weights', shape=[in_dim, out_dim], initializer=weight_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+        w      = tf.get_variable('kernel', shape=[in_dim, out_dim], initializer=weight_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
         b      = tf.get_variable('bias', shape=[out_dim], initializer=bias_init)
         fc_out = tf.add(tf.matmul(flat_input, w), b, name=scope.name)
 

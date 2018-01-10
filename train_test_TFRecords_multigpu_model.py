@@ -626,43 +626,46 @@ if __name__=="__main__":
 
     # Associating models
     if model_name == 'vgg16':
-        model = VGG16(args.inputDims, 25)
+        model = VGG16(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet':
-        model = ResNet(args.inputDims, 25)
+        model = ResNet(args.inputDims, 25, verbose=args.verbose)
+
+    elif model_name == 'c3d':
+        model = C3D(verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v23_2_1':
-        model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v23_4':
-        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v23_7_1':
-        model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v31_3':
-        model = ResNet_RIL_Interp_Median_v31_3(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v31_3(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v34_3_lstm':
-        model = ResNet_RIL_Interp_Median_v34_3_lstm(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v34_3_lstm(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v35_lstm':
-        model = ResNet_RIL_Interp_Median_v35_lstm(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v35_lstm(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v36_lstm':
-        model = ResNet_RIL_Interp_Median_v36_lstm(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v36_lstm(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v37_lstm':
-        model = ResNet_RIL_Interp_Median_v37_lstm(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v37_lstm(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v38':
-        model = ResNet_RIL_Interp_Median_v38(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v38(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v39':
-        model = ResNet_RIL_Interp_Median_v39(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v39(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'resnet_RIL_interp_median_v40':
-        model = ResNet_RIL_Interp_Median_v40(args.inputDims, 25)
+        model = ResNet_RIL_Interp_Median_v40(args.inputDims, 25, verbose=args.verbose)
 
     else:
         print("Model not found, check the import and elif statements")

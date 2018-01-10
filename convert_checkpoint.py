@@ -8,10 +8,10 @@ import tensorflow as tf
 
 def checkpoint_filename(model, dataset, exp_name):
     """
-    Return checkpoint file name for chosen model, dataset and experiment name combination 
+    Return checkpoint file name for chosen model, dataset and experiment name combination
     Args:
         :model: String indicating name of model
-        :dataset: String indicating dataset 
+        :dataset: String indicating dataset
         :exp_name: String indicating name of experiment for selected combination of model and dataset
 
     Returns:
@@ -82,3 +82,25 @@ if __name__ == '__main__':
 	f.close()
 
 # python convert_checkpoint.py --model resnet_RIL_interp_median_model_v40 --dataset HMDB51 --expName tfrecords_resnet_rain_interp_median_v40_HMDB51
+
+"""
+Convert c3d
+reader = tf.train.NewCheckpointReader(checkpoint_path)
+vm = reader.get_variable_to_shape_map()
+dd = {}
+for k in vm.keys():
+...     layer = k[10:]
+...     if layer in dd.keys():
+...             if k[9] == 'b':
+...                     dd[layer]['bias:0'] = reader.get_tensor(k)
+...             else:
+...                     dd[layer]['kernel:0'] = reader.get_tensor(k)
+...     else:
+...             dd[layer] = {}
+...             if k[9] == 'b':
+...                     dd[layer]['bias:0'] = reader.get_tensor(k)
+...             else:
+...                     dd[layer]['kernel:0'] = reader.get_tensor(k)
+
+
+"""
