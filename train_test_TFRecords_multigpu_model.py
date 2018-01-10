@@ -451,7 +451,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Load pre-trained/saved model
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name)
                 if verbose:
                     print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
 

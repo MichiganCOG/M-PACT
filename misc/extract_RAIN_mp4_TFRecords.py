@@ -17,12 +17,11 @@ from tensorflow.python.ops      import variable_scope as vs
 from tensorflow.python.ops      import variables as vars_
 from tensorflow.python.training import queue_runner_impl
 
+import sys
+sys.path.append('../..')
 from utils                                            import *
 from Queue                                            import Queue
-from models.lrcn.lrcn_model                           import LRCN
-from models.vgg16.vgg16_model                         import VGG16
-from models.resnet.resnet_model                       import ResNet
-from models.resnet.resnet_model_bgr                   import ResNet_BGR
+from models                                           import *
 from logger                                           import Logger
 from random                                           import shuffle
 from load_dataset_tfrecords                           import load_dataset
@@ -540,9 +539,10 @@ def save_gif(frames, name, model, dataset, vid_num):
 
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, extract_end = 0, k=25):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, k=25, extract_end=0, verbose=0):
 
     """
+    Function used to test the performance and analyse a chosen model
     Args:
         :model:              tf-activity-recognition framework model object
         :input_dims:         Number of frames used in input
@@ -555,78 +555,76 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :num_vids:           Number of videos to be used for training
         :split:              Split of dataset being used
         :base_data_path:     Full path to root directory containing datasets
-        :f_name:             Prefix for HDF5 to be used
+        :f_name:             Specific video directory within a chosen split of a dataset
         :k:                  Width of temporal sliding window
+        :verbose:            Boolean to indicate if all print statement should be procesed or not
 
+    Returns:
+        Does not return anything
     """
 
     with tf.name_scope("my_scope") as scope:
+
+        # Initializers for checkpoint and global step variable
+        ckpt    = None
+        gs_init = 0
+
+        # Load pre-trained/saved model
+        if load_model:
+            try:
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name)
+                if verbose:
+                    print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+
+            except:
+                if verbose:
+                    print "Failed loading checkpoint requested. Please check."
+                exit()
+
+            # END TRY
+        else:
+            ckpt = model.load_default_weights()
+
+        # END IF
+
+        # Initialize model variables
         istraining  = False
-        global_step = tf.Variable(0, name='global_step', trainable=False)
-        j           = input_dims / k
+        global_step = tf.Variable(gs_init, name='global_step', trainable=False)
+
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
-        #import pdb; pdb.set_trace()
         if len(input_data_tensor.shape) > 5:
-            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
+            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
+
         else:
-            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j, dataset)
-        # logits, softmax = tf.cond( tf.greater(len(input_data_tensor.shape), tf.constant(5)),
-        #                             lambda: ,
-        #                             lambda:
-        #                          )
-        #
-        # logits_list = tf.map_fn(lambda clip_tensor: model.inference(input_data_tensor[0,:,:,:,:],
-        #                          istraining,
-        #                          input_dims,
-        #                          output_dims,
-        #                          seq_length,
-        #                          scope, k, j), input_data_tensor)
-        # # # Model Inference
-        # # logits = model.inference(input_data_tensor[0,:,:,:,:],
-        # #                          istraining,
-        # #                          input_dims,
-        # #                          output_dims,
-        # #                          seq_length,
-        # #                          scope, k, j)
-        #
-        # # Logits
-        # softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
-
-        # # Logger setup
-        # log_name     = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-        #                                                    dataset,
-        #                                                    experiment_name))
-        # curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
-
-        # Initialize Variables
-        sess    = tf.Session()
-        saver   = tf.train.Saver()
-        init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
-        coord   = tf.train.Coordinator()
-        threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        sess.run(init)
-
-        if load_model:
-            ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint')))
-        #    import pdb; pdb.set_trace()
-            if ckpt and ckpt.model_checkpoint_path:
-                saver.restore(sess, ckpt.model_checkpoint_path)
-                print 'A better checkpoint is found. Its global_step value is: ', global_step.eval(session=sess)
-
-            else:
-                print os.path.dirname(os.path.join('results', model.name, loaded_dataset, experiment_name, 'checkpoints/checkpoint'))
-                print "Invalid load dataset specified. Please check."
-                exit()
+            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
 
         # END IF
 
-        total_pred = []
+        # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
+        log_name    = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
+                                               dataset, experiment_name))
+        curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
+
+        # TF session setup
+        sess    = tf.Session()
+        init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
+        coord   = tf.train.Coordinator()
+        threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
+
+        # Variables get randomly initialized into tf graph
+        sess.run(init)
+
+        # Model variables initialized from previous saved models
+        initialize_from_dict(sess, ckpt)
+        del ckpt
+
         acc        = 0
         count      = 0
+        total_pred = []
 
 
 
@@ -1040,6 +1038,21 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_RIL_interp_median_v34_3_lstm':
         model = ResNet_RIL_Interp_Median_v34_3_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v36_lstm':
+        model = ResNet_RIL_Interp_Median_v36_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v37_lstm':
+        model = ResNet_RIL_Interp_Median_v37_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v38_lstm':
+        model = ResNet_RIL_Interp_Median_v38_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v39_lstm':
+        model = ResNet_RIL_Interp_Median_v39_lstm()
+
+    elif model_name == 'resnet_RIL_interp_median_v40_lstm':
+        model = ResNet_RIL_Interp_Median_v40_lstm()
 
     else:
         print("Model not found")
