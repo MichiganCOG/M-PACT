@@ -129,6 +129,7 @@ python train_test_TFRecords_multigpu_model.py \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \
---valFreq 40
+--valFreq 40 \
+--returnLayer Parameterization_Variables Parameterization_Variables_phi
 
 echo "end"
