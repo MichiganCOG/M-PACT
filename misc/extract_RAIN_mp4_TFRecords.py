@@ -17,8 +17,7 @@ from tensorflow.python.ops      import variable_scope as vs
 from tensorflow.python.ops      import variables as vars_
 from tensorflow.python.training import queue_runner_impl
 
-import sys
-sys.path.append('../..')
+
 from utils                                            import *
 from Queue                                            import Queue
 from models                                           import *
@@ -458,7 +457,7 @@ def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, 
                              input_dims,
                              output_dims,
                              seq_length,
-                             scope, k, j), input_data_tensor[0,:,:,:,:,:])
+                             scope,), input_data_tensor[0,:,:,:,:,:])
     #import pdb; pdb.set_trace()
     # Logits
     softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
@@ -475,10 +474,10 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
                                  input_dims,
                                  output_dims,
                                  seq_length,
-                                 scope, k, j,
+                                 scope,
                                 # return_layer = "RIlayer")
                                 # return_layer = "RAINlayer")
-                                 return_layer = ['Parameterization_Variables'])
+                                 return_layer = ['Parameterization_Variables', 'Parameterization_Variables_phi'])
                                 # return_layer = 'Parameterization_Variable_Phi')
                                 # return_layer = 'Parameterization_Variable_Alpha')
                                 # return_layer = 'RAINlayer_lstm_fc_4')
@@ -568,7 +567,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Initializers for checkpoint and global step variable
         ckpt    = None
         gs_init = 0
-
+        j           = input_dims / k
         # Load pre-trained/saved model
         if load_model:
             try:
@@ -597,10 +596,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
 
         if len(input_data_tensor.shape) > 5:
-            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
-
+            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j)
         else:
-            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
+            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope, k, j, dataset)
 
         # END IF
 
@@ -665,11 +663,14 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                 frames, input_data, labels, names = sess.run([logits, input_data_tensor, labels_tensor, names_tensor])
                 input_data = input_data[0]
             #loaded_data, labels, names = sess.run([input_data_tensor, labels_tensor, names_tensor])
-            # import pdb; pdb.set_trace()
-            if vid_num==6:
-                return frames, input_data
-            #
-            #
+            print frames
+
+
+            # if vid_num==6:
+            #     return frames, input_data
+
+
+
             # import pdb; pdb.set_trace()
         #    print names, frames
 
@@ -801,159 +802,7 @@ if __name__=="__main__":
     print "Setup of current experiments: ",args
     model_name = args.model
 
-    # Associating models
-    if model_name=='lrcn':
-        model = LRCN()
 
-    elif model_name == 'vgg16':
-        model = VGG16()
-
-    elif model_name == 'resnet':
-        model = ResNet()
-
-    elif model_name == 'resnet_bgr':
-        model = ResNet_BGR()
-
-    # elif model_name == 'resnet_RIL_interp_mean_v1':
-    #     model = ResNet_RIL_Interp_Mean_v1()
-    #
-    # elif model_name == 'resnet_RIL_interp_mean_v2':
-    #     model = ResNet_RIL_Interp_Mean_v2()
-    #
-    # elif model_name == 'resnet_RIL_interp_mean_v3':
-    #     model = ResNet_RIL_Interp_Mean_v3()
-    #
-    # elif model_name == 'resnet_RIL_interp_mean_nosort_v4':
-    #     model = ResNet_RIL_Interp_Mean_Nosort_v4()
-    #
-    # elif model_name == 'resnet_RIL_interp_mean_v8':
-    #     model = ResNet_RIL_Interp_Mean_v8()
-    #
-    # elif model_name == 'resnet_RIL_interp_mean_v11':
-    #     model = ResNet_RIL_Interp_Mean_v11()
-    #
-    # elif model_name == 'resnet_RIL_interp_mean_v18':
-    #     model = ResNet_RIL_Interp_Mean_v18()
-    #
-    # elif model_name == 'resnet_RIL_interp_max_v1':
-    #     model = ResNet_RIL_Interp_Max_v1()
-    #
-    # elif model_name == 'resnet_RIL_interp_max_v2':
-    #     model = ResNet_RIL_Interp_Max_v2()
-    #
-    # elif model_name == 'resnet_RIL_interp_max_v3':
-    #     model = ResNet_RIL_Interp_Max_v3()
-    #
-    # elif model_name == 'resnet_RIL_interp_max_nosort_v4':
-    #     model = ResNet_RIL_Interp_Max_Nosort_v4()
-    #
-    # elif model_name == 'resnet_RIL_interp_max_v8':
-    #     model = ResNet_RIL_Interp_Max_v8()
-    #
-    # elif model_name == 'resnet_RIL_interp_max_v20':
-    #     model = ResNet_RIL_Interp_Max_v20()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v1':
-    #     model = ResNet_RIL_Interp_Median_v1()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v2':
-    #     model = ResNet_RIL_Interp_Median_v2()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v3':
-    #     model = ResNet_RIL_Interp_Median_v3()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_nosort_v4':
-    #     model = ResNet_RIL_Interp_Median_Nosort_v4()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v6':
-    #     model = ResNet_RIL_Interp_Median_v6()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v6_1':
-    #     model = ResNet_RIL_Interp_Median_v6_1()
-
-    # elif model_name == 'resnet_RIL_interp_median_v8':
-    #     model = ResNet_RIL_Interp_Median_v8()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v11':
-    #     model = ResNet_RIL_Interp_Median_v11()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v12':
-    #     model = ResNet_RIL_Interp_Median_v12()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v12_1':
-    #     model = ResNet_RIL_Interp_Median_v12_1()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v14':
-    #     model = ResNet_RIL_Interp_Median_v14()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v14_1':
-    #     model = ResNet_RIL_Interp_Median_v14_1()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v14_2':
-    #     model = ResNet_RIL_Interp_Median_v14_2()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v14_3':
-    #     model = ResNet_RIL_Interp_Median_v14_3()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v15':
-    #     model = ResNet_RIL_Interp_Median_v15()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v16':
-    #     model = ResNet_RIL_Interp_Median_v16()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v17':
-    #     model = ResNet_RIL_Interp_Median_v17()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v18':
-    #     model = ResNet_RIL_Interp_Median_v18()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v19':
-    #     model = ResNet_RIL_Interp_Median_v19()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v21':
-    #     model = ResNet_RIL_Interp_Median_v21()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v22':
-    #     model = ResNet_RIL_Interp_Median_v22()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23':
-    #     model = ResNet_RIL_Interp_Median_v23()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_1':
-    #     model = ResNet_RIL_Interp_Median_v23_1()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_1_1':
-    #     model = ResNet_RIL_Interp_Median_v23_1_1()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_2':
-    #     model = ResNet_RIL_Interp_Median_v23_2()
-
-    elif model_name == 'resnet_RIL_interp_median_v23_2_1':
-        model = ResNet_RIL_Interp_Median_v23_2_1()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_2_1_lstm':
-    #     model = ResNet_RIL_Interp_Median_v23_2_1_lstm()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_2_2':
-    #     model = ResNet_RIL_Interp_Median_v23_2_2()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_3':
-    #     model = ResNet_RIL_Interp_Median_v23_3()
-
-    elif model_name == 'resnet_RIL_interp_median_v23_4':
-        model = ResNet_RIL_Interp_Median_v23_4()
-
-    # elif model_name == 'resnet_RIL_interp_median_v23_4_lstm':
-    #     model = ResNet_RIL_Interp_Median_v23_4_lstm()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_5':
-    #     model = ResNet_RIL_Interp_Median_v23_5()
-    #
-    # elif model_name == 'resnet_RIL_interp_median_v23_6':
-    #     model = ResNet_RIL_Interp_Median_v23_6()
-
-    elif model_name == 'resnet_RIL_interp_median_v23_7_1':
-        model = ResNet_RIL_Interp_Median_v23_7_1()
     #
     # elif model_name == 'resnet_RIL_interp_median_v23_7_2':
     #     model = ResNet_RIL_Interp_Median_v23_7_2()
@@ -1012,9 +861,6 @@ if __name__=="__main__":
     # elif model_name == 'resnet_RIL_interp_median_v31_2':
     #     model = ResNet_RIL_Interp_Median_v31_2()
 
-    elif model_name == 'resnet_RIL_interp_median_v31_3':
-        model = ResNet_RIL_Interp_Median_v31_3()
-
     # elif model_name == 'resnet_RIL_interp_median_v31_3_lstm':
     #     model = ResNet_RIL_Interp_Median_v31_3_lstm()
     #
@@ -1036,23 +882,45 @@ if __name__=="__main__":
     # elif model_name == 'resnet_RIL_interp_median_v34_3':
     #     model = ResNet_RIL_Interp_Median_v34_3()
 
+    # Associating models
+    if model_name == 'vgg16':
+        model = VGG16(args.inputDims, 25)
+
+    elif model_name == 'resnet':
+        model = ResNet(args.inputDims, 25)
+
+    elif model_name == 'resnet_RIL_interp_median_v23_2_1':
+        model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25)
+
+    elif model_name == 'resnet_RIL_interp_median_v23_4':
+        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25)
+
+    elif model_name == 'resnet_RIL_interp_median_v23_7_1':
+        model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25)
+
+    elif model_name == 'resnet_RIL_interp_median_v31_3':
+        model = ResNet_RIL_Interp_Median_v31_3(args.inputDims, 25)
+
     elif model_name == 'resnet_RIL_interp_median_v34_3_lstm':
-        model = ResNet_RIL_Interp_Median_v34_3_lstm()
+        model = ResNet_RIL_Interp_Median_v34_3_lstm(args.inputDims, 25)
+
+    elif model_name == 'resnet_RIL_interp_median_v35_lstm':
+        model = ResNet_RIL_Interp_Median_v35_lstm(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v36_lstm':
-        model = ResNet_RIL_Interp_Median_v36_lstm()
+        model = ResNet_RIL_Interp_Median_v36_lstm(args.inputDims, 25)
 
     elif model_name == 'resnet_RIL_interp_median_v37_lstm':
-        model = ResNet_RIL_Interp_Median_v37_lstm()
+        model = ResNet_RIL_Interp_Median_v37_lstm(args.inputDims, 25)
 
-    elif model_name == 'resnet_RIL_interp_median_v38_lstm':
-        model = ResNet_RIL_Interp_Median_v38_lstm()
+    elif model_name == 'resnet_RIL_interp_median_v38':
+        model = ResNet_RIL_Interp_Median_v38(args.inputDims, 25)
 
-    elif model_name == 'resnet_RIL_interp_median_v39_lstm':
-        model = ResNet_RIL_Interp_Median_v39_lstm()
+    elif model_name == 'resnet_RIL_interp_median_v39':
+        model = ResNet_RIL_Interp_Median_v39(args.inputDims, 25)
 
-    elif model_name == 'resnet_RIL_interp_median_v40_lstm':
-        model = ResNet_RIL_Interp_Median_v40_lstm()
+    elif model_name == 'resnet_RIL_interp_median_v40':
+        model = ResNet_RIL_Interp_Median_v40(args.inputDims, 25)
 
     else:
         print("Model not found")
