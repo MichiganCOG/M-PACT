@@ -8,3 +8,4 @@ logs/
 results/*
 train_test_TFRecords_multigpu_model_test_tsn.py
 *.swp
+*.model
