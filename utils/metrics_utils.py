@@ -11,7 +11,7 @@ import sklearn import svm
 
 
 class Metrics():
-    def __init__(self, output_dims, verbose=True):
+    def __init__(self, output_dims, logger, method, verbose=True):
         """
         Args:
             :output_dims: Output dimensions of the model, used to verify the shape of predictions
@@ -22,63 +22,63 @@ class Metrics():
         self.correct_predictions=0
         self.total_predictions=0
         self.predicitons_array=[]
+        self.logger=logger
+        self.method=method
 
-    def _save_prediction(label, prediction, name):
+    def _save_prediction(self, label, prediction, name):
         if not os.path.isdir('temp'):
             os.mkdir('temp')
 
         np.save(name, (prediction, label))
 
 
-    def log_prediction(label, predictions, names, method):
+    def log_prediction(self, label, predictions, names):
         """
         Args:
             :label:            Ground truth label of the video(s) used to generate the predictions
             :predictions:      The output predictions from the model accross all batches
             :name:             The name(s) of the video(s) currently being classified
-            :method:           The classification method to use
         Return:
             :current_accuracy: The current classification accuracy of all videos
                                passed through this object accross multiple calls of this method
         """
-        if method == 'default':
+        if self.method == 'default':
             current_accuracy = _default_classify(label, predictions, names)
 
-        elif method == 'svm':
+        elif self.method == 'svm':
             current_accuracy = _svm_log(label, predictions, names)
 
         else:
-            print "Error: Invalid classification method"
+            print "Error: Invalid classification method ", self.method
             exit()
 
         return current_accuracy
 
 
-    def total_classification(method):
+    def total_classification(self):
         """
         Args:
             :label:            Ground truth label of the video(s) used to generate the predictions
             :predictions:      The output predictions from the model accross all batches
             :name:             The name(s) of the video(s) currently being classified
-            :method:           The classification method to use
         Return:
             :current_accuracy: The current classification accuracy of all videos
                                passed through this object accross multiple calls of this method
         """
-        if method == 'default':
+        if self.method == 'default':
             current_accuracy = get_accuracy()
 
-        elif method == 'svm':
+        elif self.method == 'svm':
             current_accuracy = _svm_classify()
 
         else:
-            print "Error: Invalid classification method"
+            print "Error: Invalid classification method ", self.method
             exit()
 
         return current_accuracy
 
 
-    def _default_classify(label, predictions, names):
+    def _default_classify(self, label, predictions, names):
         """
         Default argmax classification
         Args:
@@ -111,10 +111,11 @@ class Metrics():
             self.correct_predictions += 1
 
         current_accuracy = self.correct_predictions / float(self.total_predictions)
+        self.logger.add_scalar_value('test/acc',current_accuracy, step=self.total_predictions)
         return current_accuracy
 
 
-    def _svm_log(label, predictions, names):
+    def _svm_log(self, label, predictions, names):
         """
         Stores predicitons until testing is completed and an svm is trained
         Args:
@@ -131,7 +132,7 @@ class Metrics():
         return -1
 
 
-    def _svm_classify():
+    def _svm_classify(self):
         """
         Final classification of predictions saved to temp folder using a linear svm
         Args:
@@ -156,12 +157,8 @@ class Metrics():
                 model_output.append([data[0]])
                 names.append(f)
                 labels.append(data[1])
-        averaged_output = []
-        for output in range(len(model_output)):
-            names.append(f)
-            data = np.load(f)
-            model_output.append(data[0])
-            labels.append(data[1])
+
+        model_output = np.mean(model_output, axis=1)
 
 
         classifier = svm.SVC(kernel='linear')
@@ -170,22 +167,22 @@ class Metrics():
 
         predictions = classifier.predict(model_output)
 
-        if len(predictions.shape)!=2:
-            predictions = np.mean(predictions, 1)
-
         # END IF
 
-        prediction = np.mean(predictions, 0).argmax()
+        for prediction_ind in range(len(predictions)):
+            prediction = predictions[prediction_ind]
+            label = labels[prediction_ind]
+            name = names[prediction_ind]
 
-        if self.verbose:
-            print "vidName: ",names
-            print "label:  ", label
-            print "prediction: ", prediction
+            if self.verbose:
+                print "vidName: ",name
+                print "label:  ", label
+                print "prediction: ", prediction
 
-        self.predictions_array.append((prediction, label))
-        self.total_predictions += 1
-        if int(prediction) == int(label):
-            self.correct_predictions += 1
+            self.predictions_array.append((prediction, label))
+            self.total_predictions += 1
+            if int(prediction) == int(label):
+                self.correct_predictions += 1
 
         shutil.rmtree('temp')
 
@@ -193,7 +190,7 @@ class Metrics():
         return current_accuracy
 
 
-    def get_predictions_array():
+    def get_predictions_array(self):
         """
         Args:
             None
@@ -202,7 +199,7 @@ class Metrics():
         """
         return self.predictions_array
 
-    def get_accuracy():
+    def get_accuracy(self):
         """
         Args:
             None
@@ -211,7 +208,7 @@ class Metrics():
         """
         return self.correct_predictions / float(self.total_predictions)
 
-    def clear_all():
+    def clear_all(self):
         """
         Clear all parameters (correct_predictions, total_predictions, predicitons_array)
         Args:

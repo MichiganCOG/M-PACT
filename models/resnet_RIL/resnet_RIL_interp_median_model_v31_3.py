@@ -3,7 +3,7 @@
 import os
 import sys
 import h5py
-sys.path.append('../..')
+sys.path.append('../../utils')
 
 import tensorflow as tf
 import numpy      as np
@@ -29,7 +29,7 @@ class ResNet_RIL_Interp_Median_v31_3():
         self.input_dims = input_dims
         self.j          = input_dims / k
         self.name       = 'resnet_RIL_interp_median_model_v31_3'
-    
+
         print "resnet RIL interp median v31_3 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
@@ -381,7 +381,7 @@ class ResNet_RIL_Interp_Median_v31_3():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
-        
+
         Return:
             Pointer to preprocessing function of current model
         """

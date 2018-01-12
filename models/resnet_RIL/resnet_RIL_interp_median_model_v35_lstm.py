@@ -3,7 +3,7 @@
 import os
 import sys
 import h5py
-sys.path.append('../..')
+sys.path.append('../../utils')
 
 import tensorflow as tf
 import numpy      as np

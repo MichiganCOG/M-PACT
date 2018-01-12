@@ -6,7 +6,7 @@ import tensorflow as tf
 from random import shuffle
 
 
-def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining):
+def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap):
     """
     Function load dataset, setup queue and read data
     Args:
@@ -19,6 +19,10 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
         :dataset:            Name of dataset being processed
         :base_data_path:     Full path to root directory containing datasets
         :istraining:         Boolean variable indicating training/testing phase 
+        :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
+        :clip_offset:        "none" or "random" indicating where to begin selecting video clips
+        :num_clips:          Number of clips to break video into
+        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
 
     Return:
         Input data tensor, label tensor and names of loaded data (video/image)
@@ -83,7 +87,7 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
 
 def _read_tfrecords(filename_queue):
     """
-    Function that reads and returns the tfrecords of a selected dataset 
+    Function that reads and returns the tfrecords of a selected dataset
     Args:
         :model:              tf-activity-recognition framework model object
         :input_dims:         Number of frames used in input
@@ -93,10 +97,10 @@ def _read_tfrecords(filename_queue):
         :num_gpus:           Number of gpus to use when training
         :dataset:            Name of dataset being processed
         :base_data_path:     Full path to root directory containing datasets
-        :istraining:         Boolean variable indicating training/testing phase 
+        :istraining:         Boolean variable indicating training/testing phase
 
     Return:
-        Dictionary containing features of a single sample 
+        Dictionary containing features of a single sample
     """
     feature_dict = {}
     reader       = tf.TFRecordReader()
@@ -118,13 +122,13 @@ def _read_tfrecords(filename_queue):
 
 def _reduce_fps(video, frame_count):
     """
-    Function that drops frames to match 25 pfs from 30 fps captured videos 
+    Function that drops frames to match 25 pfs from 30 fps captured videos
     Args:
-        :video:       Tensor containing video frames 
+        :video:       Tensor containing video frames
         :frame_count: Total number of frames in the video
 
     Return:
-        Video with reduced number of frames to match 25fps 
+        Video with reduced number of frames to match 25fps
     """
     # Convert from 30 fps to 25 fps
     remove_count = tf.cast(tf.ceil(tf.divide(frame_count, 6)), tf.int32)

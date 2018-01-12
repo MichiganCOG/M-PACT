@@ -3,7 +3,7 @@
 import os
 import sys
 import h5py
-sys.path.append('../..')
+sys.path.append('../../utils')
 
 import tensorflow as tf
 import numpy      as np
@@ -448,7 +448,7 @@ class ResNet_RIL_Interp_Median_v38():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
-        
+
         Return:
             Pointer to preprocessing function of current model
         """

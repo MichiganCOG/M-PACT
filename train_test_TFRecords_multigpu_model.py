@@ -68,7 +68,7 @@ def _average_gradients(tower_grads):
 
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, k=25, verbose=0):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, k=25, verbose=0):
 
     """
     Training function used to train or fine-tune a chosen model
@@ -81,7 +81,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :num_gpus:           Number of gpus to use when training
         :dataset:            Name of dataset being processed
         :experiment_name:    Name of current experiment
-        :load_model:         Boolean variable indicating whether to load form a checkpoint or not
+        :load_model:         Boolean variable indicating whether to load from a checkpoint or not
         :num_vids:           Number of videos to be used for training
         :n_epochs:           Total number of epochs to train
         :split:              Split of dataset being used
@@ -92,6 +92,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :save_freq:          Frequency, in epochs, with which to save
         :val_freq:           Frequency, in epochs, with which to run validaton
         :return_layer:       Layers to be tracked during training
+        :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
+        :clip_offset:        "none" or "random" indicating where to begin selecting video clips
+        :num_clips:          Number of clips to break video into
+        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :k:                  Width of temporal sliding window
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
@@ -151,7 +155,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap)
 
         # Define optimizer (Current selection is only momentum optimizer)
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
@@ -418,7 +422,7 @@ def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims,
 
     return logits, softmax
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, k=25, verbose=0):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, k=25, verbose=0):
 
     """
     Function used to test the performance and analyse a chosen model
@@ -435,6 +439,12 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :split:              Split of dataset being used
         :base_data_path:     Full path to root directory containing datasets
         :f_name:             Specific video directory within a chosen split of a dataset
+        :load_model:         Boolean variable indicating whether to load from a checkpoint or not
+        :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
+        :clip_offset:        "none" or "random" indicating where to begin selecting video clips
+        :num_clips:          Number of clips to break video into
+        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :metrics_method:     Which method to use to calculate accuracy metrics. ("default" or "svm")
         :k:                  Width of temporal sliding window
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
@@ -473,7 +483,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap)
 
         if len(input_data_tensor.shape) > 5:
             logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
@@ -493,7 +503,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-
+        metrics = metrics_util.Metrics(output_dims, logger, verbose=verbose)
         # Variables get randomly initialized into tf graph
         sess.run(init)
 
@@ -514,28 +524,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
             label = labels[0][0]
 
+            metrics.log_prediction(label, output_predictions, names, metrics_method)
 
-            if len(output_predictions.shape)!=2:
-                output_predictions = np.mean(output_predictions, 1)
-
-            # END IF
-
-            guess = np.mean(output_predictions, 0).argmax()
-
-            if verbose:
-                print "vidNum: ", vid_num
-                print "vidName: ",names
-                print "label:  ", label
-                print "prediction: ", guess
-
-            total_pred.append((guess, label))
-
-            if int(guess) == int(label):
-                acc += 1
-
-            # END IF
-
-            curr_logger.add_scalar_value('test/acc',acc/float(count), step=count)
 
         # END FOR
 
@@ -544,8 +534,11 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     coord.request_stop()
     coord.join(threads)
 
+    total_accuracy = metrics.total_classification()
+    total_pred = metrics.get_predictions_array()
+
     if verbose:
-        print "Total accuracy : ", acc/float(count)
+        print "Total accuracy : ", total_accuracy
         print total_pred
 
     # Save results in numpy format
@@ -614,7 +607,23 @@ if __name__=="__main__":
     parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
             help= 'Dataset (UCF101, HMDB51)')
 
-    parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'])
+    parser.add_argument('--clipLength', action='store', type=int, default=-1,
+            help = 'Length of clips to cut video into, -1 indicates using the entire video as one clip')
+
+    parser.add_argument('--clipOffset', action='store', default='none',
+            help = '"none" or "random" indicating where to begin selecting video clips')
+
+    parser.add_argument('--clipOverlap', action='store', type=int, default=0,
+            help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
+
+    parser.add_argument('--numClips', action='store', type=int, default=1,
+            help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
+
+    parser.add_argument('--metricsMethod', action='store', default='default',
+            help = 'Which method to use to calculate accuracy metrics. ("default" or "svm")')
+
+    parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
+            help = 'Which model layers to be returned by the models\' inference and logged.')
 
     parser.add_argument('--verbose', action='store', type=int, default=0,
             help = 'Boolean switch to display all print statements or not')
@@ -692,6 +701,10 @@ if __name__=="__main__":
                 save_freq           = args.saveFreq,
                 val_freq            = args.valFreq,
                 return_layer        = args.returnLayer,
+                clip_length         = args.clipLength,
+                clip_offset         = args.clipOffset,
+                num_clips           = args.numClips,
+                clip_overlap        = args.clip_overlap,
                 verbose             = args.verbose)
 
     else:
@@ -708,4 +721,9 @@ if __name__=="__main__":
                 base_data_path    = args.baseDataPath,
                 f_name            = args.fName,
                 load_model        = args.load,
+                clip_length       = args.clipLength,
+                clip_offset       = args.clipOffset,
+                num_clips         = args.numClips,
+                clip_overlap      = args.clip_overlap,
+                metrics_method    = args.metricsMethod,
                 verbose           = args.verbose)
