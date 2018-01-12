@@ -8,21 +8,21 @@ import tensorflow as tf
 
 def checkpoint_filename(model, dataset, exp_name):
     """
-    Return checkpoint file name for chosen model, dataset and experiment name combination 
+    Return checkpoint file name for chosen model, dataset and experiment name combination
     Args:
         :model: String indicating name of model
-        :dataset: String indicating dataset 
+        :dataset: String indicating dataset
         :exp_name: String indicating name of experiment for selected combination of model and dataset
 
     Returns:
         String reflecting checkpoint filename
     """
-	checkpoints_file = os.path.join('results', model, dataset, exp_name, 'checkpoints', 'checkpoint')
-	f = open(checkpoints_file, 'r')
-	filename = f.readline()
-	f.close()
-	filename = filename.split(' ')[1].split('\"')[1]
-	return filename
+    checkpoints_file = os.path.join('results', model, dataset, exp_name, 'checkpoints', 'checkpoint')
+    f = open(checkpoints_file, 'r')
+    filename = f.readline()
+    f.close()
+    filename = filename.split(' ')[1].split('\"')[1]
+    return filename
 
 
 def add_tensor(tensor, keys_list, original_key, reader):
@@ -37,16 +37,16 @@ def add_tensor(tensor, keys_list, original_key, reader):
     Returns:
         Dictionary of Model parameters
     """
-	if len(keys_list) == 0:
-		return reader.get_tensor(original_key)
+    if len(keys_list) == 0:
+        return reader.get_tensor(original_key)
 
-	else:
-		try:
-			curr_tensor = tensor[keys_list[0]]
-		except:
-			curr_tensor = {}
-		tensor[keys_list[0]] = add_tensor(curr_tensor, keys_list[1:], original_key, reader)
-		return tensor
+    else:
+        try:
+        	curr_tensor = tensor[keys_list[0]]
+        except:
+        	curr_tensor = {}
+        tensor[keys_list[0]] = add_tensor(curr_tensor, keys_list[1:], original_key, reader)
+        return tensor
 
 
 if __name__ == '__main__':
