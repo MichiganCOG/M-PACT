@@ -50,7 +50,7 @@ class Metrics():
 
         else:
             print "Error: Invalid classification method ", self.method
-            exit()
+            exit()clips = tf.gather(video, indices)
 
         return current_accuracy
 

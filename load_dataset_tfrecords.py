@@ -18,7 +18,7 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
         :num_gpus:           Number of gpus to use when training
         :dataset:            Name of dataset being processed
         :base_data_path:     Full path to root directory containing datasets
-        :istraining:         Boolean variable indicating training/testing phase 
+        :istraining:         Boolean variable indicating training/testing phase
         :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
@@ -71,8 +71,13 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
         if 'HMDB51' in dataset:
             input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
 
+        clips = _extract_clips(input_data_tensor, num_clips, clip_offset, clip_length, clip_overlap)
+
         # Call preprocessing function related to model chosen
-        input_data_tensor, labels_tensor = model.preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+        input_data_tensor, labels_tensor = tf.map_fn(lambda clip:,
+            model.preprocess_tfrecords(clip, frames, height, width,
+            channel, input_dims, output_dims, seq_length, size, label, istraining),
+            input_data_tensor)
 
         input_data_list.append(input_data_tensor)
         labels_list.append(labels_tensor)
@@ -119,6 +124,21 @@ def _read_tfrecords(filename_queue):
     features = tf.parse_single_example(serialized_example, features=feature_dict)
 
     return features
+
+
+
+def _extract_clips(video, num_clips, clip_offset, clip_length, clip_overlap):
+
+    if clip_offset == 'random':
+        video_start = tf.random_uniform()
+    else:
+        video_start = 0
+
+    clips = tf.map_fn(lambda clip_start: video[tf.range(clip_start, clip_start+clip_length), ...],
+                        tf.range(video_start, frames, clip_length-clip_overlap))
+
+    return clips
+
 
 def _reduce_fps(video, frame_count):
     """
