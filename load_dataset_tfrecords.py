@@ -2,8 +2,9 @@ import os
 
 import numpy      as np
 import tensorflow as tf
-
+from tensorflow.python.training import queue_runner
 from random import shuffle
+
 
 
 def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap):
@@ -25,9 +26,8 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
 
     Return:
-        Input data tensor, label tensor and names of loaded data (video/image)
+        Input data tensor, label tensor and name of loaded data (video/image)
     """
-
     # Get a list of tfrecords file names from which to pull videos
     filenames           = []
     number_of_tfrecords = 0
@@ -45,49 +45,68 @@ def load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, bas
 
     tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
-    input_data_list     = []
-    labels_list 	= []
-    names_list 		= []
+    q = tf.FIFOQueue(num_gpus*5, dtypes=[tf.uint8, tf.int32, tf.string], shapes=[[],[seq_length],[]])
+    enqueue_op = q.enqueue_many(_load_video(tfrecord_file_queue))
 
-    # Read in num_gpus number of videos from queue
-    for gpu_idx in range(num_gpus):
+    inputs = q.dequeue_many(num_gpus)
+    qr = tf.train.QueueRunner(q, [op]*num_gpus)
+    queue_runner.add_queue_runner(qr)
+    return inputs
 
-        # Dequeue video data from queue and convert it from TFRecord format (int64 or bytes)
-        features = _read_tfrecords(tfrecord_file_queue)
-        frames   = tf.cast(features['Frames'], tf.int32)
-        height   = tf.cast(features['Height'], tf.int32)
-        width    = tf.cast(features['Width'], tf.int32)
-        channel  = tf.cast(features['Channels'], tf.int32)
-        label    = tf.cast(features['Label'], tf.int32)
 
-        name     = features['Name']
 
-        input_data_tensor = tf.reshape(tf.decode_raw(features['Data'], tf.uint8), tf.stack([frames,height,width,channel]))
 
-        # BGR to RGB
-        input_data_tensor = input_data_tensor[...,::-1]
+def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, tfrecord_file_queue):
+    """
+    Function load dataset, setup queue and read data
+    Args:
+        :model:                tf-activity-recognition framework model object
+        :input_dims:           Number of frames used in input
+        :output_dims:          Integer number of classes in current dataset
+        :seq_length:           Length of output sequence expected from LSTM
+        :size:                 List detailing height and width of frame
+        :dataset:              Name of dataset being processed
+        :base_data_path:       Full path to root directory containing datasets
+        :istraining:           Boolean variable indicating training/testing phase
+        :clip_length:          Length of clips to cut video into, -1 indicates using the entire video as one clip')
+        :clip_offset:          "none" or "random" indicating where to begin selecting video clips
+        :num_clips:            Number of clips to break video into
+        :clip_overlap:         Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :tfrecord_file_queue:  A queue containing remaining videos to be loaded for the current epoch
 
-        # Reduction in fps to 25 for HMDB51 dataset
-        if 'HMDB51' in dataset:
-            input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
+    Return:
+        Input data tensor, label tensor and name of loaded data (video/image)
+    """
 
-        clips = _extract_clips(input_data_tensor, num_clips, clip_offset, clip_length, clip_overlap)
+    # Dequeue video data from queue and convert it from TFRecord format (int64 or bytes)
+    features = _read_tfrecords(tfrecord_file_queue)
+    frames   = tf.cast(features['Frames'], tf.int32)
+    height   = tf.cast(features['Height'], tf.int32)
+    width    = tf.cast(features['Width'], tf.int32)
+    channel  = tf.cast(features['Channels'], tf.int32)
+    label    = tf.cast(features['Label'], tf.int32)
 
-        # Call preprocessing function related to model chosen
-        input_data_tensor, labels_tensor = tf.map_fn(lambda clip:,
-            model.preprocess_tfrecords(clip, frames, height, width,
-            channel, input_dims, output_dims, seq_length, size, label, istraining),
-            input_data_tensor)
+    name     = features['Name']
 
-        input_data_list.append(input_data_tensor)
-        labels_list.append(labels_tensor)
-        names_list.append(name)
+    input_data_tensor = tf.reshape(tf.decode_raw(features['Data'], tf.uint8), tf.stack([frames,height,width,channel]))
 
-    input_data_tensor = tf.convert_to_tensor(input_data_list)
-    labels_tensor     = tf.convert_to_tensor(labels_list)
-    names             = tf.convert_to_tensor(names_list)
+    # BGR to RGB
+    input_data_tensor = input_data_tensor[...,::-1]
 
-    return input_data_tensor, labels_tensor, names
+    # Reduction in fps to 25 for HMDB51 dataset
+    if 'HMDB51' in dataset:
+        input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
+
+    clips = _extract_clips(input_data_tensor, num_clips, clip_offset, clip_length, clip_overlap)
+
+    # Call preprocessing function related to model chosen
+    input_data_tensor, labels_tensor = tf.map_fn(lambda clip:,
+        model.preprocess_tfrecords(clip, frames, height, width,
+        channel, input_dims, output_dims, seq_length, size, label, istraining),
+        input_data_tensor)
+
+
+    return input_data_tensor, labels_tensor, name
 
 
 def _read_tfrecords(filename_queue):

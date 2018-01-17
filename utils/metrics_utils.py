@@ -7,11 +7,25 @@ import shutil
 
 import numpy      as np
 import tensorflow as tf
-import sklearn import svm
+import sklearn    import svm
 
 
 class Metrics():
-    def __init__(self, output_dims, logger, method, verbose=True):
+    """
+    A class containing methods to log and calculate classification metrics
+    Methods:
+        :__init__:
+        :log_prediction:
+        :total_classification:
+        :get_accuracy:
+        :get_predictions_array:
+        :clear_all:
+        :_save_prediction:
+        :_default_classify:
+        :_svm_classify:
+    """
+
+    def __init__(self, output_dims, logger, method, is_training, verbose=True):
         """
         Args:
             :output_dims: Output dimensions of the model, used to verify the shape of predictions
@@ -24,15 +38,47 @@ class Metrics():
         self.predicitons_array=[]
         self.logger=logger
         self.method=method
+        self.step=0
+        self.is_training = is_training
+        if self.is_training:
+            self.log_name = 'train'
+        else:
+            self.log_name = 'test'
 
-    def _save_prediction(self, label, prediction, name):
-        if not os.path.isdir('temp'):
-            os.mkdir('temp')
+    def get_accuracy(self):
+        """
+        Args:
+            None
+        Return:
+            Total accuracy of classifications
+        """
+        return self.correct_predictions / float(self.total_predictions)
 
-        np.save(name, (prediction, label))
+
+    def get_predictions_array(self):
+        """
+        Args:
+            None
+        Return:
+            :predictions_array:  Array of predictions with each index containing (prediction, ground_truth_label)
+        """
+        return self.predictions_array
 
 
-    def log_prediction(self, label, predictions, names):
+    def clear_all(self):
+        """
+        Clear all parameters (correct_predictions, total_predictions, predicitons_array)
+        Args:
+            None
+        Return:
+            None
+        """
+        self.correct_predictions = 0
+        self.total_predictions = 0
+        self.predictions_array = []
+
+
+    def log_prediction(self, label, predictions, names, step):
         """
         Args:
             :label:            Ground truth label of the video(s) used to generate the predictions
@@ -42,16 +88,25 @@ class Metrics():
             :current_accuracy: The current classification accuracy of all videos
                                passed through this object accross multiple calls of this method
         """
+        self.step = step
+        self._save_prediction(label, predictions, names)
+
         if self.method == 'default':
-            current_accuracy = _default_classify(label, predictions, names)
+            prediction = np.mean(predictions, 0).argmax()
+            if prediction == label:
+                self.correct_predictions += 1
+
+            self.total_predictions += 1
+            current_accuracy = self.get_accuracy()
 
         elif self.method == 'svm':
-            current_accuracy = _svm_log(label, predictions, names)
+            current_accuracy = -1
 
         else:
             print "Error: Invalid classification method ", self.method
-            exit()clips = tf.gather(video, indices)
+            exit()
 
+        self.logger.add_scalar_value(os.path.join(self.log_name, 'acc'), current_accuracy, step=self.step)
         return current_accuracy
 
 
@@ -66,19 +121,21 @@ class Metrics():
                                passed through this object accross multiple calls of this method
         """
         if self.method == 'default':
-            current_accuracy = get_accuracy()
+            accuracy = self._default_classify()
 
         elif self.method == 'svm':
-            current_accuracy = _svm_classify()
+            accuracy = self._svm_classify()
 
         else:
             print "Error: Invalid classification method ", self.method
             exit()
 
+        self.logger.add_scalar_value(os.path.join(self.log_name, 'acc'), accuracy, step=self.step)
+
         return current_accuracy
 
 
-    def _default_classify(self, label, predictions, names):
+    def _default_classify(self):
         """
         Default argmax classification
         Args:
@@ -90,15 +147,31 @@ class Metrics():
             :current_accuracy: The current classification accuracy of all videos
                                passed through this object accross multiple calls of this method
         """
-        # Average predictions if single video is broken into clips
-        if len(predictions.shape)!=2:
-            predictions = np.mean(predictions, 1)
+        self.clear_all()
+
+        model_output = []
+        labels = []
+        names = []
+
+
+        for f in os.listdir('temp'):
+            if f in names:
+                ind = names.index(f)
+                data = np.load(f)
+                model_output[ind].append(data[0])
+            else:
+                data = np.load(f)
+                model_output.append([data[0]])
+                names.append(f)
+                labels.append(data[1])
+
+        if len(model_output.shape)!=3:
+            # Average together all clips relating to a video
+            model_output = np.mean(model_output, axis=1)
 
         # END IF
 
         prediction = np.mean(predictions, 0).argmax()
-
-        if
 
         if self.verbose:
             print "vidName: ",names
@@ -113,23 +186,6 @@ class Metrics():
         current_accuracy = self.correct_predictions / float(self.total_predictions)
         self.logger.add_scalar_value('test/acc',current_accuracy, step=self.total_predictions)
         return current_accuracy
-
-
-    def _svm_log(self, label, predictions, names):
-        """
-        Stores predicitons until testing is completed and an svm is trained
-        Args:
-            :label:            Ground truth label of the video(s) used to generate the predictions
-            :predictions:      The output predictions from the model accross all batches
-            :name:             The name(s) of the video(s) currently being classified
-
-        Return:
-            :current_accuracy: Accuracy is not calculated until all testing videos have been logged
-                               and the svm can be trained
-        """
-        _save_prediction(label, predictions, names)
-
-        return -1
 
 
     def _svm_classify(self):
@@ -158,8 +214,9 @@ class Metrics():
                 names.append(f)
                 labels.append(data[1])
 
-        model_output = np.mean(model_output, axis=1)
-
+        if len(model_output.shape)!=3:
+            # Average together all clips relating to a video
+            model_output = np.mean(model_output, axis=1)
 
         classifier = svm.SVC(kernel='linear')
 
@@ -190,32 +247,8 @@ class Metrics():
         return current_accuracy
 
 
-    def get_predictions_array(self):
-        """
-        Args:
-            None
-        Return:
-            :predictions_array:  Array of predictions with each index containing (prediction, ground_truth_label)
-        """
-        return self.predictions_array
+    def _save_prediction(self, label, prediction, name):
+        if not os.path.isdir('temp'):
+            os.mkdir('temp')
 
-    def get_accuracy(self):
-        """
-        Args:
-            None
-        Return:
-            Total accuracy of classifications
-        """
-        return self.correct_predictions / float(self.total_predictions)
-
-    def clear_all(self):
-        """
-        Clear all parameters (correct_predictions, total_predictions, predicitons_array)
-        Args:
-            None
-        Return:
-            None
-        """
-        self.correct_predictions = 0
-        self.total_predictions = 0
-        self.predictions_array = []
+        np.save(name, (prediction, label))

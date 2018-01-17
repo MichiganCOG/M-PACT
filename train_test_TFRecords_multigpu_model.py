@@ -66,10 +66,7 @@ def _average_gradients(tower_grads):
     return average_grads
 
 
-
-
 def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, k=25, verbose=0):
-
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -249,10 +246,14 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         initialize_from_dict(sess, ckpt)
         del ckpt
 
-        acc            = 0
-        epoch_count    = 0
-        tot_load_time  = 0.0
-        tot_train_time = 0.0
+        # Initialize tracking variables
+        previous_vid_name = ""
+        videos_loaded     = 0
+        tot_count         = 0
+        acc               = 0
+        epoch_count       = 0
+        tot_load_time     = 0.0
+        tot_train_time    = 0.0
 
         losses     = []
         total_pred = []
@@ -264,34 +265,40 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Timing test setup
         time_init = time.time()
 
+
         # Loop epoch number of time over the training set
-        for tot_count in range(0, n_epochs*num_vids, num_gpus):
-
+        while videos_loaded < n_epochs*num_vids:
             # Variable to update during epoch intervals
-            for gpu_idx in range(num_gpus):
-                if tot_count % num_vids == gpu_idx:
-                    batch_count = 0
-                    epoch_acc   = 0
+            if (epoch_count+1)*num_vids + 1 <= videos_loaded < (epoch_count+1)*num_vids + num_gpus + 1:
+                batch_count = 0
+                epoch_acc   = 0
 
-                    if epoch_count % save_freq == 0 and tot_count > 0:
-                        if verbose:
-                            print "Saving..."
+                if epoch_count % save_freq == 0 and tot_count > 0:
+                    if verbose:
+                        print "Saving..."
 
-                        save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, global_step.eval(session=sess))
-
-                    # END IF
-
-                    epoch_count += 1
+                    save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, global_step.eval(session=sess))
 
                 # END IF
 
-            # END FOR
+                epoch_count += 1
+
+            # END IF
+
+
 
             time_pre_train = time.time()
 
-            _, loss_train, predictions, gs, labels, params = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, params, vid_names = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
-                                                                       labels_tensor, model_params_array])
+                                                                       labels_tensor, model_params_array,
+                                                                       names_tensor])
+
+            for name in vid_names:
+                if name != previous_vid_name:
+                    videos_loaded += 1
+                    previous_vid_name = name
+                tot_count += 1
 
             # Transpose the extracted layers such that the mean is taken across the gpus and over any matrix with more than 1 dimension
             params_array = []
@@ -346,7 +353,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             # END FOR
 
-        # END FOR
+        # END WHILE
 
         if verbose:
             print "Saving..."
@@ -362,68 +369,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # END WITH
 
 
-
-def _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope):
-    """
-    Function used to return logits and softmax(logits) from a chosen model for clip inputs
-    Args:
-        :model:              tf-activity-recognition framework model object
-        :input_data_tensor:  Tensor containing input data
-        :istraining:         Boolean variable indicating training/testing phase
-        :input_dims:         Number of frames used in input
-        :output_dims:        Integer number of classes in current dataset
-        :seq_length:         Length of output sequence expected from LSTM
-        :scope:              String indicating current scope name
-
-    Returns:
-        logits from network and Softmax(logits)
-    """
-    # Model Inference
-    logits_list = tf.map_fn(lambda clip_tensor: model.inference(clip_tensor,
-                             istraining,
-                             input_dims,
-                             output_dims,
-                             seq_length,
-                             scope)[0], input_data_tensor[0,:,:,:,:,:])
-
-    # Logits
-    softmax = tf.map_fn(lambda logits: tf.nn.softmax(logits), logits_list)
-
-    return logits_list, softmax
-
-def _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope):
-    """
-    Function used to return logits and softmax(logits) from a chosen model  for a single input
-    Args:
-        :model:              tf-activity-recognition framework model object
-        :input_data_tensor:  Tensor containing input data
-        :istraining:         Boolean variable indicating training/testing phase
-        :input_dims:         Number of frames used in input
-        :output_dims:        Integer number of classes in current dataset
-        :seq_length:         Length of output sequence expected from LSTM
-        :scope:              String indicating current scope name
-        :k:                  Width of temporal sliding window
-        :j:                  Number of sets in input data once temporal window of length k is applied
-
-    Returns:
-        logits from network and Softmax(logits)
-    """
-
-    # Model Inference
-    logits = model.inference(input_data_tensor[0,:,:,:,:],
-                             istraining,
-                             input_dims,
-                             output_dims,
-                             seq_length,
-                             scope)[0]
-
-    # Logits
-    softmax = tf.nn.softmax(logits)
-
-    return logits, softmax
-
 def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, k=25, verbose=0):
-
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -471,6 +417,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                 exit()
 
             # END TRY
+
         else:
             ckpt = model.load_default_weights()
 
@@ -503,7 +450,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = metrics_util.Metrics(output_dims, logger, verbose=verbose)
+        metrics = metrics_util.Metrics(output_dims, logger, metrics_method, verbose=verbose)
+
         # Variables get randomly initialized into tf graph
         sess.run(init)
 
@@ -511,23 +459,33 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         initialize_from_dict(sess, ckpt)
         del ckpt
 
-        acc        = 0
-        count      = 0
-        total_pred = []
+        acc               = 0
+        count             = 0
+        videos_loaded     = 0
+        previous_vid_name = ''
+        total_pred        = []
 
         if verbose:
             print "Begin Testing"
 
-        for vid_num in range(num_vids):
-            count +=1
+        # END IF
+
+        while videos_loaded < num_vids:
+            count += 1
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
-
             label = labels[0][0]
+            if names != previous_vid_name:
+                videos_loaded += 1
+                previous_vid_name = names
 
-            metrics.log_prediction(label, output_predictions, names, metrics_method)
+                # END IF
 
 
-        # END FOR
+            metrics.log_prediction(label, output_predictions, names)
+
+            # END IF
+
+        # END WHILE
 
     # END WITH
 
@@ -543,6 +501,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
     # Save results in numpy format
     np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
+
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
