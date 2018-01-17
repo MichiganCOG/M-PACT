@@ -120,7 +120,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             try:
                 ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
                 if verbose:
-                    print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+                    print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
             except:
                 if verbose:
@@ -453,7 +453,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             try:
                 ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name)
                 if verbose:
-                    print 'A better checkpoint is found. Its global_step value is: ' + str(gs_init)
+                    print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
             except:
                 if verbose:
@@ -630,6 +630,9 @@ if __name__=="__main__":
 
     elif model_name == 'resnet':
         model = ResNet(args.inputDims, 25)
+
+    elif model_name == 'resnet_50_frames':
+        model = ResNet_50_Frames(args.inputDims)
 
     elif model_name == 'resnet_RIL_interp_median_v23_2_1':
         model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25)

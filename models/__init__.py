@@ -1,6 +1,7 @@
 # Basic model imports
-from vgg16.vgg16_model   import VGG16
-from resnet.resnet_model import ResNet
+from vgg16.vgg16_model                       import VGG16
+from resnet.resnet_model                     import ResNet
+from resnet_50_frames.resnet_50_frames_model import ResNet_50_Frames
 
 # RAIN layer model imports
 from resnet_RIL.resnet_RIL_interp_median_model_v23_2_1    import ResNet_RIL_Interp_Median_v23_2_1
