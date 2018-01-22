@@ -188,7 +188,7 @@ def initialize_from_dict(sess, data_dict):
        Does not return anything
     """
 
-    print 'Initializng model weights...'
+    print 'Initializing model weights...'
     try:
         data_dict = data_dict.tolist()
 

@@ -1,15 +1,12 @@
 " RESNET-50 + RAIN (INTERP + MEDIAN + LSTM) v35_LSTM + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
-import sys
-import h5py
-sys.path.append('../../utils')
 
 import tensorflow as tf
 import numpy      as np
 
 from tensorflow.contrib.rnn          import static_rnn
-from layers_utils                    import *
+from utils.layers_utils              import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 class ResNet_RIL_Interp_Median_v35_lstm():
@@ -381,6 +378,7 @@ class ResNet_RIL_Interp_Median_v35_lstm():
 
         # END IF
 
+        inputs = inputs[0]
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
@@ -504,9 +502,9 @@ class ResNet_RIL_Interp_Median_v35_lstm():
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
+            layers['logits'] = [fully_connected_layer(input_tensor=layers['126'],
                                                      out_dim=output_dims, non_linear_fn=None,
-                                                     name='logits', weight_decay=weight_decay)
+                                                     name='logits', weight_decay=weight_decay)]
 
             # END WITH
 

@@ -1,31 +1,100 @@
-" C3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" C3D ALPHA MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 
 """
-Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 use C3D sports1M model by @ hdx173149.
+Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 using C3D sports1M model by @ hdx173149.
 """
 
-import sys
-sys.path.append('../../utils')
+import os
 
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils                  import *
-from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from utils.layers_utils                 import *
+from c3d_alpha_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 
 class C3D():
-    def __init__(self, verbose=True):
+    def __init__(self, input_dims, k, verbose=True):
         """
         Args:
-            :verbose: Setting verbose command
+            :k:          Temporal window width
+            :verbose:    Setting verbose command
+            :input_dims: Input dimensions (number of frames)
         """
-        self.verbose=verbose
-        self.name = 'c3d'
+        self.k          = k
+        self.verbose    = verbose
+        self.input_dims = input_dims
+        self.j          = input_dims / k
+        self.name = 'c3d_alpha'
 
         if verbose:
-            print "C3D Model Initialized"
+            print "C3D Alpha Model Initialized"
+
+
+    def _extraction_layer(self, inputs, params, sets, K, L):
+        """
+        Args:
+            :inputs: Original inputs to the model
+            :params: Offset and sampling parameter estimates from Parameterization Network
+            :sets:   Number of non overlapping sets obtained from applying a temporal slid
+                     ing window over the input
+            :K:      Size of temporal sliding window
+            :L:      Expected number of output frames
+
+        Return:
+            :output: Extracted features
+        """
+
+        # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
+        sample_alpha_tick = tf.nn.sigmoid(tf.nn.relu(params[0]))
+
+        # Extract shape of input signal
+        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+
+        # Generate indices for output
+        output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
+
+        output_idx = tf.slice(output_idx, [0],[L])
+
+        # Sampling parameter scaling to match inputs temporal dimension
+        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
+
+        # Include sampling parameter to correct output indices
+        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
+
+        # Clip output index values to >= 1 and <=N (valid cases only)
+        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
+
+        # Create x0 and x1 float
+        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
+        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
+
+
+        # Deltas :
+        d1 = (output_idx - x0)
+        d2 = (x1 - x0)
+        d1 = tf.reshape(tf.tile(d1, [112*112*3]), [L,112,112,3])
+        d2 = tf.reshape(tf.tile(d2, [112*112*3]), [L,112,112,3])
+
+        # Create x0 and x1 indices
+        output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
+        output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
+        output_idx   = tf.cast(output_idx, 'int32')
+
+	# Create y0 and y1 outputs
+        output_0 = tf.gather(inputs, output_idx_0-1)
+        output_1 = tf.gather(inputs, output_idx_1-1)
+        output   = tf.gather(inputs, output_idx-1)
+
+        d3     = output_1 - output_0
+
+        output = tf.add_n([(d1/d2)*d3, output_0])
+
+        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
+
+        return output
+
 
 
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.6, return_layer=['logits'], weight_decay=0.0):
@@ -50,17 +119,31 @@ class C3D():
         ############################################################################
 
         if self.verbose:
-            print('Generating C3D network layers')
+            print('Generating C3D Alpha network layers')
 
         # END IF
 
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
-            # Conv3d requires a batch size, in this case of one video
-            inputs = tf.expand_dims(inputs, 0)
+            # Input shape:  [(K frames in a set x J number of sets) x Height x Width x Channels]
+            # Output shape: [(K frames in a set x J number of sets) x Height x Width x 32]
 
-            layers['conv1'] = conv3d_layer(input_tensor=inputs,
+            ############################################################################
+            #                           Parameterization Network                       #
+            ############################################################################
+
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
+
+
+            layers['RAINlayer'] = self._extraction_layer(inputs=inputs,
+                                                         params=layers['Parameterization_Variables'],
+                                                         sets=self.j, L=seq_length, K=self.k)
+
+            ############################################################################
+
+
+            layers['conv1'] = conv3d_layer(input_tensor=layers['RAINlayer'],
                     filter_dims=[3, 3, 3, 64],
                     name='c1',
                     weight_decay = weight_decay, non_linear_fn=tf.nn.relu)
@@ -122,7 +205,7 @@ class C3D():
 
             layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
 
-            layers['reshape'] = tf.reshape(layers['transpose'], shape=[1, 8192], name='reshape')
+            layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             layers['dense1'] = fully_connected_layer(input_tensor=layers['reshape'],
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,

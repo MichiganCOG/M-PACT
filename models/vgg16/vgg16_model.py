@@ -1,13 +1,11 @@
 " VGG16 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
-import sys
-sys.path.append('../..')
 
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils                  import *
+from utils.layers_utils            import *
 from tensorflow.contrib.rnn        import static_rnn
 from vgg16_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
@@ -90,6 +88,7 @@ class VGG16():
 
         # END IF
 
+        inputs = inputs[0]
 
         if is_training:
             keep_prob = 0.5
@@ -260,11 +259,11 @@ class VGG16():
 
             layers['drop8'] = tf.nn.dropout(layers['rnn_outputs'], keep_prob=keep_prob)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['drop8'],
+            layers['logits'] = [fully_connected_layer(input_tensor=layers['drop8'],
                                           out_dim=output_dims,
                                           name='logits',
                                           weight_decay=weight_decay,
-                                          non_linear_fn=None)
+                                          non_linear_fn=None)]
 
             # END IF
 

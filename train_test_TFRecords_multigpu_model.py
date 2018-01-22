@@ -16,7 +16,7 @@ from tensorflow.python.training import queue_runner_impl
 
 # Custom imports
 from models                 import *
-from utils                  import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir
+from utils                  import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir, Metrics
 from Queue                  import Queue
 from logger                 import Logger
 from random                 import shuffle
@@ -66,7 +66,7 @@ def _average_gradients(tower_grads):
     return average_grads
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, k=25, verbose=0):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, batch_size, k=25, verbose=0):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -93,6 +93,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :batch_size:         Number of clips to load into the model each step.
         :k:                  Width of temporal sliding window
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
@@ -152,7 +153,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
 
         # Define optimizer (Current selection is only momentum optimizer)
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
@@ -164,16 +165,16 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             with tf.device('/gpu:'+str(gpu_idx)):
                 with tf.name_scope('%s_%d' % ('tower', gpu_idx)) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
-                        returned_layers = model.inference(input_data_tensor[gpu_idx,:,:,:,:],
+                        returned_layers = model.inference(input_data_tensor[gpu_idx:gpu_idx+batch_size,:,:,:,:],
                                                  istraining,
                                                  input_dims,
                                                  output_dims,
                                                  seq_length,
                                                  scope,
                                                  return_layer = return_layer,
-                                                 weight_decay=wd)
+                                                 weight_decay = wd)
 
-                        logits       = returned_layers[0]
+                        logits          = returned_layers[0]
 
                         for rl in range(len(returned_layers[1:])):
                             model_params_array[rl].append(returned_layers[1:][rl])
@@ -194,7 +195,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                3) Compute gradients
                                                4) Aggregate losses, gradients and logits
                     """
-                    total_loss = model.loss(logits, labels_tensor[gpu_idx, :])
+
+                    total_loss = model.loss(logits, labels_tensor[gpu_idx:gpu_idx+batch_size, :])
                     opt        = optimizer(lr)
                     gradients  = opt.compute_gradients(total_loss, vars_.trainable_variables())
 
@@ -265,7 +267,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Timing test setup
         time_init = time.time()
 
-
+        batch_count = 0
+        epoch_acc = 0
         # Loop epoch number of time over the training set
         while videos_loaded < n_epochs*num_vids:
             # Variable to update during epoch intervals
@@ -286,14 +289,14 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             # END IF
 
 
-
             time_pre_train = time.time()
 
-            _, loss_train, predictions, gs, labels, params, vid_names = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
-                                                                       names_tensor])
+                                                                       names_tensor, input_data_tensor])
 
+            print vid_names
             for name in vid_names:
                 if name != previous_vid_name:
                     videos_loaded += 1
@@ -369,7 +372,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # END WITH
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, k=25, verbose=0):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, k=25, verbose=0):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -391,6 +394,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :num_clips:          Number of clips to break video into
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :metrics_method:     Which method to use to calculate accuracy metrics. ("default" or "svm")
+        :batch_size:         Number of clips to load into the model each step.
         :k:                  Width of temporal sliding window
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
@@ -399,6 +403,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     """
 
     with tf.name_scope("my_scope") as scope:
+        is_training = False
 
         # Initializers for checkpoint and global step variable
         ckpt    = None
@@ -430,27 +435,35 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
 
-        if len(input_data_tensor.shape) > 5:
-            logits, softmax = _clip_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
+        # Model Inference
+        logits = model.inference(input_data_tensor[0:batch_size,:,:,:,:],
+                                 istraining,
+                                 input_dims,
+                                 output_dims,
+                                 seq_length,
+                                 scope,
+                                 return_layer = return_layer)[0]
 
-        else:
-            logits, softmax = _video_logits(model, input_data_tensor, istraining, input_dims, output_dims, seq_length, scope)
+        # Logits
+        softmax = tf.nn.softmax(logits)
 
-        # END IF
 
         # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
         log_name    = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                dataset, experiment_name))
         curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
+        make_dir(os.path.join('results',model.name))
+        make_dir(os.path.join('results',model.name, dataset))
+        make_dir(os.path.join('results',model.name, dataset, experiment_name))
 
         # TF session setup
         sess    = tf.Session()
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = metrics_util.Metrics(output_dims, logger, metrics_method, verbose=verbose)
+        metrics = Metrics( output_dims, curr_logger, metrics_method, is_training, model.name, experiment_name, dataset, verbose=verbose)
 
         # Variables get randomly initialized into tf graph
         sess.run(init)
@@ -471,17 +484,20 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # END IF
 
         while videos_loaded < num_vids:
-            count += 1
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
-            label = labels[0][0]
-            if names != previous_vid_name:
-                videos_loaded += 1
-                previous_vid_name = names
 
                 # END IF
 
+            for batch_idx in range(len(names)):
+                if names[batch_idx] != previous_vid_name:
+                    videos_loaded += 1
+                    previous_vid_name = names[batch_idx]
 
-            metrics.log_prediction(label, output_predictions, names)
+                    if verbose:
+                        print "Number of videos loaded: ", videos_loaded
+
+                count += 1
+                metrics.log_prediction(labels[batch_idx][0], output_predictions[batch_idx], names[batch_idx], count)
 
             # END IF
 
@@ -570,22 +586,25 @@ if __name__=="__main__":
             help = 'Length of clips to cut video into, -1 indicates using the entire video as one clip')
 
     parser.add_argument('--clipOffset', action='store', default='none',
-            help = '"none" or "random" indicating where to begin selecting video clips')
+            help = '(none or random) indicating where to begin selecting video clips')
 
     parser.add_argument('--clipOverlap', action='store', type=int, default=0,
             help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
 
-    parser.add_argument('--numClips', action='store', type=int, default=1,
+    parser.add_argument('--numClips', action='store', type=int, default=-1,
             help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
 
-    parser.add_argument('--metricsMethod', action='store', default='default',
-            help = 'Which method to use to calculate accuracy metrics. ("default" or "svm")')
+    parser.add_argument('--metricsMethod', action='store', default='avg_pooling',
+            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, or svm_train)')
 
     parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
             help = 'Which model layers to be returned by the models\' inference and logged.')
 
     parser.add_argument('--verbose', action='store', type=int, default=0,
             help = 'Boolean switch to display all print statements or not')
+
+    parser.add_argument('--batchSize', action='store', type=int, default=1,
+            help = 'Number of clips to load into the model each step.')
 
     args = parser.parse_args()
 
@@ -663,7 +682,8 @@ if __name__=="__main__":
                 clip_length         = args.clipLength,
                 clip_offset         = args.clipOffset,
                 num_clips           = args.numClips,
-                clip_overlap        = args.clip_overlap,
+                clip_overlap        = args.clipOverlap,
+                batch_size          = args.batchSize,
                 verbose             = args.verbose)
 
     else:
@@ -680,9 +700,11 @@ if __name__=="__main__":
                 base_data_path    = args.baseDataPath,
                 f_name            = args.fName,
                 load_model        = args.load,
+                return_layer      = args.returnLayer,
                 clip_length       = args.clipLength,
                 clip_offset       = args.clipOffset,
                 num_clips         = args.numClips,
-                clip_overlap      = args.clip_overlap,
+                clip_overlap      = args.clipOverlap,
                 metrics_method    = args.metricsMethod,
+                batch_size        = args.batchSize,
                 verbose           = args.verbose)

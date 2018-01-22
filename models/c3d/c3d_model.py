@@ -6,12 +6,12 @@ Model weights found at https://github.com/hx173149/C3D-tensorflow. The model use
 """
 
 import sys
-sys.path.append('../../utils')
+#sys.path.append('utils')
 
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils                  import *
+from utils.layers_utils                import *
 from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
@@ -56,9 +56,6 @@ class C3D():
 
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
-
-            # Conv3d requires a batch size, in this case of one video
-            inputs = tf.expand_dims(inputs, 0)
 
             layers['conv1'] = conv3d_layer(input_tensor=inputs,
                     filter_dims=[3, 3, 3, 64],
@@ -122,7 +119,7 @@ class C3D():
 
             layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
 
-            layers['reshape'] = tf.reshape(layers['transpose'], shape=[1, 8192], name='reshape')
+            layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             layers['dense1'] = fully_connected_layer(input_tensor=layers['reshape'],
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,
