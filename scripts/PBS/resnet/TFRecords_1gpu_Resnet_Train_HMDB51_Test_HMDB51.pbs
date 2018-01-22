@@ -124,6 +124,7 @@ python train_test_TFRecords_multigpu_model.py \
 --numVids 1530 \
 --split 1 \
 --baseDataPath /z/dat \
---fName testlist
+--fName testlist \
+--verbose 1
 
 echo "end"

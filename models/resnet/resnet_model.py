@@ -309,8 +309,8 @@ class ResNet():
 
         labels = tf.cast(labels, tf.int64)
 
-        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:labels.shape[0].value/2],
-                                                                  logits=logits[:logits.shape[0].value/2,:])
+        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:,:labels.shape[1].value/2],
+                                                                  logits=logits[:,:logits.shape[1].value/2,:])
         return cross_entropy_loss
 
 

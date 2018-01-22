@@ -51,8 +51,8 @@ class Metrics():
         else:
             self.log_name = 'test'
 
-        #if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp')) and self.method != 'svm':
-            #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp')) and self.method != 'svm':
+            shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
 
         if self.method == 'svm':
             if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp', 'svm_train')):
@@ -109,12 +109,12 @@ class Metrics():
         if self.method == 'avg_pooling':
             if len(predictions.shape) >= 2:
                 predictions = np.mean(predictions, 0)
-                prediction = predictions.argmax()
+            prediction = predictions.argmax()
 
         elif self.method == 'last_frame':
             if len(predictions.shape) >= 2:
                 predictions = predictions[-1]
-                prediction = predictions.argmax()
+            prediction = predictions.argmax()
 
         elif 'svm' in self.method:
             prediction = -1
@@ -225,7 +225,7 @@ class Metrics():
 
         # END FOR
 
-        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
 
         return current_accuracy
 
@@ -284,7 +284,7 @@ class Metrics():
 
         # END FOR
 
-        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
 
         return current_accuracy
 
