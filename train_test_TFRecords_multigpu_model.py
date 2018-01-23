@@ -489,7 +489,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
 
                 # END IF
-            import pdb; pdb.set_trace()
+
             for batch_idx in range(len(names)):
                 if names[batch_idx] != previous_vid_name:
                     videos_loaded += 1
@@ -518,10 +518,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         print total_pred
 
     # Save results in numpy format
-#    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
+    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
 
-# ['Two_Towers_3_punch_u_nm_np1_fr_bad_4', 'HIGHLANDER___TRAINING___WEEPING_OF_THE_SPIRITS_sword_f_cm_np2_fr_med_0', 'DONNIE_DARKO_drink_u_nm_np1_fr_goo_4', 'girl_smoking_a_cigarette_smoke_h_nm_np1_fr_med_1', '6_Minute_Abs_Routine_situp_f_nm_np1_ri_bad_3', 'Johnny_Vegas_Presents_An_Award_shake_hands_u_cm_np2_ri_med_0']
-#       20                                              31                                                                      24                                                                  3                                      42                                       18
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
 

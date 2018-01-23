@@ -36,9 +36,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     for f in os.listdir(base_data_path):
         filenames.append(os.path.join(base_data_path,f))
         number_of_tfrecords += 1
-    filenames = []
-    for f in ['Two_Towers_3_punch_u_nm_np1_fr_bad_4', 'HIGHLANDER___TRAINING___WEEPING_OF_THE_SPIRITS_sword_f_cm_np2_fr_med_0', 'DONNIE_DARKO_drink_u_nm_np1_fr_goo_4', 'girl_smoking_a_cigarette_smoke_h_nm_np1_fr_med_1', '6_Minute_Abs_Routine_situp_f_nm_np1_ri_bad_3', 'Johnny_Vegas_Presents_An_Award_shake_hands_u_cm_np2_ri_med_0']:
-        filenames.append(os.path.join(base_data_path,f+'.tfrecords'))
+
     # END FOR
 
     if verbose:
@@ -50,13 +48,13 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
     # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
-    clip_q = tf.FIFOQueue(num_gpus*batch_size*3, dtypes=[tf.float32, tf.int32, tf.string], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[]])
+    clip_q = tf.FIFOQueue(num_gpus*batch_size*10, dtypes=[tf.float32, tf.int32, tf.string], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[]])
 
     # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
     enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, tfrecord_file_queue))
 
     # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
-    qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*batch_size*3)
+    qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*batch_size*10)
     queue_runner.add_queue_runner(qr)
 
     # Dequeue the required number of clips so that each gpu contains batch_size clips
@@ -105,28 +103,26 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     # Reduction in fps to 25 for HMDB51 dataset
     if 'HMDB51' in dataset:
         input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
-    #
-    # # If clip_length == -1 then the entire video is to be used as a single clip
-    # if clip_length <= 0:
-    #     clips = [input_data_tensor]
-    #     clips = tf.to_int32(clips)  # Usually occurs within _extract_clips
-    # else:
-    #     tf.cond(tf.greater(tf.convert_to_tensor(clip_length), frames),lambda:_error_loading_video(),lambda: 1) # Verify that there are not fewer frames than the requested clip_length
-    #     clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, clip_overlap)
-    #
-    #     # tf.Assert(tf.greater(frames, clip_length), [tf.constant("Video ")+name+tf.constant(" contained fewer frames than the specified clip length... Exiting")])
-    #
-    #
-    #
-    # # Call preprocessing function related to model chosen that preprocesses each clip as an individual video
-    # clips_tensor = tf.map_fn(lambda clip:
-    #     model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining),
-    #     clips, dtype=tf.float32)
-    input_data_tensor = [model.preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)]
-    clips_tensor = tf.to_float(input_data_tensor)
 
-    num_clips = tf.convert_to_tensor(1)
-    # num_clips = tf.shape(clips_tensor)[0]
+    # If clip_length == -1 then the entire video is to be used as a single clip
+    if clip_length <= 0:
+        clips = [input_data_tensor]
+        clips = tf.to_int32(clips)  # Usually occurs within _extract_clips
+    else:
+        tf.cond(tf.greater(tf.convert_to_tensor(clip_length), frames),lambda:_error_loading_video(),lambda: 1) # Verify that there are not fewer frames than the requested clip_length
+        clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, clip_overlap)
+
+        # tf.Assert(tf.greater(frames, clip_length), [tf.constant("Video ")+name+tf.constant(" contained fewer frames than the specified clip length... Exiting")])
+
+
+
+    # Call preprocessing function related to model chosen that preprocesses each clip as an individual video
+    clips_tensor = tf.map_fn(lambda clip:
+        model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining),
+        clips, dtype=tf.float32)
+
+
+    num_clips = tf.shape(clips_tensor)[0]
     labels_tensor = tf.tile( [label], [seq_length])
     names_tensor = tf.tile( [name], [num_clips])
 

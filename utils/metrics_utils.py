@@ -51,8 +51,8 @@ class Metrics():
         else:
             self.log_name = 'test'
 
-        # if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp')) and self.method != 'svm':
-        #     shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp')) and 'svm' not in self.method:
+         shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
 
         if self.method == 'svm':
             if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp', 'svm_train')):
