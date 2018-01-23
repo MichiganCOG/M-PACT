@@ -48,7 +48,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
     if istraining:
-        thread_count = 10
+        thread_count = 6 
 
     else:
         thread_count = 1
