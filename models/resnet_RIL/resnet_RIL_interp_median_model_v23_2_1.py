@@ -1,15 +1,12 @@
 " RESNET-50 + RAIN (INTERP + MEDIAN) v23_2_1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
-import sys
-import h5py
-sys.path.append('../..')
 
 import tensorflow as tf
 import numpy      as np
 
 from tensorflow.contrib.rnn          import static_rnn
-from layers_utils                    import *
+from utils.layers_utils              import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 class ResNet_RIL_Interp_Median_v23_2_1():
@@ -143,6 +140,7 @@ class ResNet_RIL_Interp_Median_v23_2_1():
             :layers:        Stack of layers
         """
 
+
         layers = {}
 
         # Conv block
@@ -262,6 +260,7 @@ class ResNet_RIL_Interp_Median_v23_2_1():
 
         # END IF
 
+        inputs = inputs[0]
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
@@ -352,9 +351,9 @@ class ResNet_RIL_Interp_Median_v23_2_1():
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
+            layers['logits'] = [fully_connected_layer(input_tensor=layers['126'],
                                                      out_dim=output_dims, non_linear_fn=None,
-                                                     name='logits', weight_decay=weight_decay)
+                                                     name='logits', weight_decay=weight_decay)]
             # END WITH
 
         return [layers[x] for x in return_layer]
@@ -375,7 +374,7 @@ class ResNet_RIL_Interp_Median_v23_2_1():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
-        
+
         Return:
             Pointer to preprocessing function of current model
         """

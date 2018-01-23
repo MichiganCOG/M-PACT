@@ -342,8 +342,8 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
     """
     Loop the video the number of times necessary for the number of frames to be > footprint
     Args:
-        :offset_tensor:     Raw input data from offset frame number  
-        :input_data_tensor: Raw input data 
+        :offset_tensor:     Raw input data from offset frame number
+        :input_data_tensor: Raw input data
         :frames:            Total number of frames
         :height:            Height of frame
         :width:             Width of frame
@@ -351,7 +351,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
         :footprint:         Total length of video to be extracted before sampling down
 
     Return:
-        Looped video 
+        Looped video
     """
 
     loop_factor       = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
@@ -368,12 +368,12 @@ def _sample_video(video, frame_count, offset):
     """
     Return frame_count number of frames from video at every offset
     Args:
-        :video:       Raw input data 
+        :video:       Raw input data
         :frame_count: Total number of frames
         :offset:      Sampling interval
 
     Return:
-        Sampled video 
+        Sampled video
     """
 
     indices = range(0, frame_count, offset)
@@ -388,12 +388,12 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     """
     Preprocessing function corresponding to the chosen model
     Args:
-        :input_data_tensor: Raw input data 
+        :input_data_tensor: Raw input data
         :frames:            Total number of frames
         :height:            Height of frame
         :width:             Width of frame
         :channel:           Total number of color channels
-        :input_dims:        Number of frames to be provided as input to model 
+        :input_dims:        Number of frames to be provided as input to model
         :output_dims:       Total number of labels
         :seq_length:        Number of frames expected as output of model
         :size:              Output size of preprocessed frames
@@ -441,6 +441,5 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         padding_zeros = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
         input_data_tensor = tf.concat([input_data_tensor, padding_zeros], 0)
 
-    labels_tensor = tf.tile( [label], [seq_length])
 
-    return input_data_tensor, labels_tensor
+    return input_data_tensor

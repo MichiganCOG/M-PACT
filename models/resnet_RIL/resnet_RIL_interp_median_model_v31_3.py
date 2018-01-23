@@ -1,15 +1,12 @@
 " RESNET-50 + RAIN (INTERP + MEDIAN) v31_3 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
-import sys
-import h5py
-sys.path.append('../..')
 
 import tensorflow as tf
 import numpy      as np
 
 from tensorflow.contrib.rnn          import static_rnn
-from layers_utils                    import *
+from utils.layers_utils              import *
 from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
 class ResNet_RIL_Interp_Median_v31_3():
@@ -29,7 +26,7 @@ class ResNet_RIL_Interp_Median_v31_3():
         self.input_dims = input_dims
         self.j          = input_dims / k
         self.name       = 'resnet_RIL_interp_median_model_v31_3'
-    
+
         print "resnet RIL interp median v31_3 initialized"
 
     def _extraction_layer(self, inputs, params, sets, K, L):
@@ -266,6 +263,7 @@ class ResNet_RIL_Interp_Median_v31_3():
 
         # END IF
 
+        inputs = inputs[0]
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
@@ -355,9 +353,9 @@ class ResNet_RIL_Interp_Median_v31_3():
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
+            layers['logits'] = [fully_connected_layer(input_tensor=layers['126'],
                                                      out_dim=output_dims, non_linear_fn=None,
-                                                     name='logits', weight_decay=weight_decay)
+                                                     name='logits', weight_decay=weight_decay)]
 
             # END WITH
 
@@ -381,7 +379,7 @@ class ResNet_RIL_Interp_Median_v31_3():
             :labels:      Labels for loaded data
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
-        
+
         Return:
             Pointer to preprocessing function of current model
         """

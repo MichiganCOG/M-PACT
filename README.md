@@ -296,6 +296,12 @@ Create the model file:
 
 File Structure:
 ```
+import sys
+sys.path.append('../..')
+
+import tensorflow as tf
+import numpy      as np
+
 from layers_utils				   import *
 from model_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
@@ -327,9 +333,9 @@ class ModelName():
         Return:
             :layers[return_layer]: The requested layer's output tensor
         """
-        
+
 		# ADD MODEL HERE
-		
+
     	return
 
 
@@ -373,7 +379,7 @@ File Structure:
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
 
     # ADD PREPROCESSING HERE
-    
+
     return input_data_tensor, labels_tensor
 ```
 
