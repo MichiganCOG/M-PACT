@@ -124,7 +124,7 @@ python train_test_TFRecords_multigpu_model.py \
 --seqLength 16 \
 --clipLength 16 \
 --clipOverlap 8 \
---expName test_load_dataset \
+--expName tfrecords_pretrain_Sports1M_c3d_UCF101 \
 --verbose 1 \
 --batchSize 5 \
 --returnLayer dense1 \

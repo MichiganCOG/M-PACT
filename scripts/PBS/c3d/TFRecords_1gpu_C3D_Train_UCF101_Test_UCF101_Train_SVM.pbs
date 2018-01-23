@@ -114,6 +114,7 @@ echo "Train C3D UCF101 Test UCF101"
 python train_test_TFRecords_multigpu_model.py \
 --model c3d \
 --dataset UCF101 \
+--loaded_dataset UCF101 \
 --train 0 \
 --load 0 \
 --numVids 9537 \

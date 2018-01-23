@@ -105,7 +105,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     # Reduction in fps to 25 for HMDB51 dataset
     if 'HMDB51' in dataset:
         input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
-
+    #
     # # If clip_length == -1 then the entire video is to be used as a single clip
     # if clip_length <= 0:
     #     clips = [input_data_tensor]
@@ -125,7 +125,8 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     input_data_tensor = [model.preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)]
     clips_tensor = tf.to_float(input_data_tensor)
 
-    num_clips = tf.convert_to_tensor(1)#tf.shape(clips_tensor)[0]
+    num_clips = tf.convert_to_tensor(1)
+    # num_clips = tf.shape(clips_tensor)[0]
     labels_tensor = tf.tile( [label], [seq_length])
     names_tensor = tf.tile( [name], [num_clips])
 
