@@ -66,7 +66,7 @@ def _average_gradients(tower_grads):
     return average_grads
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, val_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, batch_size, k=25, verbose=0):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, batch_size, loss_type, verbose):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -87,14 +87,13 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :learning_rate_init: Initializer for learning rate
         :wd:                 Weight decay
         :save_freq:          Frequency, in epochs, with which to save
-        :val_freq:           Frequency, in epochs, with which to run validaton
         :return_layer:       Layers to be tracked during training
         :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :batch_size:         Number of clips to load into the model each step.
-        :k:                  Width of temporal sliding window
+        :loss_type:          String declaring loss type associated with a chosen model 
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
     Returns:
@@ -196,7 +195,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                4) Aggregate losses, gradients and logits
                     """
 
-                    total_loss = model.loss(logits, labels_tensor[gpu_idx:gpu_idx+batch_size, :])
+                    total_loss = model.loss(logits, labels_tensor[gpu_idx:gpu_idx+batch_size, :], loss_type)
                     opt        = optimizer(lr)
                     gradients  = opt.compute_gradients(total_loss, vars_.trainable_variables())
 
@@ -374,7 +373,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # END WITH
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, k=25, verbose=0):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, verbose):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -397,7 +396,6 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :metrics_method:     Which method to use to calculate accuracy metrics. ("default" or "svm")
         :batch_size:         Number of clips to load into the model each step.
-        :k:                  Width of temporal sliding window
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
     Returns:
@@ -578,9 +576,6 @@ if __name__=="__main__":
     parser.add_argument('--saveFreq', action='store', type=int, default=1,
             help = 'Frequency in epochs to save model checkpoints')
 
-    parser.add_argument('--valFreq', action='store', type=int, default=3,
-            help = 'Frequency in epochs to validate')
-
     parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
             help= 'Dataset (UCF101, HMDB51)')
 
@@ -602,15 +597,20 @@ if __name__=="__main__":
     parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
             help = 'Which model layers to be returned by the models\' inference and logged.')
 
-    parser.add_argument('--verbose', action='store', type=int, default=0,
-            help = 'Boolean switch to display all print statements or not')
-
     parser.add_argument('--batchSize', action='store', type=int, default=1,
             help = 'Number of clips to load into the model each step.')
 
+    parser.add_argument('--lossType', action='store', default='full_loss',
+            help = 'String defining loss type associated with chosen model.')
+
+    parser.add_argument('--verbose', action='store', type=int, default=1,
+            help = 'Boolean switch to display all print statements or not')
     args = parser.parse_args()
 
-    print "Setup of current experiments: ",args
+    print "Setup of current experiments"
+    print "############################"
+    print args
+    print "############################ \n"
     model_name = args.model
 
     # Associating models
@@ -682,13 +682,13 @@ if __name__=="__main__":
                 learning_rate_init  = args.lr,
                 wd                  = args.wd,
                 save_freq           = args.saveFreq,
-                val_freq            = args.valFreq,
                 return_layer        = args.returnLayer,
                 clip_length         = args.clipLength,
                 clip_offset         = args.clipOffset,
                 num_clips           = args.numClips,
                 clip_overlap        = args.clipOverlap,
                 batch_size          = args.batchSize,
+                loss_type           = args.lossType,
                 verbose             = args.verbose)
 
     else:

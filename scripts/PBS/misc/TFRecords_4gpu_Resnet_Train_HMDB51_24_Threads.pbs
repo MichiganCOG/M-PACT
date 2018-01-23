@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_Resnet_Train_HMDB51Offset_Test_HMDB51Offset     # Name of the job
+#PBS -N TFRecords_4gpu_Resnet_Train_HMDB51_24_Threads     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=1:ppn=2:gpus=1    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn7:ppn=40:gpus=4    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -104,7 +104,7 @@ echo ------------------------------------------------------
 echo "start"
 hostname
 nvidia-smi
-export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]}"
+export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]},${allocatedgpus[2]},${allocatedgpus[3]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
@@ -112,17 +112,25 @@ echo "Train Resnet"
 
 python train_test_TFRecords_multigpu_model.py \
 --model resnet \
---dataset HMDB51Offset \
---loadedDataset HMDB51Offset \
---train 0 \
+--numGpus 4 \
+--dataset HMDB51 \
+--train 1 \
+--load 0 \
 --inputDims 50 \
 --outputDims 51 \
 --seqLength 50 \
 --size 224  \
---expName tfrecords_resnet_HMDB51Offset \
---numVids 1530 \
+--expName tfrecords_resnet_HMDB51_24_threads \
+--numVids 3570 \
 --split 1 \
---baseDataPath /z/home/madantrg/Datasets \
---fName testlist
+--wd 0.0 \
+--lr 0.001 \
+--nEpochs 2 \
+--baseDataPath /z/dat \
+--fName trainlist \
+--saveFreq 1 \
+--valFreq 40 \
+--verbose 1
+
 
 echo "end"

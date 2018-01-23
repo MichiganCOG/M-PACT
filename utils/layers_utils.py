@@ -80,6 +80,7 @@ def conv3d_layer(input_tensor,
                weight_decay=0.0,
                padding='SAME',
                groups=1,
+               use_bias=True,
                non_linear_fn=tf.nn.relu,
                kernel_init=tf.truncated_normal_initializer(stddev=0.01),
                bias_init=tf.constant_initializer(0.1)):
@@ -129,8 +130,14 @@ def conv3d_layer(input_tensor,
 
         # END IF
 
-        b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
-        conv_out = output + b
+        if use_bias:
+            b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
+            conv_out = output + b
+
+        else:
+            conv_out = output
+
+        # END IF
 
         if non_linear_fn is not None:
             conv_out = non_linear_fn(conv_out, name=scope.name)
