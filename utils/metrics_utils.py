@@ -191,11 +191,11 @@ class Metrics():
             for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -250,11 +250,11 @@ class Metrics():
             for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -310,11 +310,11 @@ class Metrics():
             for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train', vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train',vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train',vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train',vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train',vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -343,11 +343,11 @@ class Metrics():
             for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -400,5 +400,110 @@ class Metrics():
             os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, name))
             self.file_name_dict[name] = 0
 
-        np.save(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, name, str(self.file_name_dict[name])+'.npy'), (prediction, label))
+        np.savez_compressed(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, name, str(self.file_name_dict[name])), (prediction, label))
         self.file_name_dict[name]+=1
+
+    def _svm_classify_debug(self, vid_limit, method):
+        """
+        Final classification of predictions saved to temp folder using a linear svm
+        Args:
+            None
+        Return:
+            :current_accuracy: The current classification accuracy of all videos
+                               passed through this object accross multiple calls of this method
+        """
+
+        self.clear_all()
+
+        model_output = []
+        labels = []
+        names = []
+
+        vid_count = 0
+        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method, vid_name)):
+                if vid_name in names:
+                    ind = names.index(vid_name)
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method,vid_name, clip))['arr_0']
+                    model_output[ind].append(data[0])
+
+                else:
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method,vid_name, clip))['arr_0']
+                    model_output.append([data[0]])
+                    names.append(vid_name)
+                    labels.append(data[1])
+            if vid_count == vid_limit:
+                break
+            vid_count+=1
+            if vid_count%10 == 0:
+                print vid_count
+        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
+        for index in range(len(model_output)):
+            model_output_dimensions = len(np.array(model_output[index]).shape)
+            if model_output_dimensions > 2:
+                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # Average the outputs for the clips
+            model_output[index] = np.mean(model_output[index], 0)
+        import pdb; pdb.set_trace()
+        classifier = svm.SVC(kernel='linear')
+
+        classifier.fit(model_output, labels)
+
+        self.clear_all()
+
+        model_output = []
+        labels = []
+        names = []
+
+        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
+                if vid_name in names:
+                    ind = names.index(vid_name)
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    model_output[ind].append(data[0])
+
+                else:
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    model_output.append([data[0]])
+                    names.append(vid_name)
+                    labels.append(data[1])
+
+        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
+        for index in range(len(model_output)):
+            model_output_dimensions = len(np.array(model_output[index]).shape)
+            if model_output_dimensions > 2:
+                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # Average the outputs for the clips
+            model_output[index] = np.mean(model_output[index], 0)
+        import pdb; pdb.set_trace()
+
+        predictions = classifier.predict(model_output)
+
+        for video in range(len(predictions)):
+            prediction = predictions[video]
+            label = labels[video]
+
+            if self.verbose:
+                print "vidName: ",names[video]
+                print "label:  ", label
+                print "prediction: ", prediction
+
+            self.predictions_array.append((prediction, label))
+            self.total_predictions += 1
+            if int(prediction) == int(label):
+                self.correct_predictions += 1
+
+            current_accuracy = self.correct_predictions / float(self.total_predictions)
+
+        # END FOR
+
+        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+
+        return current_accuracy
+
+if __name__=="__main__":
+    import pdb; pdb.set_trace()

@@ -207,62 +207,62 @@ class ResNet():
                     weight_decay = weight_decay, non_linear_fn=None)
 
             layers['2'] = tf.layers.batch_normalization(layers['1'],
-                    name='bn_conv1', training=is_training)
+                    name='bn_conv1', training=False)
 
             layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
                                          filter_dims=[3, 3], stride_dims=[2,2],
                                          name='pool1', padding='VALID')
 
             layers.update(self._conv_block([64,64,256], kernel_size=3, name='2a', layer_numbers=['4','5','6','7','8','9','10','11','12'],
-                            input_layer=layers['3'], is_training=is_training, strides=1))
+                            input_layer=layers['3'], is_training=False, strides=1))
 
             layers.update(self._identity_block([64,64,256], kernel_size=3, name='2b', layer_numbers=['13','14','15','16','17','18','19'],
-                            input_layer=layers['12'], is_training=is_training))
+                            input_layer=layers['12'], is_training=False))
 
             layers.update(self._identity_block([64,64,256], kernel_size=3, name='2c', layer_numbers=['20','21','22','23','24','25','26'],
-                            input_layer=layers['19'], is_training=is_training))
+                            input_layer=layers['19'], is_training=False))
 
             #########
             layers.update(self._conv_block([128,128,512], kernel_size=3, name='3a', layer_numbers=['27','28','29','30','31','32','33','34','35'],
-                            input_layer=layers['26'], is_training=is_training))
+                            input_layer=layers['26'], is_training=False))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3b', layer_numbers=['36','37','38','39','40','41','42'],
-                            input_layer=layers['35'], is_training=is_training))
+                            input_layer=layers['35'], is_training=False))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3c', layer_numbers=['43','44','45','46','47','48','49'],
-                            input_layer=layers['42'], is_training=is_training))
+                            input_layer=layers['42'], is_training=False))
 
             layers.update(self._identity_block([128,128,512], kernel_size=3, name='3d', layer_numbers=['50','51','52','53','54','55','56'],
-                            input_layer=layers['49'], is_training=is_training))
+                            input_layer=layers['49'], is_training=False))
 
             #########
             layers.update(self._conv_block([256,256,1024], kernel_size=3, name='4a', layer_numbers=['57','58','59','60','61','62','63','64','65'],
-                            input_layer=layers['56'], is_training=is_training))
+                            input_layer=layers['56'], is_training=False))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4b', layer_numbers=['66','67','68','69','70','71','72'],
-                            input_layer=layers['65'], is_training=is_training))
+                            input_layer=layers['65'], is_training=False))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4c', layer_numbers=['73','74','75','76','77','78','79'],
-                            input_layer=layers['72'], is_training=is_training))
+                            input_layer=layers['72'], is_training=False))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4d', layer_numbers=['80','81','82','83','84','85','86'],
-                            input_layer=layers['79'], is_training=is_training))
+                            input_layer=layers['79'], is_training=False))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4e', layer_numbers=['87','88','89','90','91','92','93'],
-                            input_layer=layers['86'], is_training=is_training))
+                            input_layer=layers['86'], is_training=False))
 
             layers.update(self._identity_block([256,256,1024], kernel_size=3, name='4f', layer_numbers=['94','95','96','97','98','99','100'],
-                            input_layer=layers['93'], is_training=is_training))
+                            input_layer=layers['93'], is_training=False))
 
             #########
             layers.update(self._conv_block([512,512,2048], kernel_size=3, name='5a', layer_numbers=['101','102','103','104','105','106','107','108','109'],
-                            input_layer=layers['100'], is_training=is_training))
+                            input_layer=layers['100'], is_training=False))
 
             layers.update(self._identity_block([512,512,2048], kernel_size=3, name='5b', layer_numbers=['110','111','112','113','114','115','116'],
-                            input_layer=layers['109'], is_training=is_training))
+                            input_layer=layers['109'], is_training=False))
 
             layers.update(self._identity_block([512,512,2048], kernel_size=3, name='5c', layer_numbers=['117','118','119','120','121','122','123'],
-                            input_layer=layers['116'], is_training=is_training))
+                            input_layer=layers['116'], is_training=False))
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
 
@@ -342,7 +342,7 @@ class ResNet():
             Cross entropy loss value
         """
         if loss_type == 'full_loss':
-            return self.full_loss(logits, labels) 
+            return self.full_loss(logits, labels)
 
         else:
             return self.half_loss(logits, labels)

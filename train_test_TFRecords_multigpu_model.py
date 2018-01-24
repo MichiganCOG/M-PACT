@@ -93,7 +93,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :num_clips:          Number of clips to break video into
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :batch_size:         Number of clips to load into the model each step.
-        :loss_type:          String declaring loss type associated with a chosen model 
+        :loss_type:          String declaring loss type associated with a chosen model
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
     Returns:
@@ -227,6 +227,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                            dataset,
                                                            experiment_name))
+        make_dir('results')
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
@@ -323,15 +324,18 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 
             # Compute training epoch accuracy
-            for pred_idx in range(len(predictions)):
-                pred = np.mean(predictions[pred_idx], 0).argmax()
+            for gpu_idx in range(len(predictions)):
+                for batch_idx in range(predictions[gpu_idx].shape[0]):
+                    pred = np.mean(predictions[gpu_idx][batch_idx], 0).argmax()
 
-                if pred == labels[pred_idx][0]:
-                    epoch_acc +=1
+                    if pred == labels[gpu_idx][0]:
+                        epoch_acc +=1
 
-                # END IF
+                    # END IF
 
-                batch_count+=1
+                    batch_count+=1
+
+                # END FOR
 
             # END FOR
 
@@ -622,9 +626,6 @@ if __name__=="__main__":
 
     #elif model_name == 'c3d':
     #    model = C3D(verbose=args.verbose)
-
-    #elif model_name == 'resnet_50_frames':
-    #    model = ResNet_50_Frames(args.inputDims)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
