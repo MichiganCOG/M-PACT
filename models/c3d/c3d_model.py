@@ -143,7 +143,7 @@ class C3D():
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        return np.load('models/c3d/c3d_Sports1M.npy')
+        return np.load('models/c3d/c3d.npy')#_Sports1M.npy')
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """

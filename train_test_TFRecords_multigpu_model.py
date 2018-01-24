@@ -328,7 +328,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 for batch_idx in range(predictions[gpu_idx].shape[0]):
                     pred = np.mean(predictions[gpu_idx][batch_idx], 0).argmax()
 
-                    if pred == labels[batch_idx][0]:
+                    if pred == labels[gpu_idx][0]:
                         epoch_acc +=1
 
                     # END IF
