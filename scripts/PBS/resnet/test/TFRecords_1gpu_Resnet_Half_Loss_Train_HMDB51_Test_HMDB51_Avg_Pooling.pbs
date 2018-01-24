@@ -4,7 +4,7 @@
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
 #PBS -l nodes=1:ppn=2:gpus=1    # nodes requested: Processor per node: gpus requested
-#PBS -M nadha@umich.edu      #  send email to user@umich.edu
+#PBS -M madantrg@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
 
@@ -107,7 +107,7 @@ nvidia-smi
 export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
-cd /z/home/nadha/tf-activity-recognition-framework/
+cd /z/home/madantrg/tf-activity-recognition-framework/
 echo "Train Resnet Half Loss Average Pooling: HMDB51"
 
 python train_test_TFRecords_multigpu_model.py \
