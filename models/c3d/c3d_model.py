@@ -159,7 +159,7 @@ class C3D():
 
 
     """ Function to return loss calculated on given network """
-    def loss(self, logits, labels):
+    def loss(self, logits, labels, loss_type):
         """
         Args:
             :logits: Unscaled logits returned from final layer in model

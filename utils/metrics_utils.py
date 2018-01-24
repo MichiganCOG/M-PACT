@@ -327,7 +327,7 @@ class Metrics():
 
             # Average the outputs for the clips
             model_output[index] = np.mean(model_output[index], 0)
-
+        import pdb; pdb.set_trace()
         classifier = svm.SVC(kernel='linear')
 
         classifier.fit(model_output, labels)
@@ -360,7 +360,7 @@ class Metrics():
 
             # Average the outputs for the clips
             model_output[index] = np.mean(model_output[index], 0)
-
+        import pdb; pdb.set_trace()
 
         predictions = classifier.predict(model_output)
 

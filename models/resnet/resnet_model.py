@@ -342,7 +342,7 @@ class ResNet():
             Cross entropy loss value
         """
         if loss_type == 'full_loss':
-            return self.full_loss(logits, labels) 
+            return self.full_loss(logits, labels)
 
         else:
             return self.half_loss(logits, labels)
