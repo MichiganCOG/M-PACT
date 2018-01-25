@@ -51,11 +51,11 @@ class Metrics():
         else:
             self.log_name = 'test'
 
-        if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp')) and 'svm' not in self.method:
-         shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)) and 'svm' not in self.method:
+         shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
         if self.method == 'svm':
-            if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp', 'svm_train')):
+            if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train')):
                 print "\nError: Temporary training features are not present to train svm. Please first evaluate this model on the training split of this dataset using metricsMethod svm_train.\n"
                 exit()
 
@@ -187,15 +187,15 @@ class Metrics():
         names = []
 
         # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -225,7 +225,7 @@ class Metrics():
 
         # END FOR
 
-        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
         return current_accuracy
 
@@ -246,15 +246,15 @@ class Metrics():
         names = []
 
         # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -284,7 +284,7 @@ class Metrics():
 
         # END FOR
 
-        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
         return current_accuracy
 
@@ -306,15 +306,15 @@ class Metrics():
         names = []
 
         # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train')):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train', vid_name)):
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train')):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train', vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train',vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train',vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method+'_train',vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train',vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -339,15 +339,15 @@ class Metrics():
         names = []
 
         # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -382,7 +382,7 @@ class Metrics():
 
         # END FOR
 
-        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
         return current_accuracy
 
@@ -390,17 +390,17 @@ class Metrics():
 
 
     def _save_prediction(self, label, prediction, name):
-        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp')):
-            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
+            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
-        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp', self.method)):
-            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method))
+        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
+            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
-        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, name)):
-            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, name))
+        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, name)):
+            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, name))
             self.file_name_dict[name] = 0
 
-        np.savez_compressed(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, name, str(self.file_name_dict[name])), (prediction, label))
+        np.savez_compressed(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, name, str(self.file_name_dict[name])), (prediction, label))
         self.file_name_dict[name]+=1
 
     def _svm_classify_debug(self, vid_limit, method):
@@ -421,15 +421,15 @@ class Metrics():
 
         vid_count = 0
         # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method, vid_name)):
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method,vid_name, clip))['arr_0']
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',method,vid_name, clip))['arr_0']
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method,vid_name, clip))['arr_0']
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -458,15 +458,15 @@ class Metrics():
         names = []
 
         # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method, vid_name)):
+        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
+            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
                 if vid_name in names:
                     ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))
                     model_output[ind].append(data[0])
 
                 else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp',self.method,vid_name, clip))
+                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))
                     model_output.append([data[0]])
                     names.append(vid_name)
                     labels.append(data[1])
@@ -501,7 +501,7 @@ class Metrics():
 
         # END FOR
 
-        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'))
+        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
 
         return current_accuracy
 

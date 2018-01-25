@@ -455,8 +455,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
 
         # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
-        log_name    = ("exp_test_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                               dataset, experiment_name))
+        log_name    = ("exp_test_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
+                                               dataset, experiment_name, metrics_method))
         curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
@@ -520,7 +520,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         print total_pred
 
     # Save results in numpy format
-    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+'.npy'), np.array(total_pred))
+    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
 
 
 if __name__=="__main__":
@@ -624,8 +624,8 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    #elif model_name == 'c3d':
-    #    model = C3D(verbose=args.verbose)
+    elif model_name == 'c3d':
+       model = C3D(verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
