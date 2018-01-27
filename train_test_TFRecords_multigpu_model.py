@@ -296,6 +296,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                                        labels_tensor, model_params_array,
                                                                        names_tensor, input_data_tensor])
 
+
             if verbose:
                 print vid_names
 
@@ -624,8 +625,11 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    elif model_name == 'c3d':
-       model = C3D(verbose=args.verbose)
+    #elif model_name == 'c3d':
+    #   model = C3D(verbose=args.verbose)
+
+    elif model_name == 'i3d':
+       model = I3D(verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)

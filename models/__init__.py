@@ -2,7 +2,8 @@
 #from vgg16.vgg16_model                       import VGG16
 from resnet.resnet_model                     import ResNet
 #from resnet_50_frames.resnet_50_frames_model import ResNet_50_Frames
-from c3d.c3d_model  			             import C3D
+#from c3d.c3d_model  			             import C3D
+from i3d.i3d_model  			             import I3D
 
 ## RAIN layer model imports
 #from resnet_RIL.resnet_RIL_interp_median_model_v23_2_1    import ResNet_RIL_Interp_Median_v23_2_1

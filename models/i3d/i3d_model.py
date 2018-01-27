@@ -8,13 +8,13 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils                   import *
+from utils.layers_utils             import *
 from utils                          import initialize_from_dict
-#from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from i3d_preprocessing_TFRecords    import preprocess   as preprocess_tfrecords
 
 class I3D():
 
-    def __init__(self, input_dims, verbose=True):
+    def __init__(self, verbose=True):
         """
         Args:
             :k:          Temporal window width
@@ -26,7 +26,6 @@ class I3D():
         """
         self.name       = 'i3d'
         self.verbose    = verbose
-        self.input_dims = input_dims
 
         print "I3D initialized"
 
@@ -451,7 +450,7 @@ class I3D():
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        return np.load('models/i3d/i3d_rgb_weights_tf_dim_ordering_tf_kernels.npy')
+        return np.load('models/i3d/i3d_rgb.npy')
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
@@ -467,8 +466,8 @@ class I3D():
         """
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
 
-    """ Function to return loss calculated on given network """
-    def loss(self, logits, labels):
+    """ Function to return loss calculated on all the outputs of a given network """
+    def full_loss(self, logits, labels):
         """
         Args:
             :logits: Unscaled logits returned from final layer in model
@@ -480,7 +479,29 @@ class I3D():
 
         labels = tf.cast(labels, tf.int64)
 
-        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
+        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
+                                                                  logits=logits)
+        return cross_entropy_loss
+
+    """ Function to return loss calculated on given network """
+    def loss(self, logits, labels, loss_type='full_loss'):
+        """
+        Args:
+            :logits: Unscaled logits returned from final layer in model
+            :labels: True labels corresponding to loaded data
+
+        Return:
+            Cross entropy loss value
+        """
+    
+        if loss_type == 'full_loss':
+            return self.full_loss(logits, labels)
+        
+        else:
+            return self.full_loss(logits, labels)
+
+        # END IF
+
         return cross_entropy_loss
 
 
