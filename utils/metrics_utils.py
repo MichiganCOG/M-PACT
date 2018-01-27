@@ -3,8 +3,8 @@ FILE TO CONTAIN VARIOUS METHODS OF CALCULATING PERFORMANCE METRICS FOR DIFFERENT
 """
 
 import os
-import shutil
 
+import h5py
 import numpy      as np
 import tensorflow as tf
 from   sklearn    import svm
@@ -51,14 +51,17 @@ class Metrics():
         else:
             self.log_name = 'test'
 
-        if os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)) and 'svm' not in self.method:
-         shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
+        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5')) and 'svm' not in self.method:
+            os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
 
         if self.method == 'svm':
-            if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train')):
+            if not os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train.hdf5')):
                 print "\nError: Temporary training features are not present to train svm. Please first evaluate this model on the training split of this dataset using metricsMethod svm_train.\n"
                 exit()
 
+        # END IF
+
+        self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'), 'w')
 
     def get_accuracy(self):
         """
@@ -123,9 +126,12 @@ class Metrics():
             print "Error: Invalid classification method ", self.method
             exit()
 
+        # END IF
 
         if prediction == label:
             self.correct_predictions += 1
+
+        # END IF
 
         self.total_predictions += 1
         current_accuracy = self.get_accuracy()
@@ -134,6 +140,8 @@ class Metrics():
             print "vidName: ",names
             print "label:  ", label
             print "prediction: ", prediction
+
+        # END IF
 
         self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method), current_accuracy, step=self.step)
         return current_accuracy
@@ -159,6 +167,7 @@ class Metrics():
             accuracy = self._svm_classify()
 
         elif self.method == 'svm_train':
+            self.save_file.close()
             print 'Please now classify this model using the testing split of this dataset.'
             accuracy = -1
 
@@ -186,25 +195,41 @@ class Metrics():
         labels = []
         names = []
 
-        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
-                if vid_name in names:
-                    ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
-                    model_output[ind].append(data[0])
+        # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in self.save_file.keys():
+            labels.append(self.save_file[vid_name]['Label'].value)
+            temp_data = []
 
-                else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
-                    model_output.append([data[0]])
-                    names.append(vid_name)
-                    labels.append(data[1])
+            for clip in self.save_file[vid_name]['Data'].keys():
+                temp_data.append(self.save_file[vid_name]['Data'][clip].value)
+
+            # END FOR
+
+            mean_feature = np.array(temp_data)
+            model_output_dimensions = len(mean_feature.shape)
+
+            if model_output_dimensions > 2:
+                mean_feature = np.mean(mean_feature, axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # END IF
+
+            # Average the outputs for the clips
+            mean_feature = np.mean(mean_feature, 0)
+            model_output.append(mean_feature)
+            names.append(vid_name)
+
+        # END FOR
+
+        model_output = np.array(model_output)
 
         # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
         for index in range(len(model_output)):
             model_output_dimensions = len(np.array(model_output[index]).shape)
+
             if model_output_dimensions > 2:
                 model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # END IF
 
             # Average the outputs for the clips
             model_output[index] = np.mean(model_output[index], 0)
@@ -216,16 +241,23 @@ class Metrics():
                 print "label:  ", label
                 print "prediction: ", prediction
 
+            # END IF
+
             self.predictions_array.append((prediction, label))
             self.total_predictions += 1
+
             if int(prediction) == int(label):
                 self.correct_predictions += 1
+
+            # END IF
 
             current_accuracy = self.correct_predictions / float(self.total_predictions)
 
         # END FOR
 
-        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
+        self.save_file.close()
+
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
 
         return current_accuracy
 
@@ -245,19 +277,32 @@ class Metrics():
         labels = []
         names = []
 
-        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
-                if vid_name in names:
-                    ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
-                    model_output[ind].append(data[0])
+        # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in self.save_file.keys():
+            labels.append(self.save_file[vid_name]['Label'].value)
+            temp_data = []
 
-                else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
-                    model_output.append([data[0]])
-                    names.append(vid_name)
-                    labels.append(data[1])
+            for clip in self.save_file[vid_name]['Data'].keys():
+                temp_data.append(self.save_file[vid_name]['Data'][clip].value)
+
+            # END FOR
+
+            mean_feature = np.array(temp_data)
+            model_output_dimensions = len(mean_feature.shape)
+
+            if model_output_dimensions > 2:
+                mean_feature = np.mean(mean_feature, axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # END IF
+
+            # Average the outputs for the clips
+            mean_feature = np.mean(mean_feature, 0)
+            model_output.append(mean_feature)
+            names.append(vid_name)
+
+        # END FOR
+
+        model_output = np.array(model_output)
 
         # For each video, select only the last frame of each clip and average the last frames then take the argmax prediction and compare it to the ground truth sabel
         for index in range(len(model_output)):
@@ -284,7 +329,9 @@ class Metrics():
 
         # END FOR
 
-        shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
+        self.save_file.close()
+
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
 
         return current_accuracy
 
@@ -301,36 +348,44 @@ class Metrics():
 
         self.clear_all()
 
-        model_output = []
-        labels = []
-        names = []
+        training_output = []
+        training_labels = []
+        training_names = []
 
-        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train')):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train', vid_name)):
-                if vid_name in names:
-                    ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train',vid_name, clip))['arr_0']
-                    model_output[ind].append(data[0])
+        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train.hdf5'), 'r')
 
-                else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train',vid_name, clip))['arr_0']
-                    model_output.append([data[0]])
-                    names.append(vid_name)
-                    labels.append(data[1])
+        # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in train_hdf5.keys():
+            training_labels.append(train_hdf5[vid_name]['Label'].value)
+            temp_data = []
 
-        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
-        for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
+            for clip in train_hdf5[vid_name]['Data'].keys():
+                temp_data.append(train_hdf5[vid_name]['Data'][clip].value)
+
+            # END IF
+
+            mean_feature = np.array(temp_data)
+            model_output_dimensions = len(mean_feature.shape)
+
             if model_output_dimensions > 2:
-                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+                mean_feature = np.mean(mean_feature, axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # END IF
 
             # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
+            mean_feature = np.mean(mean_feature, 0)
+            training_output.append(mean_feature)
+            training_names.append(vid_name)
 
-        classifier = svm.SVC(kernel='linear')
+        # END IF
 
-        classifier.fit(model_output, labels)
+        training_output = np.array(training_output)
+        output_dims = training_output.shape
+        training_output = training_output/(np.linalg.norm(training_output, axis=1).reshape([output_dims[0],1]).repeat(output_dims[1],1))
+
+        # Train svm on training set features
+        classifier = svm.LinearSVC()
+        classifier.fit(training_output, training_labels)
 
         self.clear_all()
 
@@ -338,30 +393,36 @@ class Metrics():
         labels = []
         names = []
 
-        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
-                if vid_name in names:
-                    ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
-                    model_output[ind].append(data[0])
+        # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in self.save_file.keys():
+            labels.append(self.save_file[vid_name]['Label'].value)
+            temp_data = []
 
-                else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))['arr_0']
-                    model_output.append([data[0]])
-                    names.append(vid_name)
-                    labels.append(data[1])
+            for clip in self.save_file[vid_name]['Data'].keys():
+                temp_data.append(self.save_file[vid_name]['Data'][clip].value)
 
-        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
-        for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
+            # END FOR
+
+            mean_feature = np.array(temp_data)
+            model_output_dimensions = len(mean_feature.shape)
+
             if model_output_dimensions > 2:
-                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+                mean_feature = np.mean(mean_feature, axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # END IF
 
             # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
+            mean_feature = np.mean(mean_feature, 0)
+            model_output.append(mean_feature)
+            names.append(vid_name)
 
+        # END FOR
 
+        model_output = np.array(model_output)
+        output_dims = model_output.shape
+        model_output = model_output/(np.linalg.norm(model_output, axis=1).reshape([output_dims[0],1]).repeat(output_dims[1],1))
+
+        # Get testing predictions from trained svm
         predictions = classifier.predict(model_output)
 
         for video in range(len(predictions)):
@@ -373,16 +434,21 @@ class Metrics():
                 print "label:  ", label
                 print "prediction: ", prediction
 
+            # END IF
+
             self.predictions_array.append((prediction, label))
             self.total_predictions += 1
+
             if int(prediction) == int(label):
                 self.correct_predictions += 1
+
+            # END IF
 
             current_accuracy = self.correct_predictions / float(self.total_predictions)
 
         # END FOR
 
-        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
+        self.save_file.close()
 
         return current_accuracy
 
@@ -390,120 +456,28 @@ class Metrics():
 
 
     def _save_prediction(self, label, prediction, name):
-        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
-            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
+        """
+        Save a given prediction and label of a video clip to the HDF5 file under the name of that video.
+        This adds the information into the HDF5 file, it gets written during _total_classification
+        Args:
+            :label:         Ground truth label for the current clip
+            :prediction:    Output prediction from the model for the current clip
+            :name:          Name of the video that the current clip belongs to
+        Return:
+            None
+        """
 
-        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
-            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
-
-        if not os.path.isdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, name)):
-            os.mkdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, name))
+        if name not in self.save_file.keys():
+            g = self.save_file.create_group(name)
+            g.create_group('Data')
+            g['Label'] = label
             self.file_name_dict[name] = 0
 
-        np.savez_compressed(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, name, str(self.file_name_dict[name])), (prediction, label))
+        # END IF
+
+        self.save_file[name]['Data'][str(self.file_name_dict[name])] = prediction
         self.file_name_dict[name]+=1
 
-    def _svm_classify_debug(self, vid_limit, method):
-        """
-        Final classification of predictions saved to temp folder using a linear svm
-        Args:
-            None
-        Return:
-            :current_accuracy: The current classification accuracy of all videos
-                               passed through this object accross multiple calls of this method
-        """
-
-        self.clear_all()
-
-        model_output = []
-        labels = []
-        names = []
-
-        vid_count = 0
-        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method, vid_name)):
-                if vid_name in names:
-                    ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method,vid_name, clip))['arr_0']
-                    model_output[ind].append(data[0])
-
-                else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,method,vid_name, clip))['arr_0']
-                    model_output.append([data[0]])
-                    names.append(vid_name)
-                    labels.append(data[1])
-            if vid_count == vid_limit:
-                break
-            vid_count+=1
-            if vid_count%10 == 0:
-                print vid_count
-        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
-        for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
-            if model_output_dimensions > 2:
-                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
-
-            # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
-        import pdb; pdb.set_trace()
-        classifier = svm.SVC(kernel='linear')
-
-        classifier.fit(model_output, labels)
-
-        self.clear_all()
-
-        model_output = []
-        labels = []
-        names = []
-
-        # Load the saved model outputs from the temp folder storing each video as a new index in model_output and appending the outputs to that index
-        for vid_name in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method)):
-            for clip in os.listdir(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method, vid_name)):
-                if vid_name in names:
-                    ind = names.index(vid_name)
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))
-                    model_output[ind].append(data[0])
-
-                else:
-                    data = np.load(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method,vid_name, clip))
-                    model_output.append([data[0]])
-                    names.append(vid_name)
-                    labels.append(data[1])
-
-        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
-        for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
-            if model_output_dimensions > 2:
-                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
-
-            # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
-        import pdb; pdb.set_trace()
-
-        predictions = classifier.predict(model_output)
-
-        for video in range(len(predictions)):
-            prediction = predictions[video]
-            label = labels[video]
-
-            if self.verbose:
-                print "vidName: ",names[video]
-                print "label:  ", label
-                print "prediction: ", prediction
-
-            self.predictions_array.append((prediction, label))
-            self.total_predictions += 1
-            if int(prediction) == int(label):
-                self.correct_predictions += 1
-
-            current_accuracy = self.correct_predictions / float(self.total_predictions)
-
-        # END FOR
-
-        #shutil.rmtree(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method))
-
-        return current_accuracy
 
 if __name__=="__main__":
     import pdb; pdb.set_trace()

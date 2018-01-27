@@ -48,7 +48,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
     if istraining:
-        thread_count = 6 
+        thread_count = 6
 
     else:
         thread_count = 1
@@ -103,6 +103,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
 
     name     = features['Name']
 
+    # Shape [frames, height, width, channels]
     input_data_tensor = tf.reshape(tf.decode_raw(features['Data'], tf.uint8), tf.stack([frames,height,width,channel]))
 
     # BGR to RGB
@@ -123,7 +124,8 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
         # tf.Assert(tf.greater(frames, clip_length), [tf.constant("Video ")+name+tf.constant(" contained fewer frames than the specified clip length... Exiting")])
 
 
-
+    # clips shape - [num_clips, clip_length or frames, height, width, channels]
+    # model.preprocess_tfrecords input shape - [clip_length or frames, height, width, channels]
     # Call preprocessing function related to model chosen that preprocesses each clip as an individual video
     clips_tensor = tf.map_fn(lambda clip:
         model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining),
@@ -134,6 +136,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     labels_tensor = tf.tile( [label], [seq_length])
     names_tensor = tf.tile( [name], [num_clips])
 
+    # clips_tensor shape - [num_clips, input_dims, size[0], size[1], channels]
     return [clips_tensor, tf.tile([labels_tensor], [num_clips,1]), names_tensor]
 
 

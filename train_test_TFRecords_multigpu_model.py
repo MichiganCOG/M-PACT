@@ -153,7 +153,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Setup tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
-
+        # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
+        
         # Define optimizer (Current selection is only momentum optimizer)
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
 
@@ -164,7 +165,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             with tf.device('/gpu:'+str(gpu_idx)):
                 with tf.name_scope('%s_%d' % ('tower', gpu_idx)) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
-                        returned_layers = model.inference(input_data_tensor[gpu_idx:gpu_idx+batch_size,:,:,:,:],
+                        returned_layers = model.inference(input_data_tensor[gpu_idx*batch_size:gpu_idx*batch_size+batch_size,:,:,:,:],
                                                  istraining,
                                                  input_dims,
                                                  output_dims,
@@ -195,7 +196,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                4) Aggregate losses, gradients and logits
                     """
 
-                    total_loss = model.loss(logits, labels_tensor[gpu_idx:gpu_idx+batch_size, :], loss_type)
+                    total_loss = model.loss(logits, labels_tensor[gpu_idx*batch_size:gpu_idx*batch_size+batch_size, :], loss_type)
                     opt        = optimizer(lr)
                     gradients  = opt.compute_gradients(total_loss, vars_.trainable_variables())
 
@@ -367,6 +368,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         if verbose:
             print "Saving..."
 
+        # END IF
+
         save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, gs)
         coord.request_stop()
         coord.join(threads)
@@ -441,6 +444,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Setting up tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
+        # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
 
         # Model Inference
         logits = model.inference(input_data_tensor[0:batch_size,:,:,:,:],
