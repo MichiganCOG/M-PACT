@@ -135,7 +135,7 @@ class Metrics():
 
         self.total_predictions += 1
         current_accuracy = self.get_accuracy()
-
+        
         if self.verbose:
             print "vidName: ",names
             print "label:  ", label
@@ -224,15 +224,6 @@ class Metrics():
 
         # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
         for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
-
-            if model_output_dimensions > 2:
-                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
-
-            # END IF
-
-            # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
             prediction = model_output[index].argmax()
             label = labels[index]
 
@@ -306,12 +297,6 @@ class Metrics():
 
         # For each video, select only the last frame of each clip and average the last frames then take the argmax prediction and compare it to the ground truth sabel
         for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
-            if model_output_dimensions > 2:
-                model_output[index] = np.array(model_output[index])[:,-1,:]
-
-            # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
             prediction = model_output[index].argmax()
             label = labels[index]
 
