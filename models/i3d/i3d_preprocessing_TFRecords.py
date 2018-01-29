@@ -249,6 +249,7 @@ def preprocess_for_train(image,
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
   image = tf.image.random_flip_left_right(image)
+  image = image * 2./255. - 1
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 def preprocess_for_eval(image, output_height, output_width, resize_side):
@@ -297,6 +298,8 @@ def preprocess_image(image, output_height, output_width, is_training=False,
   else:
     return preprocess_for_eval(image, output_height, output_width,
                                resize_side_min)
+
+  # END IF
 
 def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
     """

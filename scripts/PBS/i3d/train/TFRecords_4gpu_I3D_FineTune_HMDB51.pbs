@@ -128,7 +128,7 @@ python train_test_TFRecords_multigpu_model.py \
 --lr 0.001 \
 --nEpochs 22 \
 --baseDataPath /z/dat \
---fName testlist \
+--fName trainlist \
 --saveFreq 1
 
 echo "end"
