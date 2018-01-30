@@ -2,9 +2,9 @@ import tensorflow as tf
 import numpy as np
 
 
-_R_MEAN = 123.68
-_G_MEAN = 116.78
-_B_MEAN = 103.94
+_R_MEAN = 123.68 * 2. / 255. - 1
+_G_MEAN = 116.78 * 2. / 255. - 1
+_B_MEAN = 103.94 * 2. / 255. - 1
 
 _RESIZE_SIDE_MIN = 256
 _RESIZE_SIDE_MAX = 512
@@ -35,6 +35,83 @@ def _mean_image_subtraction(image, means):
   for i in range(num_channels):
     channels[i] -= means[i]
   return tf.concat(axis=2, values=channels)
+
+def _random_crop(image_list, crop_height, crop_width):
+  """Crops the given list of images.
+  The function applies the same crop to each image in the list. This can be
+  effectively applied when there are multiple image inputs of the same
+  dimension such as:
+    image, depths, normals = _random_crop([image, depths, normals], 120, 150)
+  Args:
+    image_list: a list of image tensors of the same dimension but possibly
+      varying channel.
+    crop_height: the new height.
+    crop_width: the new width.
+  Returns:
+    the image_list with cropped images.
+  Raises:
+    ValueError: if there are multiple image inputs provided with different size
+      or the images are smaller than the crop dimensions.
+  """
+  if not image_list:
+    raise ValueError('Empty image_list.')
+
+  # Compute the rank assertions.
+  rank_assertions = []
+  for i in range(len(image_list)):
+    image_rank = tf.rank(image_list[i])
+    rank_assert = tf.Assert(
+        tf.equal(image_rank, 3),
+        ['Wrong rank for tensor  %s [expected] [actual]',
+         image_list[i].name, 3, image_rank])
+    rank_assertions.append(rank_assert)
+
+  with tf.control_dependencies([rank_assertions[0]]):
+    image_shape = tf.shape(image_list[0])
+  image_height = image_shape[0]
+  image_width = image_shape[1]
+  crop_size_assert = tf.Assert(
+      tf.logical_and(
+          tf.greater_equal(image_height, crop_height),
+          tf.greater_equal(image_width, crop_width)),
+      ['Crop size greater than the image size.'])
+
+  asserts = [rank_assertions[0], crop_size_assert]
+
+  for i in range(1, len(image_list)):
+    image = image_list[i]
+    asserts.append(rank_assertions[i])
+    with tf.control_dependencies([rank_assertions[i]]):
+      shape = tf.shape(image)
+    height = shape[0]
+    width = shape[1]
+
+    height_assert = tf.Assert(
+        tf.equal(height, image_height),
+        ['Wrong height for tensor %s [expected][actual]',
+         image.name, height, image_height])
+    width_assert = tf.Assert(
+        tf.equal(width, image_width),
+        ['Wrong width for tensor %s [expected][actual]',
+         image.name, width, image_width])
+    asserts.extend([height_assert, width_assert])
+
+  # Create a random bounding box.
+  #
+  # Use tf.random_uniform and not numpy.random.rand as doing the former would
+  # generate random numbers at graph eval time, unlike the latter which
+  # generates random numbers at graph definition time.
+  with tf.control_dependencies(asserts):
+    max_offset_height = tf.reshape(image_height - crop_height + 1, [])
+  with tf.control_dependencies(asserts):
+    max_offset_width = tf.reshape(image_width - crop_width + 1, [])
+  offset_height = tf.random_uniform(
+      [], maxval=max_offset_height, dtype=tf.int32)
+  offset_width = tf.random_uniform(
+      [], maxval=max_offset_width, dtype=tf.int32)
+
+  return [_crop(image, offset_height, offset_width,
+                crop_height, crop_width) for image in image_list]
 
 def _crop(image, offset_height, offset_width, crop_height, crop_width):
   """Crops the given image using the provided offsets and sizes.
@@ -172,6 +249,7 @@ def preprocess_for_train(image,
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
   image = tf.image.random_flip_left_right(image)
+  image = image * 2./255. - 1
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 def preprocess_for_eval(image, output_height, output_width, resize_side):
@@ -188,6 +266,8 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   image = _central_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
+  image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+  image = image * 2./255. - 1
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
@@ -219,6 +299,35 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     return preprocess_for_eval(image, output_height, output_width,
                                resize_side_min)
 
+  # END IF
+
+def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
+    """
+    Loop the video the number of times necessary for the number of frames to be > footprint
+    Args:
+        :offset_tensor:     Raw input data from offset frame number
+        :input_data_tensor: Raw input data
+        :frames:            Total number of frames
+        :height:            Height of frame
+        :width:             Width of frame
+        :channel:           Total number of color channels
+        :footprint:         Total length of video to be extracted before sampling down
+
+    Return:
+        Looped video
+    """
+
+    loop_factor       = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
+    loop_stack        = tf.stack([loop_factor,1,1,1])
+    input_data_tensor = tf.tile(input_data_tensor, loop_stack)
+    reshape_stack     = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
+    input_data_looped = tf.reshape(input_data_tensor, reshape_stack)
+
+    output_data       = tf.concat([offset_tensor, input_data_looped], axis = 0)
+
+    return output_data
+
+
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
     """
     Preprocessing function corresponding to the chosen model
@@ -239,13 +348,29 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         Preprocessing input data and labels tensor
     """
 
-    num_frames_per_clip = input_dims
+    if istraining:
+        footprint = 64
+
+    else:
+        footprint = 250
+    
+    # END IF
+
+    # Selecting a random, seeded temporal offset
+    temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-1, shape=np.asarray([1]))[0]
+
+
+    # Loop video video if it is shorter than footprint
+    input_data_tensor = tf.cond(tf.less(frames-temporal_offset, footprint),
+                            lambda: _loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint),
+                            lambda: input_data_tensor)
+
+    # Remove excess frames after looping to reduce to footprint size
+    input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
+    input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
-
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=size[0]), input_data_tensor)
-
-    input_data_tensor = input_data_tensor - _mean_image.tolist()
 
     return input_data_tensor
 

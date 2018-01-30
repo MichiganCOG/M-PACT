@@ -151,7 +151,7 @@ class Metrics():
 
         self.total_predictions += 1
         current_accuracy = self.get_accuracy()
-
+        
         if self.verbose:
             print "vidName: ",names
             print "label:  ", label
