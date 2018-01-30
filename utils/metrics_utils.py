@@ -26,11 +26,18 @@ class Metrics():
         :_svm_classify:
     """
 
-    def __init__(self, output_dims, logger, method, is_training, model_name, exp_name, dataset, verbose=1):
+    def __init__(self, output_dims, logger, method, is_training, model_name, exp_name, dataset, verbose=1, load_svm=False):
         """
         Args:
             :output_dims: Output dimensions of the model, used to verify the shape of predictions
+            :logger:      The logger object that will save the testing performance.
+            :method:      The metrics method to be used (svm, svm_train, avg_pooling, last_frame)
+            :is_training: Boolean indicating whether the testlist or trainlist is being used.
+            :model_name:  Name of the model that is being tested
+            :exp_name:    Name of experiment weights that the logs will be saved under.
+            :dataset:     Which dataset is currently being tested.
             :verbose:     Setting verbose command
+            :load_svm:    Boolean indication whether to load saved svm testlist features or to extract them. Intended for debugging.
         """
         self.output_dims=output_dims
         self.verbose=verbose
@@ -45,11 +52,14 @@ class Metrics():
         self.step=0
         self.is_training = is_training
         self.file_name_dict = {}
+
         if self.is_training:
             self.log_name = 'train'
 
         else:
             self.log_name = 'test'
+
+        # END IF
 
         if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5')) and 'svm' not in self.method:
             os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
@@ -61,7 +71,13 @@ class Metrics():
 
         # END IF
 
-        self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'), 'w')
+        # Debugging, load saved train and test features for an svm without regenerating the features
+        if load_svm:
+            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'), 'r')
+        else:
+            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'), 'w')
+
+        # END IF
 
     def get_accuracy(self):
         """
@@ -224,15 +240,6 @@ class Metrics():
 
         # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
         for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
-
-            if model_output_dimensions > 2:
-                model_output[index] = np.mean(model_output[index], axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
-
-            # END IF
-
-            # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
             prediction = model_output[index].argmax()
             label = labels[index]
 
@@ -291,7 +298,7 @@ class Metrics():
             model_output_dimensions = len(mean_feature.shape)
 
             if model_output_dimensions > 2:
-                mean_feature = np.mean(mean_feature, axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+                mean_feature = np.array(mean_feature)[:,-1,:]   # Extract the last frame from each clip
 
             # END IF
 
@@ -306,12 +313,6 @@ class Metrics():
 
         # For each video, select only the last frame of each clip and average the last frames then take the argmax prediction and compare it to the ground truth sabel
         for index in range(len(model_output)):
-            model_output_dimensions = len(np.array(model_output[index]).shape)
-            if model_output_dimensions > 2:
-                model_output[index] = np.array(model_output[index])[:,-1,:]
-
-            # Average the outputs for the clips
-            model_output[index] = np.mean(model_output[index], 0)
             prediction = model_output[index].argmax()
             label = labels[index]
 
@@ -362,7 +363,7 @@ class Metrics():
             for clip in train_hdf5[vid_name]['Data'].keys():
                 temp_data.append(train_hdf5[vid_name]['Data'][clip].value)
 
-            # END IF
+            # END FOR
 
             mean_feature = np.array(temp_data)
             model_output_dimensions = len(mean_feature.shape)
