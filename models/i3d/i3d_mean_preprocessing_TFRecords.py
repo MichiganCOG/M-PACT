@@ -249,8 +249,9 @@ def preprocess_for_train(image,
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
   image = tf.image.random_flip_left_right(image)
+  image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
   image = image * 2./255. - 1
-  return image
+  return image 
 
 def preprocess_for_eval(image, output_height, output_width, resize_side):
   """Preprocesses the given image for evaluation.
@@ -266,8 +267,9 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   image = _central_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
+  image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
   image = image * 2./255. - 1
-  return image
+  return image 
 
 
 def preprocess_image(image, output_height, output_width, is_training=False,
@@ -299,6 +301,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
                                resize_side_min)
 
   # END IF
+
 
 def _pad_video(input_data_tensor, frames, height, width, channel, footprint):
     """
