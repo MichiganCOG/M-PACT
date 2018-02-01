@@ -136,6 +136,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Initialize model variables
         global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
+        number_of_videos   = tf.Variable(num_vids, name='number_of_videos', trainable=False)
+        number_of_epochs   = tf.Variable(n_epochs, name='number_of_epochs', trainable=False)
         istraining         = True
         reuse_variables    = None
 
@@ -154,7 +156,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Setup tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
         # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
-        
+
         # Define optimizer (Current selection is only momentum optimizer)
         optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
 
@@ -438,6 +440,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Initialize model variables
         istraining  = False
         global_step = tf.Variable(gs_init, name='global_step', trainable=False)
+        number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
+        number_of_epochs = tf.Variable(1, name='number_of_epochs', trainable=False)
 
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
@@ -491,21 +495,26 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # END IF
 
-        while videos_loaded < num_vids:
+        while videos_loaded <= num_vids:
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
 
                 # END IF
 
             for batch_idx in range(len(names)):
-                if names[batch_idx] != previous_vid_name:
+                vid_name = names[batch_idx]
+                if vid_name != previous_vid_name:
+                    previous_vid_name = vid_name
                     videos_loaded += 1
-                    previous_vid_name = names[batch_idx]
-
                     if verbose:
                         print "Number of videos loaded: ", videos_loaded
 
+
+                # Extract remaining clips from currently loaded video, once it finishes exit while loop
+                if videos_loaded > num_vids:
+                    break
+
                 count += 1
-                metrics.log_prediction(labels[batch_idx][0], output_predictions[batch_idx], names[batch_idx], count)
+                metrics.log_prediction(labels[batch_idx][0], output_predictions[batch_idx], vid_name, count)
 
             # END IF
 
