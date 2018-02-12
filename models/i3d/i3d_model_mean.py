@@ -1,4 +1,4 @@
-" I3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" I3D MODEL WITH MEAN SUBTRACTION IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import time
@@ -8,11 +8,11 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils             import *
-from utils                          import initialize_from_dict
-from i3d_preprocessing_TFRecords    import preprocess   as preprocess_tfrecords
+from utils.layers_utils               import *
+from utils                            import initialize_from_dict
+from i3d_mean_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
-class I3D():
+class I3D_mean():
 
     def __init__(self, verbose=True):
         """
@@ -438,7 +438,7 @@ class I3D():
 
                 layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False))
                 
-                layers['logits'] = tf.expand_dims(tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1), 1) 
+                layers['logits'] = tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1)
 
             # END WITH
 
@@ -476,6 +476,7 @@ class I3D():
         Return:
             Cross entropy loss value
         """
+
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
