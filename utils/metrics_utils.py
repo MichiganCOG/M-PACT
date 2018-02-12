@@ -61,7 +61,7 @@ class Metrics():
 
         # END IF
 
-        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5')) and 'svm' not in self.method:
+        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5')) and ('svm' not in self.method and 'features' not in self.method):
             os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
 
         if self.method == 'svm':
@@ -138,6 +138,9 @@ class Metrics():
         elif 'svm' in self.method:
             prediction = -1
 
+        elif self.method == 'extract_features':
+            prediction = -1
+
         else:
             print "Error: Invalid classification method ", self.method
             exit()
@@ -151,7 +154,7 @@ class Metrics():
 
         self.total_predictions += 1
         current_accuracy = self.get_accuracy()
-        
+
         if self.verbose:
             print "vidName: ",names
             print "label:  ", label
@@ -181,10 +184,18 @@ class Metrics():
 
         elif self.method == 'svm':
             accuracy = self._svm_classify()
+            self.save_file.close()
+            print 'Please now classify this model using the testing split of this dataset.'
+            accuracy = -1
 
         elif self.method == 'svm_train':
             self.save_file.close()
             print 'Please now classify this model using the testing split of this dataset.'
+            accuracy = -1
+
+        elif self.method == 'extract_features':
+            self.save_file.close()
+            print 'Logged accuracies for this model are irrelevent.'
             accuracy = -1
 
         else:

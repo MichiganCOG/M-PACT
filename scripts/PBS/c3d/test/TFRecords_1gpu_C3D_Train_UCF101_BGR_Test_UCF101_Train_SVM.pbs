@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_C3D_Train_UCF101_Test_UCF101_Test_SVM_no_RELU     # Name of the job
+#PBS -N TFRecords_1gpu_C3D_Train_UCF101_BGR_Test_UCF101_Train_SVM     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -116,20 +116,20 @@ python train_test_TFRecords_multigpu_model.py \
 --dataset UCF101 \
 --loadedDataset UCF101 \
 --train 0 \
---load 0 \
---numVids 3783 \
---fName testlist \
+--load 1 \
+--numVids 9537 \
+--fName trainlist \
 --size 112 \
 --inputDims 16 \
 --outputDims 101 \
 --seqLength 16 \
 --clipLength 16 \
 --clipOverlap 8 \
---expName tfrecords_pretrain_Sports1M_c3d_UCF101_no_RELU \
+--expName c3d_tf_UCF101_bgr \
 --verbose 1 \
 --batchSize 1 \
 --returnLayer dense1 \
---metricsMethod svm
+--metricsMethod svm_train
 
 
 echo "end"

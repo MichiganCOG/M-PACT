@@ -50,7 +50,11 @@ def load_checkpoint(model, dataset, experiment_name):
         data_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints', filename+'.dat'), 'r')
         data_str = data_file.readlines()
         for data in data_str:
-            data_name, data_value = data.split('-')
+            if ':' in data:
+                data_name, data_value = data.split(':')
+            else:
+                data_name = data[:2]
+                data_value = data[3:]
 
             if data_name == "lr":
                 lr_init = float(data_value)
@@ -91,7 +95,7 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
     c_file.close()
 
     data_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints', filename+'.dat'), 'w')
-    data_file.write('lr-'+str(lr)+'\n')
+    data_file.write('lr:'+str(lr)+'\n')
     data_file.close()
 
     data_dict = {}

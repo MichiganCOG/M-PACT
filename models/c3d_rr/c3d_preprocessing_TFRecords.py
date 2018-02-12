@@ -1,6 +1,9 @@
 import tensorflow as tf
 import numpy as np
 
+'''
+Random Resampling
+'''
 
 _R_MEAN = 123.68
 _G_MEAN = 116.78
@@ -120,21 +123,25 @@ def _aspect_preserving_resize(image, smallest_side):
   return resized_image
 
 
-def preprocess_for_eval(image, output_height, output_width, resize_side):
-  """Preprocesses the given image for evaluation.
-  Args:
-    image: A `Tensor` representing an image of arbitrary size.
-    output_height: The height of the image after preprocessing.
-    output_width: The width of the image after preprocessing.
-    resize_side: The smallest side of the image for aspect-preserving resizing.
-  Returns:
-    A preprocessed image.
-  """
-  image = _aspect_preserving_resize(image, resize_side)
-  image = _central_crop([image], output_height, output_width)[0]
-  image.set_shape([output_height, output_width, 3])
-  image = tf.to_float(image)
-  return image
+def random_resample(video, sample_dims, frame_count, alpha):
+    """Return video sampled at random rate
+    Args:
+        :video:       Raw input data
+        :frame_count: Total number of frames
+        :sample_dims: Number of frames to be provided as input to model
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
+
+    indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
+    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output
+
 
 
 def preprocess_image(image, output_height, output_width, is_training=False,
@@ -157,9 +164,11 @@ def preprocess_image(image, output_height, output_width, is_training=False,
   Returns:
     A preprocessed image.
   """
-
-  return preprocess_for_eval(image, output_height, output_width,
-                             resize_side_min)
+  image = _aspect_preserving_resize(image, resize_side_min)
+  image = _central_crop([image], output_height, output_width)[0]
+  image.set_shape([output_height, output_width, 3])
+  image = tf.to_float(image)
+  return image
 
 
 
@@ -183,6 +192,8 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     Return:
         Preprocessing input data and labels tensor
     """
+    tf.set_random_seed(0)
+    input_data_tensor = input_data_tensor[...,::-1]
 
     num_frames_per_clip = input_dims
 
@@ -191,9 +202,15 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 #    input_data_tensor = input_data_tensor[temporal_offset:temporal_offset+num_frames_per_clip,:,:,:]
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
+    if istraining:
+        rr = tf.random_uniform(dtype=tf.float32, minval=0.2, maxval=3.0, shape=np.asarray([1]))[0]
+    else:
+        rr = 1.0
+
+    input_data_tensor = random_resample(input_data_tensor, input_dims, frames, rr)
 
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=size[0]), input_data_tensor)
 
-    input_data_tensor = input_data_tensor - _mean_image.tolist()
+    input_data_tensor = input_data_tensor - _mean_image[...,::-1].tolist()
 
-    return input_data_tensor
+    return input_data_tensor, rr

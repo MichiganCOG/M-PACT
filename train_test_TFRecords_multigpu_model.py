@@ -66,7 +66,7 @@ def _average_gradients(tower_grads):
     return average_grads
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, clip_offset, num_clips, clip_overlap, batch_size, loss_type, verbose):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, verbose):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -138,8 +138,17 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
         number_of_videos   = tf.Variable(num_vids, name='number_of_videos', trainable=False)
         number_of_epochs   = tf.Variable(n_epochs, name='number_of_epochs', trainable=False)
+
         istraining         = True
         reuse_variables    = None
+
+        # TF session setup
+        config  = tf.ConfigProto(allow_soft_placement=True)
+        sess    = tf.Session(config=config)
+        init    = tf.global_variables_initializer()
+        sess.run(init)
+
+
 
         model_params_array = []
         for rl in range(len(return_layer)-1):
@@ -154,7 +163,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose)
         # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
 
         # Define optimizer (Current selection is only momentum optimizer)
@@ -238,8 +247,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
 
         # TF session setup
-        config  = tf.ConfigProto(allow_soft_placement=True)
-        sess    = tf.Session(config=config)
+#        config  = tf.ConfigProto(allow_soft_placement=True)
+#        sess    = tf.Session(config=config)
         init    = tf.global_variables_initializer()
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
@@ -275,7 +284,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Loop epoch number of time over the training set
         while videos_loaded < n_epochs*num_vids:
             # Variable to update during epoch intervals
-            if (epoch_count+1)*num_vids + 1 <= videos_loaded < (epoch_count+1)*num_vids + num_gpus + 1:
+            if (epoch_count+1)*num_vids + 1 <= videos_loaded < (epoch_count+1)*num_vids + num_gpus*batch_size + 1:
                 batch_count = 0
                 epoch_acc   = 0
 
@@ -332,7 +341,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 for batch_idx in range(predictions[gpu_idx].shape[0]):
                     pred = np.mean(predictions[gpu_idx][batch_idx], 0).argmax()
 
-                    if pred == labels[gpu_idx][0]:
+                    if pred == labels[gpu_idx*batch_size + batch_idx][0]:
                         epoch_acc +=1
 
                     # END IF
@@ -383,7 +392,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # END WITH
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, verbose):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, verbose):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -440,14 +449,14 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Initialize model variables
         istraining  = False
-        global_step = tf.Variable(gs_init, name='global_step', trainable=False)
-        number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
-        number_of_epochs = tf.Variable(1, name='number_of_epochs', trainable=False)
+        global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
+        number_of_videos   = tf.Variable(num_vids, name='number_of_videos', trainable=False)
+        number_of_epochs   = tf.Variable(n_epochs, name='number_of_epochs', trainable=False)
 
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose)
         # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
 
         # Model Inference
@@ -600,8 +609,11 @@ if __name__=="__main__":
     parser.add_argument('--clipLength', action='store', type=int, default=-1,
             help = 'Length of clips to cut video into, -1 indicates using the entire video as one clip')
 
+    parser.add_argument('--videoOffset', action='store', default='none',
+            help = '(none or random) indicating where to begin selecting video clips assuming clipOffset is none')
+
     parser.add_argument('--clipOffset', action='store', default='none',
-            help = '(none or random) indicating where to begin selecting video clips')
+            help = '(none or random) indicating if clips are seleted sequentially or randomly')
 
     parser.add_argument('--clipOverlap', action='store', type=int, default=0,
             help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
@@ -610,7 +622,7 @@ if __name__=="__main__":
             help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
 
     parser.add_argument('--metricsMethod', action='store', default='avg_pooling',
-            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, or svm_train)')
+            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train, or extract_features)')
 
     parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
             help = 'Which model layers to be returned by the models\' inference and logged.')
@@ -623,6 +635,10 @@ if __name__=="__main__":
 
     parser.add_argument('--verbose', action='store', type=int, default=1,
             help = 'Boolean switch to display all print statements or not')
+
+    parser.add_argument('--alpha', action='store', type=float, default=1.,
+            help = 'Resampling factor for constant value resampling')
+
     args = parser.parse_args()
 
     print "Setup of current experiments"
@@ -638,17 +654,26 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    #elif model_name == 'c3d':
-    #   model = C3D(verbose=args.verbose)
+    elif model_name == 'c3d':
+        model = C3D(verbose=args.verbose)
+
+    elif model_name == 'c3d_cvr':
+        model = C3D_CVR(cvr=args.alpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_rr':
+        model = C3D_RR(verbose=args.verbose)
+
+    elif model_name == 'c3d_sr':
+        model = C3D_SR(verbose=args.verbose)
 
     elif model_name == 'i3d':
-       model = I3D(verbose=args.verbose)
+        model = I3D(verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
 
-    #elif model_name == 'resnet_RIL_interp_median_v23_4':
-    #    model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
+    elif model_name == 'resnet_RIL_interp_median_v23_4':
+        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_7_1':
     #    model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25, verbose=args.verbose)
@@ -702,6 +727,7 @@ if __name__=="__main__":
                 save_freq           = args.saveFreq,
                 return_layer        = args.returnLayer,
                 clip_length         = args.clipLength,
+                video_offset        = args.videoOffset,
                 clip_offset         = args.clipOffset,
                 num_clips           = args.numClips,
                 clip_overlap        = args.clipOverlap,
@@ -725,6 +751,7 @@ if __name__=="__main__":
                 load_model        = args.load,
                 return_layer      = args.returnLayer,
                 clip_length       = args.clipLength,
+                video_offset      = args.videoOffset,
                 clip_offset       = args.clipOffset,
                 num_clips         = args.numClips,
                 clip_overlap      = args.clipOverlap,

@@ -2,7 +2,8 @@
 *.npy
 Logs
 logs/
-
+*c3d_Sports1M*
+*c3d_frozen*
 *.mp4
 *.o*
 results/*

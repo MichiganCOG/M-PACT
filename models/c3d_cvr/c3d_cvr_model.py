@@ -15,15 +15,15 @@ from utils.layers_utils                import *
 from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
-class C3D():
-    def __init__(self, verbose=True):
+class C3D_CVR():
+    def __init__(self, cvr, verbose=True):
         """
         Args:
             :verbose: Setting verbose command
         """
         self.verbose=verbose
-        self.name = 'c3d'
-
+        self.name = 'c3d_cvr'
+        self.cvr = cvr
         if verbose:
             print "C3D Model Initialized"
 
@@ -56,6 +56,8 @@ class C3D():
 
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
+
+            layers['Parameterization_Variables'] = self.alpha_tensor
 
             layers['conv1'] = conv3d_layer(input_tensor=inputs,
                     filter_dims=[3, 3, 3, 64],
@@ -159,8 +161,9 @@ class C3D():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
-
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.cvr)
+        self.alpha_tensor = tf.Variable(alpha_tensor, trainable=False)
+        return output
 
 
     """ Function to return loss calculated on given network """
