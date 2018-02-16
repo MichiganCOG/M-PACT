@@ -12,7 +12,7 @@ def make_dir(path):
         pass
 
 
-def load_checkpoint(model, dataset, experiment_name):
+def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
     """
     Function to checkpoint file (both ckpt text file, numpy and dat file)
     Args:
@@ -23,25 +23,29 @@ def load_checkpoint(model, dataset, experiment_name):
     Return:
         numpy containing model parameters, global step and learning rate saved values.
     """
-    try:
-        checkpoints_file = os.path.join('results', model, dataset, experiment_name, 'checkpoints', 'checkpoint')
-        f = open(checkpoints_file, 'r')
-        filename = f.readline()
-        f.close()
-        filename = filename.split(' ')[1].split('\"')[1]
+    if loaded_checkpoint == -1:
+        try:
+            checkpoints_file = os.path.join('results', model, dataset, experiment_name, 'checkpoints', 'checkpoint')
+            f = open(checkpoints_file, 'r')
+            filename = f.readline()
+            f.close()
+            filename = filename.split(' ')[1].split('\"')[1]
 
-    except:
-        print "Failed to load checkpoint information file"
-        exit()
+        except:
+            print "Failed to load checkpoint information file"
+            exit()
 
-    # END TRY
+        # END TRY
+
+    else:
+        filename = 'checkpoint-'+str(loaded_checkpoint)
 
     try:
         gs_init = int(filename.split('-')[1])
         ckpt = np.load(os.path.join('results', model, dataset,  experiment_name, 'checkpoints',filename+'.npy'))
 
     except:
-        print "Failed to load saved checkpoint numpy file"
+        print "Failed to load saved checkpoint numpy file: ", filename
         exit()
 
     # END TRY
@@ -68,7 +72,7 @@ def load_checkpoint(model, dataset, experiment_name):
         return ckpt, gs_init, lr_init
 
     except:
-        print "Failed to extract checkpoint data"
+        print "Failed to extract checkpoint data: ", filename
         exit()
 
     # END TRY

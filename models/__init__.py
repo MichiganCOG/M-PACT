@@ -5,6 +5,9 @@ from resnet.resnet_model                     import ResNet
 from c3d_cvr.c3d_cvr_model 			         import C3D_CVR
 from c3d_rr.c3d_rr_model 			         import C3D_RR
 from c3d_sr.c3d_sr_model 			         import C3D_SR
+from c3d_alpha.c3d_alpha_model 			     import C3D_ALPHA
+from c3d_alpha.c3d_alpha_sine_model 		 import C3D_ALPHA_SINE
+from c3d_alpha.c3d_alpha_div_100_model       import C3D_ALPHA_DIV_100
 from c3d.c3d_model  			             import C3D
 from i3d.i3d_model  			             import I3D
 from i3d.i3d_model_mean  		             import I3D_mean

@@ -16,7 +16,7 @@ from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
 class C3D_CVR():
-    def __init__(self, cvr, verbose=True):
+    def __init__(self, cvr, input_alpha=1.0, verbose=True):
         """
         Args:
             :verbose: Setting verbose command
@@ -24,6 +24,7 @@ class C3D_CVR():
         self.verbose=verbose
         self.name = 'c3d_cvr'
         self.cvr = cvr
+        self.input_alpha = input_alpha
         if verbose:
             print "C3D Model Initialized"
 
@@ -161,7 +162,7 @@ class C3D_CVR():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.cvr)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.cvr, self.input_alpha)
         self.alpha_tensor = tf.Variable(alpha_tensor, trainable=False)
         return output
 

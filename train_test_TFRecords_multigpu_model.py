@@ -66,7 +66,7 @@ def _average_gradients(tower_grads):
     return average_grads
 
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, verbose):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -119,7 +119,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Load pre-trained/saved model to continue training (or fine-tune)
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name, loaded_checkpoint)
                 if verbose:
                     print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
@@ -244,7 +244,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir(os.path.join('results',model.name, dataset))
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
+        curr_logger = Logger(os.path.join('logs',model.name,dataset,metrics_dir, log_name))
 
         # TF session setup
 #        config  = tf.ConfigProto(allow_soft_placement=True)
@@ -391,7 +391,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # END WITH
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, verbose):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -430,7 +430,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Load pre-trained/saved model
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name, loaded_checkpoint)
                 if verbose:
                     print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
@@ -450,7 +450,6 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         istraining  = False
         global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
         number_of_videos   = tf.Variable(num_vids, name='number_of_videos', trainable=False)
-        number_of_epochs   = tf.Variable(n_epochs, name='number_of_epochs', trainable=False)
 
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
@@ -474,17 +473,18 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
         log_name    = ("exp_test_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                dataset, experiment_name, metrics_method))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, log_name))
+        curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
+        make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
 
         # TF session setup
         sess    = tf.Session()
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = Metrics( output_dims, curr_logger, metrics_method, is_training, model.name, experiment_name, dataset, verbose=verbose)
+        metrics = Metrics( output_dims, curr_logger, metrics_method, is_training, model.name, experiment_name, dataset, metrics_dir, verbose=verbose)
 
         # Variables get randomly initialized into tf graph
         sess.run(init)
@@ -542,7 +542,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         print total_pred
 
     # Save results in numpy format
-    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name,'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
+    np.save(os.path.join('results', model.name, dataset, experiment_name, metrics_dir,'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
 
 
 if __name__=="__main__":
@@ -635,8 +635,20 @@ if __name__=="__main__":
     parser.add_argument('--verbose', action='store', type=int, default=1,
             help = 'Boolean switch to display all print statements or not')
 
-    parser.add_argument('--alpha', action='store', type=float, default=1.,
-            help = 'Resampling factor for constant value resampling')
+    parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
+            help = 'Resampling factor for constant value resampling and alpha initialization')
+
+    parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
+            help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
+
+    parser.add_argument('--resampleFrames', action='store', type=int, default=16,
+            help = 'Number of frames remaining after resampling within model inference.')
+
+    parser.add_argument('--metricsDir', action='store', type=str, default='default',
+            help = 'Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.')
+
+    parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
+            help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
 
     args = parser.parse_args()
 
@@ -654,22 +666,31 @@ if __name__=="__main__":
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
     elif model_name == 'c3d':
-        model = C3D(verbose=args.verbose)
+        model = C3D(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'c3d_cvr':
-        model = C3D_CVR(cvr=args.alpha, verbose=args.verbose)
+        model = C3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'c3d_rr':
-        model = C3D_RR(verbose=args.verbose)
+        model = C3D_RR(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'c3d_sr':
-        model = C3D_SR(verbose=args.verbose)
+        model = C3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha':
+        model = C3D_ALPHA(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_sine':
+        model = C3D_ALPHA_SINE(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_div_100':
+        model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
 
     elif model_name == 'i3d':
         model = I3D(verbose=args.verbose)
 
     elif model_name == 'i3d_mean':
-       model = I3D_mean(verbose=args.verbose)
+        model = I3D_mean(verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
@@ -735,6 +756,8 @@ if __name__=="__main__":
                 clip_overlap        = args.clipOverlap,
                 batch_size          = args.batchSize,
                 loss_type           = args.lossType,
+                metrics_dir         = args.metricsDir,
+                loaded_checkpoint   = args.loadedCheckpoint,
                 verbose             = args.verbose)
 
     else:
@@ -759,4 +782,6 @@ if __name__=="__main__":
                 clip_overlap      = args.clipOverlap,
                 metrics_method    = args.metricsMethod,
                 batch_size        = args.batchSize,
+                metrics_dir       = args.metricsDir,
+                loaded_checkpoint = args.loadedCheckpoint,
                 verbose           = args.verbose)
