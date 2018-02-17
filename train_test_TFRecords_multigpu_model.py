@@ -302,7 +302,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 
             time_pre_train = time.time()
-
+            
             _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
@@ -675,13 +675,25 @@ if __name__=="__main__":
         model = C3D_RR(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'c3d_sr':
-        model = C3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
+        model = C3D_SR(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_sr_quant':
+        model = C3D_SR_QUANT(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
+
+    elif model_name == 'c3d_sr_step':
+        model = C3D_SR_STEP(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
 
     elif model_name == 'c3d_alpha':
         model = C3D_ALPHA(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
 
     elif model_name == 'c3d_alpha_sine':
         model = C3D_ALPHA_SINE(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_sine_100':
+        model = C3D_ALPHA_SINE_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_exp':
+        model = C3D_ALPHA_EXP(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
 
     elif model_name == 'c3d_alpha_div_100':
         model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)

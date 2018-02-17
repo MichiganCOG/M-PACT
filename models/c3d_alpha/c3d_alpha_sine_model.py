@@ -16,7 +16,7 @@ from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
 class C3D_ALPHA_SINE():
-    def __init__(self, model_alpha=0.25, input_alpha=1.0, resample_frames=16, verbose=True):
+    def __init__(self, model_alpha=0.0, input_alpha=1.0, resample_frames=16, verbose=True):
         """
         Args:
             :verbose:    Setting verbose command
@@ -46,9 +46,11 @@ class C3D_ALPHA_SINE():
         Return:
             :output: Extracted features
         """
+        max_alpha = 3.0
+        min_alpha = 0.2
 
         # Scale alpha to gradually increase in the range of 0.2 to 3.0
-        sample_alpha_tick = tf.sin(params[0])*1.4+1.6
+        sample_alpha_tick = tf.sin(params[0])* ((max_alpha-min_alpha)/2.0)+ ((max_alpha+min_alpha)/2.0)
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()

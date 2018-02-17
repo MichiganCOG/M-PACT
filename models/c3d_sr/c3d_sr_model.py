@@ -16,12 +16,13 @@ from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
 class C3D_SR():
-    def __init__(self, input_alpha=1.0, verbose=True):
+    def __init__(self, model_alpha=1.0, input_alpha=1.0, verbose=True):
         """
         Args:
             :verbose: Setting verbose command
         """
         self.verbose=verbose
+        self.model_alpha = model_alpha
         self.input_alpha = input_alpha
         self.name = 'c3d_sr'
 
@@ -161,7 +162,7 @@ class C3D_SR():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha)
         return output
 
 
