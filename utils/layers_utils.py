@@ -11,6 +11,7 @@ def conv_layer(input_tensor,
                weight_decay=0.0,
                padding='SAME',
                groups=1,
+               trainable=True,
                non_linear_fn=tf.nn.relu,
                kernel_init=tf.truncated_normal_initializer(stddev=0.01),
                bias_init=tf.constant_initializer(0.1)):
@@ -46,12 +47,12 @@ def conv_layer(input_tensor,
     with tf.variable_scope(name) as scope:
         if groups == 1:
             w = tf.get_variable('kernel', shape=[filter_h, filter_w, num_channels_in, num_channels_out],
-                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay), trainable=trainable)
             output = convolve(input_tensor, w)
 
         else:
             w = tf.get_variable('kernel', shape=[filter_h, filter_w, int(num_channels_in/groups), num_channels_out],
-                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay), trainable=trainable)
 
             input_groups  = tf.split(input_tensor, groups, axis=3)
             kernel_groups = tf.split(w, groups, axis=3)
@@ -60,7 +61,7 @@ def conv_layer(input_tensor,
 
         # END IF
 
-        b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
+        b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init, trainable=trainable)
         conv_out = output + b
 
         if non_linear_fn is not None:
@@ -81,6 +82,7 @@ def conv3d_layer(input_tensor,
                padding='SAME',
                groups=1,
                use_bias=True,
+               trainable=True,
                non_linear_fn=tf.nn.relu,
                kernel_init=tf.truncated_normal_initializer(stddev=0.01),
                bias_init=tf.constant_initializer(0.1)):
@@ -116,12 +118,12 @@ def conv3d_layer(input_tensor,
     with tf.variable_scope(name) as scope:
         if groups == 1:
             w = tf.get_variable('kernel', shape=[filter_d, filter_h, filter_w, num_channels_in, num_channels_out],
-                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay), trainable=trainable)
             output = convolve(input_tensor, w)
 
         else:
             w = tf.get_variable('kernel', shape=[filter_d, filter_h, filter_w, int(num_channels_in/groups), num_channels_out],
-                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
+                                initializer=kernel_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay), trainable=trainable)
 
             input_groups  = tf.split(input_tensor, groups, axis=3)
             kernel_groups = tf.split(w, groups, axis=3)
@@ -131,7 +133,7 @@ def conv3d_layer(input_tensor,
         # END IF
 
         if use_bias:
-            b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init)
+            b        = tf.get_variable('bias', shape=[num_channels_out], initializer=bias_init, trainable=trainable)
             conv_out = output + b
 
         else:
@@ -254,6 +256,7 @@ def fully_connected_layer(input_tensor,
                           out_dim,
                           name,
                           weight_decay=0.0,
+                          trainable=True,
                           non_linear_fn=tf.nn.relu,
                           weight_init=tf.truncated_normal_initializer(stddev=0.01),
                           bias_init=tf.constant_initializer(0.1)):
@@ -288,8 +291,8 @@ def fully_connected_layer(input_tensor,
 
         # END IF
 
-        w      = tf.get_variable('kernel', shape=[in_dim, out_dim], initializer=weight_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay))
-        b      = tf.get_variable('bias', shape=[out_dim], initializer=bias_init)
+        w      = tf.get_variable('kernel', shape=[in_dim, out_dim], initializer=weight_init, regularizer=tf.contrib.layers.l2_regularizer(weight_decay), trainable=trainable)
+        b      = tf.get_variable('bias', shape=[out_dim], initializer=bias_init, trainable=trainable)
         fc_out = tf.add(tf.matmul(flat_input, w), b, name=scope.name)
 
         if non_linear_fn is not None:

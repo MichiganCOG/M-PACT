@@ -7,7 +7,7 @@ from random import shuffle
 
 
 
-def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, verbose=True):
+def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose=True):
     """
     Function load dataset, setup queue and read data into queue
     Args:
@@ -59,7 +59,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[]])
 
     # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
-    enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, tfrecord_file_queue))
+    enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue))
 
     # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
     qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*batch_size*thread_count)
@@ -71,7 +71,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     return input_data_tensor, labels_tensor, names_tensor
 
 
-def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, clip_offset, num_clips, clip_overlap, tfrecord_file_queue):
+def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue):
     """
     Function to load a single video and preprocess its' frames
     Args:
@@ -118,8 +118,8 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
         clips = [input_data_tensor]
         clips = tf.to_int32(clips)  # Usually occurs within _extract_clips
     else:
-        tf.cond(tf.greater(tf.convert_to_tensor(clip_length), frames),lambda:_error_loading_video(),lambda: 1) # Verify that there are not fewer frames than the requested clip_length
-        clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, clip_overlap)
+    #    tf.cond(tf.greater(tf.convert_to_tensor(clip_length), frames),lambda:_error_loading_video(),lambda: 1) # Verify that there are not fewer frames than the requested clip_length
+        clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, video_offset, clip_overlap, height, width, channel)
 
         # tf.Assert(tf.greater(frames, clip_length), [tf.constant("Video ")+name+tf.constant(" contained fewer frames than the specified clip length... Exiting")])
 
@@ -168,7 +168,7 @@ def _read_tfrecords(filename_queue):
     return features
 
 
-def _extract_clips(video, frames, num_clips, clip_offset, clip_length, clip_overlap):
+def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_offset, clip_overlap, height, width, channel):
     """
     Function that extracts clips from a video based off of clip specifications
     Args:
@@ -183,26 +183,82 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, clip_over
     Return:
         A tensor containing the clip(s) extracted from the video (shape [clip_number, clip_frames, height, width, channel])
     """
-    if clip_offset == 'random':
-        video_start = tf.random_uniform([], maxval=frames-1)
+    if video_offset == 'random':
+        video_start = tf.random_uniform([], maxval=frames-1, dtype=tf.int32)
+
     else:
         video_start = 0
 
-    iteration = tf.range(video_start, frames-clip_overlap+1, delta = clip_length-clip_overlap)[:-1]
+    if clip_offset == 'random':
+        video = tf.cond(tf.greater(clip_length, frames),
+                        lambda: _loop_video_with_offset(video, video, 0, frames, height, width, channel, clip_length),
+                        lambda: video)
 
-    if num_clips > 0:
-        iteration = iteration[:num_clips]
+        clip_begin = tf.random_uniform([num_clips], minval=0, maxval=tf.shape(video)[0]-clip_length+1, dtype=tf.int32)
+        rs = tf.reshape(clip_begin, [num_clips,1,1,1])
+        video = tf.to_int32(video)
+        clips = tf.map_fn(lambda clip_start: video[clip_start[0][0][0]:clip_start[0][0][0]+clip_length], rs)
 
-        # If the clip length caused there to be less clips than the requested num_clips, loop the video for the remaining number of clips
-        iteration = tf.cond(tf.greater(num_clips, tf.shape(iteration)[0]),
-                            lambda: tf.tile(iteration, [(num_clips-tf.shape(iteration)[0])/num_clips + 1])[:num_clips],
-                            lambda: iteration)
+    else:
+        if num_clips > 0:
+            frames_needed = clip_length + (clip_length-clip_overlap) * (num_clips-1)
+            video = tf.cond(tf.greater(frames_needed, frames-video_start),
+                            lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, video_start, frames, height, width, channel, clip_length+video_start),
+                            lambda: video[video_start:,:,:,:])
 
-    video = tf.to_int32(video)
-    clips = tf.map_fn(lambda clip_start: video[clip_start[0][0][0]:clip_start[0][0][0]+clip_length],
-                        tf.reshape(iteration, [tf.shape(iteration)[0], 1, 1, 1]))
+            clip_begin = tf.range(0, frames_needed, delta = clip_length-clip_overlap)[:num_clips]
+
+            rs = tf.reshape(clip_begin, [num_clips,1,1,1])
+            video = tf.to_int32(video)
+            clips = tf.map_fn(lambda clip_start: video[clip_start[0][0][0]:clip_start[0][0][0]+clip_length], rs)
+
+        else:
+            # Get total number of clips possible given clip_length overlap and offset
+
+            # Need minimum one clip: loop video until at least have clip_length frames
+            video = tf.cond(tf.greater(clip_length, frames-video_start),
+                            lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, video_start, frames, height, width, channel, clip_length+video_start),
+                            lambda: video[video_start:,:,:,:])
+
+            number_of_clips = tf.cond(tf.greater(clip_length, frames-video_start),
+                            lambda: 1,
+                            lambda: (frames-video_start-clip_length) / (clip_length - clip_overlap) + 1)
+
+
+            clip_begin = tf.range(0, number_of_clips*(clip_length-clip_overlap), delta=clip_length-clip_overlap)[:num_clips]
+
+            rs = tf.reshape(clip_begin, [num_clips,1,1,1])
+            video = tf.to_int32(video)
+            clips = tf.map_fn(lambda clip_start: video[clip_start[0][0][0]:clip_start[0][0][0]+clip_length], rs)
 
     return clips
+
+
+def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
+    """
+    Loop the video the number of times necessary for the number of frames to be > footprint
+    Args:
+        :offset_tensor:     Raw input data from offset frame number
+        :input_data_tensor: Raw input data
+        :frames:            Total number of frames
+        :height:            Height of frame
+        :width:             Width of frame
+        :channel:           Total number of color channels
+        :footprint:         Total length of video to be extracted before sampling down
+
+    Return:
+        Looped video
+    """
+
+    loop_factor       = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
+    loop_stack        = tf.stack([loop_factor,1,1,1])
+    input_data_tensor = tf.tile(input_data_tensor, loop_stack)
+    reshape_stack     = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
+    input_data_looped = tf.reshape(input_data_tensor, reshape_stack)
+
+    output_data       = tf.concat([offset_tensor, input_data_looped], axis = 0)
+
+    return output_data
 
 
 def _reduce_fps(video, frame_count):

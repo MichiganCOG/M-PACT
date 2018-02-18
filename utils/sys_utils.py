@@ -12,7 +12,7 @@ def make_dir(path):
         pass
 
 
-def load_checkpoint(model, dataset, experiment_name):
+def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
     """
     Function to checkpoint file (both ckpt text file, numpy and dat file)
     Args:
@@ -23,25 +23,29 @@ def load_checkpoint(model, dataset, experiment_name):
     Return:
         numpy containing model parameters, global step and learning rate saved values.
     """
-    try:
-        checkpoints_file = os.path.join('results', model, dataset, experiment_name, 'checkpoints', 'checkpoint')
-        f = open(checkpoints_file, 'r')
-        filename = f.readline()
-        f.close()
-        filename = filename.split(' ')[1].split('\"')[1]
+    if loaded_checkpoint == -1:
+        try:
+            checkpoints_file = os.path.join('results', model, dataset, experiment_name, 'checkpoints', 'checkpoint')
+            f = open(checkpoints_file, 'r')
+            filename = f.readline()
+            f.close()
+            filename = filename.split(' ')[1].split('\"')[1]
 
-    except:
-        print "Failed to load checkpoint information file"
-        exit()
+        except:
+            print "Failed to load checkpoint information file"
+            exit()
 
-    # END TRY
+        # END TRY
+
+    else:
+        filename = 'checkpoint-'+str(loaded_checkpoint)
 
     try:
         gs_init = int(filename.split('-')[1])
         ckpt = np.load(os.path.join('results', model, dataset,  experiment_name, 'checkpoints',filename+'.npy'))
 
     except:
-        print "Failed to load saved checkpoint numpy file"
+        print "Failed to load saved checkpoint numpy file: ", filename
         exit()
 
     # END TRY
@@ -50,7 +54,11 @@ def load_checkpoint(model, dataset, experiment_name):
         data_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints', filename+'.dat'), 'r')
         data_str = data_file.readlines()
         for data in data_str:
-            data_name, data_value = data.split('-')
+            if ':' in data:
+                data_name, data_value = data.split(':')
+            else:
+                data_name = data[:2]
+                data_value = data[3:]
 
             if data_name == "lr":
                 lr_init = float(data_value)
@@ -64,7 +72,7 @@ def load_checkpoint(model, dataset, experiment_name):
         return ckpt, gs_init, lr_init
 
     except:
-        print "Failed to extract checkpoint data"
+        print "Failed to extract checkpoint data: ", filename
         exit()
 
     # END TRY
@@ -91,7 +99,7 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
     c_file.close()
 
     data_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints', filename+'.dat'), 'w')
-    data_file.write('lr-'+str(lr)+'\n')
+    data_file.write('lr:'+str(lr)+'\n')
     data_file.close()
 
     data_dict = {}

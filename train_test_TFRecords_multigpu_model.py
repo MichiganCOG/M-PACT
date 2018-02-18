@@ -303,7 +303,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 
             time_pre_train = time.time()
-
+            
             _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
@@ -615,7 +615,7 @@ if __name__=="__main__":
             help = '(none or random) indicating where to begin selecting video clips assuming clipOffset is none')
 
     parser.add_argument('--clipOffset', action='store', default='none',
-            help = '(none or random) indicating where to begin selecting video clips')
+            help = '(none or random) indicating if clips are seleted sequentially or randomly')
 
     parser.add_argument('--clipOverlap', action='store', type=int, default=0,
             help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
@@ -671,12 +671,43 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    #elif model_name == 'c3d':
-    #   model = C3D(verbose=args.verbose)
+    elif model_name == 'c3d':
+        model = C3D(input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_cvr':
+        model = C3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_rr':
+        model = C3D_RR(input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_sr':
+        model = C3D_SR(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'c3d_sr_quant':
+        model = C3D_SR_QUANT(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
+
+    elif model_name == 'c3d_sr_step':
+        model = C3D_SR_STEP(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha':
+        model = C3D_ALPHA(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_sine':
+        model = C3D_ALPHA_SINE(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_sine_100':
+        model = C3D_ALPHA_SINE_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_exp':
+        model = C3D_ALPHA_EXP(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
+
+    elif model_name == 'c3d_alpha_div_100':
+        model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
 
     elif model_name == 'i3d':
-       model = I3D(verbose=args.verbose)
+        model = I3D(verbose=args.verbose)
 
+<<<<<<< HEAD
     elif model_name == 'i3d_cvr':
        model = I3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
 
@@ -685,12 +716,16 @@ if __name__=="__main__":
 
     elif model_name == 'i3d_sr':
        model = I3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
+=======
+    elif model_name == 'i3d_mean':
+        model = I3D_mean(verbose=args.verbose)
+>>>>>>> 80e1a129f18f05a0307aeea1938186d637dbb117
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
 
-    #elif model_name == 'resnet_RIL_interp_median_v23_4':
-    #    model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
+    elif model_name == 'resnet_RIL_interp_median_v23_4':
+        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_7_1':
     #    model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25, verbose=args.verbose)

@@ -1,53 +1,54 @@
-" C3D ALPHA MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" C3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 
 """
-Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 using C3D sports1M model by @ hdx173149.
+Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 use C3D sports1M model by @ hdx173149.
 """
 
-import os
+import sys
+#sys.path.append('utils')
 
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                 import *
-from c3d_alpha_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
+from utils.layers_utils                import *
+from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
-class C3D():
-    def __init__(self, input_dims, k, verbose=True):
+class C3D_ALPHA():
+    def __init__(self, model_alpha=0.25, input_alpha=1.0, resample_frames=16, verbose=True):
         """
         Args:
-            :k:          Temporal window width
             :verbose:    Setting verbose command
-            :input_dims: Input dimensions (number of frames)
+
+        Return:
+            Does not return anything
         """
-        self.k          = k
-        self.verbose    = verbose
-        self.input_dims = input_dims
-        self.j          = input_dims / k
+        self.verbose         = verbose
+        self.alpha           = model_alpha
+        self.input_alpha     = input_alpha
+        self.resample_frames = resample_frames
+        self.mean_clip       = np.load('models/c3d/crop_mean.npy')[...,::-1].tolist()
         self.name = 'c3d_alpha'
 
         if verbose:
-            print "C3D Alpha Model Initialized"
+            print "C3D alpha Model Initialized"
 
 
-    def _extraction_layer(self, inputs, params, sets, K, L):
+    def _extraction_layer(self, inputs, params, model_input, L):
         """
         Args:
-            :inputs: Original inputs to the model
-            :params: Offset and sampling parameter estimates from Parameterization Network
-            :sets:   Number of non overlapping sets obtained from applying a temporal slid
-                     ing window over the input
-            :K:      Size of temporal sliding window
-            :L:      Expected number of output frames
+            :inputs:      Original inputs to the model
+            :params:      Offset and sampling parameter estimates from Parameterization Network
+            :model_input: Number of frames input into extraction layer
+            :L:           Expected number of output frames
 
         Return:
             :output: Extracted features
         """
 
-        # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.nn.sigmoid(tf.nn.relu(params[0]))
+        # Scale alpha to gradually increase in the range of 0.2 to 3.0
+        sample_alpha_tick = tf.nn.sigmoid(params[0])*2.8+0.2
 
         # Extract shape of input signal
         frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
@@ -58,17 +59,17 @@ class C3D():
         output_idx = tf.slice(output_idx, [0],[L])
 
         # Sampling parameter scaling to match inputs temporal dimension
-        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
+        alpha_tick = sample_alpha_tick * tf.cast(model_input, tf.float32) / (float(L))
 
         # Include sampling parameter to correct output indices
         output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
 
         # Clip output index values to >= 1 and <=N (valid cases only)
-        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
+        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(model_input, tf.float32))
 
         # Create x0 and x1 float
-        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
-        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
+        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(model_input, tf.float32)-1.)
+        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(model_input, tf.float32))
 
 
         # Deltas :
@@ -93,11 +94,11 @@ class C3D():
 
         output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
 
+        output = output - self.mean_clip
+
         return output
 
-
-
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.6, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -119,29 +120,18 @@ class C3D():
         ############################################################################
 
         if self.verbose:
-            print('Generating C3D Alpha network layers')
+            print('Generating C3D network layers')
 
         # END IF
 
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
-            # Input shape:  [(K frames in a set x J number of sets) x Height x Width x Channels]
-            # Output shape: [(K frames in a set x J number of sets) x Height x Width x 32]
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(self.alpha))]         # a=-1.29928 for 0.8    a=0 for 1.6    a=0.25 original
 
-            ############################################################################
-            #                           Parameterization Network                       #
-            ############################################################################
-
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.69))]
-
-
-            layers['RAINlayer'] = self._extraction_layer(inputs=inputs,
-                                                         params=layers['Parameterization_Variables'],
-                                                         sets=self.j, L=seq_length, K=self.k)
-
-            ############################################################################
-
+            layers['RAINlayer'] = tf.map_fn(lambda clip: self._extraction_layer(inputs=clip,
+                                                       params=layers['Parameterization_Variables'],
+                                                       model_input=input_dims, L=self.resample_frames), inputs)
 
             layers['conv1'] = conv3d_layer(input_tensor=layers['RAINlayer'],
                     filter_dims=[3, 3, 3, 64],
@@ -203,9 +193,13 @@ class C3D():
                                                  filter_dims=[2,2,2], stride_dims=[2,2,2],
                                                  name='pool5')
 
-            layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
 
-            layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
+            # Uncomment to use sports1m_finetuned_ucf101.model (aka c3d.npy)
+            #layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
+            #layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
+
+            # Uncomment to use c3d_Sports1M.npy
+            layers['reshape'] = tf.reshape(layers['pool5'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             layers['dense1'] = fully_connected_layer(input_tensor=layers['reshape'],
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,
@@ -219,9 +213,9 @@ class C3D():
 
             layers['dropout2'] = tf.layers.dropout(layers['dense2'], training=is_training, rate=dropout_rate)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['dropout2'],
+            layers['logits'] = tf.expand_dims(fully_connected_layer(input_tensor=layers['dropout2'],
                                                      out_dim=output_dims, non_linear_fn=None,
-                                                     name='out', weight_decay=weight_decay)
+                                                     name='out', weight_decay=weight_decay), 1)
 
         return [layers[x] for x in return_layer]
 
@@ -229,7 +223,8 @@ class C3D():
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        return np.load('models/c3d/c3d.npy')
+        return np.load('models/c3d/c3d_Sports1M.npy')
+        # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
         """
@@ -240,12 +235,11 @@ class C3D():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
-
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
 
     """ Function to return loss calculated on given network """
-    def loss(self, logits, labels):
+    def loss(self, logits, labels, loss_type):
         """
         Args:
             :logits: Unscaled logits returned from final layer in model

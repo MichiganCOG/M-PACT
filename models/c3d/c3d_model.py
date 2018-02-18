@@ -16,19 +16,20 @@ from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
 class C3D():
-    def __init__(self, verbose=True):
+    def __init__(self, input_alpha=1.0, verbose=True):
         """
         Args:
             :verbose: Setting verbose command
         """
         self.verbose=verbose
+        self.input_alpha = input_alpha
         self.name = 'c3d'
 
         if verbose:
             print "C3D Model Initialized"
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.6, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -119,8 +120,8 @@ class C3D():
 
 
             # Uncomment to use sports1m_finetuned_ucf101.model (aka c3d.npy)
-            # layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
-            # layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
+            #layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
+            #layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             # Uncomment to use c3d_Sports1M.npy
             layers['reshape'] = tf.reshape(layers['pool5'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
@@ -137,9 +138,9 @@ class C3D():
 
             layers['dropout2'] = tf.layers.dropout(layers['dense2'], training=is_training, rate=dropout_rate)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['dropout2'],
+            layers['logits'] = tf.expand_dims(fully_connected_layer(input_tensor=layers['dropout2'],
                                                      out_dim=output_dims, non_linear_fn=None,
-                                                     name='out', weight_decay=weight_decay)
+                                                     name='out', weight_decay=weight_decay), 1)
 
         return [layers[x] for x in return_layer]
 
@@ -159,8 +160,7 @@ class C3D():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
-
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
 
     """ Function to return loss calculated on given network """

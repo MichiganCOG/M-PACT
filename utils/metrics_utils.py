@@ -26,7 +26,7 @@ class Metrics():
         :_svm_classify:
     """
 
-    def __init__(self, output_dims, logger, method, is_training, model_name, exp_name, dataset, verbose=1, load_svm=False):
+    def __init__(self, output_dims, logger, method, is_training, model_name, exp_name, dataset, metrics_dir='default', verbose=1, load_svm=False):
         """
         Args:
             :output_dims: Output dimensions of the model, used to verify the shape of predictions
@@ -52,6 +52,7 @@ class Metrics():
         self.step=0
         self.is_training = is_training
         self.file_name_dict = {}
+        self.metrics_dir = metrics_dir
 
         if self.is_training:
             self.log_name = 'train'
@@ -61,11 +62,11 @@ class Metrics():
 
         # END IF
 
-        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5')) and 'svm' not in self.method:
-            os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
+        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5')) and ('svm' not in self.method and 'features' not in self.method):
+            os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         if self.method == 'svm':
-            if not os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train.hdf5')):
+            if not os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'_train.hdf5')):
                 print "\nError: Temporary training features are not present to train svm. Please first evaluate this model on the training split of this dataset using metricsMethod svm_train.\n"
                 exit()
 
@@ -73,9 +74,9 @@ class Metrics():
 
         # Debugging, load saved train and test features for an svm without regenerating the features
         if load_svm:
-            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'), 'r')
+            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'r')
         else:
-            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'), 'w')
+            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'w')
 
         # END IF
 
@@ -138,6 +139,9 @@ class Metrics():
         elif 'svm' in self.method:
             prediction = -1
 
+        elif self.method == 'extract_features':
+            prediction = -1
+
         else:
             print "Error: Invalid classification method ", self.method
             exit()
@@ -151,7 +155,7 @@ class Metrics():
 
         self.total_predictions += 1
         current_accuracy = self.get_accuracy()
-        
+
         if self.verbose:
             print "vidName: ",names
             print "label:  ", label
@@ -181,10 +185,18 @@ class Metrics():
 
         elif self.method == 'svm':
             accuracy = self._svm_classify()
+            self.save_file.close()
+            print 'Please now classify this model using the testing split of this dataset.'
+            accuracy = -1
 
         elif self.method == 'svm_train':
             self.save_file.close()
             print 'Please now classify this model using the testing split of this dataset.'
+            accuracy = -1
+
+        elif self.method == 'extract_features':
+            self.save_file.close()
+            print 'Logged accuracies for this model are irrelevent.'
             accuracy = -1
 
         else:
@@ -264,7 +276,7 @@ class Metrics():
 
         self.save_file.close()
 
-        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         return current_accuracy
 
@@ -332,7 +344,7 @@ class Metrics():
 
         self.save_file.close()
 
-        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'.hdf5'))
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         return current_accuracy
 
@@ -353,7 +365,7 @@ class Metrics():
         training_labels = []
         training_names = []
 
-        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,'temp'+self.method+'_train.hdf5'), 'r')
+        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'_train.hdf5'), 'r')
 
         # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
         for vid_name in train_hdf5.keys():
