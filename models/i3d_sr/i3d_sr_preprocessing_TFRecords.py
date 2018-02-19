@@ -393,7 +393,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
 
     return output_data
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, input_alpha=1.0):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, input_alpha, model_alpha):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -439,17 +439,16 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # Resample input to desired rate (input fluctuation only, not related to model)
     input_data_tensor = resample_input(input_data_tensor, 250, 250, input_alpha)
-
+    
     # Resample input to desired rate (resampling as a model requirement)
     if istraining:
-        input_data_tensor = resample_model_sinusoidal(input_data_tensor, footprint, 250, tracker)
+        input_data_tensor, alpha_tensor = resample_model_sinusoidal(input_data_tensor, footprint, 250, tracker)
     
     else:
         input_data_tensor = resample_model(input_data_tensor, footprint, 250, 1.0)
         alpha_tensor = tf.convert_to_tensor(1.0) 
 
     # END IF
-
 
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
 

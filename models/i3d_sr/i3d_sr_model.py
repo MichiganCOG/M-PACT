@@ -25,6 +25,7 @@ class I3D_SR():
         """
         self.name        = 'i3d_sr'
         self.input_alpha = input_alpha
+        self.model_alpha = tf.Variable(1.6, dtype=tf.float32)
         self.verbose     = verbose
 
         if verbose:
@@ -105,7 +106,7 @@ class I3D_SR():
                 layers = {}
 
                 # To help with logging
-                layers['Parameterization_Variables'] = self.alpha_tensor
+                #layers['Parameterization_Variables'] = self.alpha_tensor
 
                 layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=False))
 
@@ -469,7 +470,7 @@ class I3D_SR():
             Pointer to preprocessing function of current model
         """
         output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
-        self.alpha_tensor    = tf.Variable(alpha_tensor, trainable=False)
+        #self.alpha_tensor    = tf.Variable(alpha_tensor, trainable=False)
 
         return output 
 

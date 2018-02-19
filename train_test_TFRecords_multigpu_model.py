@@ -150,6 +150,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         sess    = tf.Session(config=config)
         init    = tf.global_variables_initializer()
 
+        # Variables get randomly initialized into tf graph
+        sess.run(init)
+
         model_params_array = []
         for rl in range(len(return_layer)-1):
             model_params_array.append([])
@@ -251,6 +254,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
         curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
 
+        init    = tf.global_variables_initializer()
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
 
@@ -707,7 +711,6 @@ if __name__=="__main__":
     elif model_name == 'i3d':
         model = I3D(verbose=args.verbose)
 
-<<<<<<< HEAD
     elif model_name == 'i3d_cvr':
        model = I3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
 
@@ -716,10 +719,6 @@ if __name__=="__main__":
 
     elif model_name == 'i3d_sr':
        model = I3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
-=======
-    elif model_name == 'i3d_mean':
-        model = I3D_mean(verbose=args.verbose)
->>>>>>> 80e1a129f18f05a0307aeea1938186d637dbb117
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
