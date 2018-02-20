@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N TFRecords_4gpu_C3D_SR_Step_Train_HMDB51     # Name of the job
+#PBS -N TFRecords_1gpu_C3D_SR_Step_Train_HMDB51_Test_HMDB51_Alpha_2_6     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=1:ppn=24:gpus=3    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=macula:ppn=5:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -104,7 +104,7 @@ echo ------------------------------------------------------
 echo "start"
 hostname
 nvidia-smi
-export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]},${allocatedgpus[1]},${allocatedgpus[2]}"
+export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
@@ -112,29 +112,25 @@ echo "Train C3D: HMDB51"
 
 python train_test_TFRecords_multigpu_model.py \
 --model c3d_sr_step \
---numGpus 3 \
 --dataset HMDB51 \
---train 1 \
---load 0 \
+--loadedDataset HMDB51 \
+--train 0 \
+--load 1 \
 --inputDims 16 \
 --outputDims 51 \
 --seqLength 1 \
 --size 112  \
---expName c3d_sr_step_HMDB51 \
---numClips 5 \
+--expName c3d_sr_step_HMDB51_test \
+--numClips 1 \
 --clipLength 50 \
 --clipOffset random \
---numVids 3570 \
+--numVids 1530 \
 --split 1 \
---wd 0.0005 \
---lr 0.0001 \
---nEpochs 20 \
 --baseDataPath /z/dat \
---fName trainlist \
---saveFreq 1 \
+--fName testlist \
 --verbose 1 \
---batchSize 7 \
---returnLayer Parameterization_Variables
+--inputAlpha 2.6 \
+--metricsDir input_alpha_2_6
 
 
 
