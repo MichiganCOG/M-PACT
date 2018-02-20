@@ -2,9 +2,9 @@ import tensorflow as tf
 import numpy as np
 
 
-_R_MEAN = 123.68 #* 2. / 255. - 1
-_G_MEAN = 116.78 #* 2. / 255. - 1
-_B_MEAN = 103.94 #* 2. / 255. - 1
+_R_MEAN = 123.68 
+_G_MEAN = 116.78 
+_B_MEAN = 103.94 
 
 _RESIZE_SIDE_MIN = 256
 _RESIZE_SIDE_MAX = 512
@@ -217,7 +217,7 @@ def _aspect_preserving_resize(image, smallest_side):
   new_height, new_width = _smallest_size_at_least(height, width, smallest_side)
   image = tf.expand_dims(image, 0)
   resized_image = tf.image.resize_bilinear(image, [new_height, new_width],
-                                           align_corners=True)
+                                           align_corners=False)
   resized_image = tf.squeeze(resized_image)
   resized_image.set_shape([None, None, 3])
   return resized_image
@@ -225,8 +225,8 @@ def _aspect_preserving_resize(image, smallest_side):
 def preprocess_for_train(image,
                          output_height,
                          output_width,
-                         resize_side_min=_RESIZE_SIDE_MIN,
-                         resize_side_max=_RESIZE_SIDE_MAX):
+                         resize_side_min=256,
+                         resize_side_max=512):
   """Preprocesses the given image for training.
   Note that the actual resizing scale is sampled from
     [`resize_size_min`, `resize_size_max`].
@@ -241,17 +241,15 @@ def preprocess_for_train(image,
   Returns:
     A preprocessed image.
   """
-  resize_side = tf.random_uniform(
-      [], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
-
   image = _aspect_preserving_resize(image, resize_side_min)
-  image = _random_crop([image], output_height, output_width)[0]
+  image = _central_crop([image], output_height, output_width)[0]
+  #image = _random_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
-  image = tf.image.random_flip_left_right(image)
-  image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
-  image = image * 2./255. - 1
-  return image 
+  #image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+  #image = tf.image.random_flip_left_right(image)
+  image = image * 2./255. - 1.
+  return image
 
 def preprocess_for_eval(image, output_height, output_width, resize_side):
   """Preprocesses the given image for evaluation.
@@ -267,14 +265,14 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   image = _central_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
-  image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
-  image = image * 2./255. - 1
-  return image 
+  #image = _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
+  image = image * 2./255. - 1.
+  return image
 
 
 def preprocess_image(image, output_height, output_width, is_training=False,
-                     resize_side_min=_RESIZE_SIDE_MIN,
-                     resize_side_max=_RESIZE_SIDE_MAX):
+                     resize_side_min=256,
+                     resize_side_max=512):
   """Preprocesses the given image.
   Args:
     image: A `Tensor` representing an image of arbitrary size.
@@ -302,11 +300,52 @@ def preprocess_image(image, output_height, output_width, is_training=False,
 
   # END IF
 
+def resample_input(video, sample_dims, frame_count, alpha):
+    """Return video sampled at uniform rate
+    Args:
+        :video:       Raw input data
+        :frame_count: Total number of frames
+        :sample_dims: Number of frames to be provided as input to model
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
 
-def _pad_video(input_data_tensor, frames, height, width, channel, footprint):
+    indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
+    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+
+    return output
+
+def resample_model(video, sample_dims, frame_count, alpha):
+    """Return video sampled at desired rate (model based)
+    Args:
+        :video:       Raw input data
+        :frame_count: Total number of frames
+        :sample_dims: Number of frames to be provided as input to model
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
+
+    sample_dims = tf.cast(sample_dims, tf.float32)
+    indices = tf.range(start=0., limit=sample_dims, delta=1., dtype=tf.float32)
+    r_alpha = alpha * tf.cast(frame_count, tf.float32) / sample_dims
+    indices = tf.multiply(tf.tile([r_alpha], [tf.cast(sample_dims, tf.int32)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output
+
+
+def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
     """
     Loop the video the number of times necessary for the number of frames to be > footprint
     Args:
+        :offset_tensor:     Raw input data from offset frame number
         :input_data_tensor: Raw input data
         :frames:            Total number of frames
         :height:            Height of frame
@@ -315,21 +354,20 @@ def _pad_video(input_data_tensor, frames, height, width, channel, footprint):
         :footprint:         Total length of video to be extracted before sampling down
 
     Return:
-        Padded video
+        Looped video
     """
 
-    pad_factor        = tf.cast(tf.subtract(footprint, frames), tf.int32)
-    pad_stack         = tf.stack([pad_factor,1,1,1])
-    input_pad_base    = tf.tile(input_data_tensor[:1, :, :, :], pad_stack)
-    reshape_stack     = tf.stack([pad_factor,height,width,channel])
-    input_data_padded = tf.reshape(input_pad_base, reshape_stack)
+    loop_factor       = tf.cast(tf.add(tf.divide(tf.subtract(footprint, offset_frames), frames), 1), tf.int32)
+    loop_stack        = tf.stack([loop_factor,1,1,1])
+    input_data_tensor = tf.tile(input_data_tensor, loop_stack)
+    reshape_stack     = tf.stack([tf.multiply(frames, loop_factor),height,width,channel])
+    input_data_looped = tf.reshape(input_data_tensor, reshape_stack)
 
-    output_data       = tf.concat([input_data_tensor, input_data_padded], axis = 0)
+    output_data       = tf.concat([offset_tensor, input_data_looped], axis = 0)
 
     return output_data
 
-
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, cvr, input_alpha=1.0):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -344,11 +382,14 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         :size:              Output size of preprocessed frames
         :label:             Label of current sample
         :istraining:        Boolean indicating training or testing phase
+        :cvr:               Desired resampling rate (model)
+        :input_alpha:       Desired resampling rate (input)
 
     Return:
         Preprocessing input data and labels tensor
     """
 
+    # Setup different temporal footprints for training and testing phase
     if istraining:
         footprint = 64
 
@@ -357,16 +398,24 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # END IF
 
-    # Following procedure in https://github.com/Peilin-D/kinetics-i3d/blob/master/inputs.py
-    temporal_offset   = tf.cond(tf.greater(frames, footprint), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - footprint + 1, shape=np.asarray([1]))[0], lambda:tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
-    input_data_tensor = tf.cond(tf.greater(frames, footprint), lambda: input_data_tensor[temporal_offset:temporal_offset + footprint, :, :, :],
-                                                               lambda: _pad_video(input_data_tensor, frames, height, width, 3, footprint))
+    temporal_offset   = tf.cond(tf.greater(frames, 250), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - 250 + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
+
+    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, 250), 
+                                lambda: _loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, 250),
+                                lambda: input_data_tensor[temporal_offset:temporal_offset + 250, :, :, :])
 
     # Remove excess frames after looping to reduce to footprint size
-    input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
-    input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
+    input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([250, height, width, channel]))
+    input_data_tensor = tf.reshape(input_data_tensor, tf.stack([250, height, width, channel]))
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
-    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=size[0]), input_data_tensor)
 
-    return input_data_tensor
+    # Resample input to desired rate (input fluctuation only, not related to model)
+    input_data_tensor = resample_input(input_data_tensor, 250, 250, input_alpha)
+
+    # Resample input to desired rate (resampling as a model requirement)
+    input_data_tensor = resample_model(input_data_tensor, footprint, 250, cvr)
+
+    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
+
+    return input_data_tensor, cvr

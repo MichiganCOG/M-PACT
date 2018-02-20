@@ -65,8 +65,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -89,12 +88,16 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :save_freq:          Frequency, in epochs, with which to save
         :return_layer:       Layers to be tracked during training
         :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
+        :video_offset:       String indicating where to begin selecting video clips (provided clipOffset is None)
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :batch_size:         Number of clips to load into the model each step.
         :loss_type:          String declaring loss type associated with a chosen model
+        :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
+        :loaded_checkpoint:  Specify the exact checkpoint of saved model to be loaded for further training/testing
         :verbose:            Boolean to indicate if all print statement should be procesed or not
+        :opt_choice:         String indicating optimizer selected 
 
     Returns:
         Does not return anything
@@ -146,9 +149,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         config  = tf.ConfigProto(allow_soft_placement=True)
         sess    = tf.Session(config=config)
         init    = tf.global_variables_initializer()
+
+        # Variables get randomly initialized into tf graph
         sess.run(init)
-
-
 
         model_params_array = []
         for rl in range(len(return_layer)-1):
@@ -164,10 +167,15 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Setup tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose)
-        # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
 
         # Define optimizer (Current selection is only momentum optimizer)
-        optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
+        if opt_choice == 'gd':
+            optimizer = lambda lr: tf.train.GradientDescentOptimizer(lr)
+
+        else:
+            optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
+
+        # END IF
 
         """ Multi-GPU setup: 1) Associate gpu device to specific model replica
                              2) Setup tower name scope for variables
@@ -244,11 +252,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir(os.path.join('results',model.name, dataset))
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset,metrics_dir, log_name))
+        curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
 
-        # TF session setup
-#        config  = tf.ConfigProto(allow_soft_placement=True)
-#        sess    = tf.Session(config=config)
         init    = tf.global_variables_initializer()
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
@@ -409,11 +414,14 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :f_name:             Specific video directory within a chosen split of a dataset
         :load_model:         Boolean variable indicating whether to load from a checkpoint or not
         :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
+        :video_offset:       String indicating where to begin selecting video clips (provided clipOffset is None)
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
         :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :metrics_method:     Which method to use to calculate accuracy metrics. ("default" or "svm")
         :batch_size:         Number of clips to load into the model each step.
+        :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
+        :loaded_checkpoint:  Specify the exact checkpoint of saved model to be loaded for further training/testing
         :verbose:            Boolean to indicate if all print statement should be procesed or not
 
     Returns:
@@ -447,9 +455,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # END IF
 
         # Initialize model variables
-        istraining  = False
-        global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
-        number_of_videos   = tf.Variable(num_vids, name='number_of_videos', trainable=False)
+        istraining       = False
+        global_step      = tf.Variable(gs_init, name='global_step', trainable=False)
+        number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
 
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
@@ -476,7 +484,6 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
 
         # TF session setup
@@ -542,7 +549,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         print total_pred
 
     # Save results in numpy format
-    np.save(os.path.join('results', model.name, dataset, experiment_name, metrics_dir,'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
+    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name, metrics_dir, 'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
 
 
 if __name__=="__main__":
@@ -621,7 +628,7 @@ if __name__=="__main__":
             help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
 
     parser.add_argument('--metricsMethod', action='store', default='avg_pooling',
-            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train, or extract_features)')
+            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)')
 
     parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
             help = 'Which model layers to be returned by the models\' inference and logged.')
@@ -632,23 +639,26 @@ if __name__=="__main__":
     parser.add_argument('--lossType', action='store', default='full_loss',
             help = 'String defining loss type associated with chosen model.')
 
-    parser.add_argument('--verbose', action='store', type=int, default=1,
-            help = 'Boolean switch to display all print statements or not')
+    parser.add_argument('--metricsDir', action='store', type=str, default='default',
+            help = 'Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.')
+    
+    parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
+            help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
 
     parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
             help = 'Resampling factor for constant value resampling and alpha initialization')
-
+    
     parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
             help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
-
+    
     parser.add_argument('--resampleFrames', action='store', type=int, default=16,
             help = 'Number of frames remaining after resampling within model inference.')
 
-    parser.add_argument('--metricsDir', action='store', type=str, default='default',
-            help = 'Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.')
+    parser.add_argument('--verbose', action='store', type=int, default=1,
+            help = 'Boolean switch to display all print statements or not')
 
-    parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
-            help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
+    parser.add_argument('--optChoice', action='store', default='default',
+            help = 'String indicating optimizer choice')
 
     args = parser.parse_args()
 
@@ -701,8 +711,14 @@ if __name__=="__main__":
     elif model_name == 'i3d':
         model = I3D(verbose=args.verbose)
 
-    elif model_name == 'i3d_mean':
-        model = I3D_mean(verbose=args.verbose)
+    elif model_name == 'i3d_cvr':
+       model = I3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'i3d_rr':
+       model = I3D_RR(input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'i3d_sr':
+       model = I3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
@@ -770,7 +786,8 @@ if __name__=="__main__":
                 loss_type           = args.lossType,
                 metrics_dir         = args.metricsDir,
                 loaded_checkpoint   = args.loadedCheckpoint,
-                verbose             = args.verbose)
+                verbose             = args.verbose,
+                opt_choice          = args.optChoice)
 
     else:
         test(   model             = model,

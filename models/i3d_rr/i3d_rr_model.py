@@ -1,4 +1,4 @@
-" I3D MODEL WITH FROZEN BATCH-NORM WEIGHTS IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" I3D RR MODEL WITH FROZEN BATCH-NORM WEIGHTS IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import time
@@ -10,24 +10,24 @@ import numpy      as np
 
 from utils.layers_utils                 import *
 from utils                              import initialize_from_dict
-from i3d_preprocessing_TFRecords        import preprocess           as preprocess_tfrecords
+from i3d_rr_preprocessing_TFRecords     import preprocess           as preprocess_tfrecords
 
-class I3D():
+class I3D_RR():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_alpha=1.0, verbose=True):
         """
         Args:
-            :k:          Temporal window width
-            :verbose:    Setting verbose command
-            :input_dims: Input dimensions (number of frames)
+            :input_alpha: Value of alpha to resample inputs to network 
+            :verbose:     Setting verbose command
 
         Return:
             Does not return anything
         """
-        self.name       = 'i3d'
-        self.verbose    = verbose
-
-        print "I3D initialized"
+        self.name        = 'i3d_rr'
+        self.input_alpha = input_alpha
+        self.verbose     = verbose
+        if verbose:
+            print "I3D RR initialized"
 
 
     def _unit_3d(self, layer_numbers, input_layer, kernel_size=(1,1,1,1), stride=(1,1,1), activation_fn=tf.nn.relu, use_batch_norm=True, use_bias=False, is_training=True, name='unit_3d'):
@@ -102,6 +102,9 @@ class I3D():
         with tf.name_scope(scope, 'i3d', [inputs]):
             with tf.variable_scope('RGB/inception_i3d'):
                 layers = {}
+
+                # To help with logging
+                #layers['Parameterization_Variables'] = self.alpha_tensor
 
                 layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=False))
 
@@ -464,7 +467,10 @@ class I3D():
         Return:
             Pointer to preprocessing function of current model
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+        #self.alpha_tensor    = tf.Variable(alpha_tensor, trainable=False)
+
+        return output 
 
     """ Function to return loss calculated on all the outputs of a given network """
     def full_loss(self, logits, labels):
@@ -480,7 +486,7 @@ class I3D():
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
-                                                                  logits=logits)
+                                                                    logits=logits)
         return cross_entropy_loss
 
     """ Function to return loss calculated on given network """

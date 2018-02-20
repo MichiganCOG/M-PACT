@@ -1,4 +1,4 @@
-" I3D MODEL WITH MEAN SUBTRACTION IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" I3D SR MODEL WITH FROZEN BATCH-NORM WEIGHTS IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import time
@@ -8,26 +8,28 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils               import *
-from utils                            import initialize_from_dict
-from i3d_mean_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from utils.layers_utils                 import *
+from utils                              import initialize_from_dict
+from i3d_sr_preprocessing_TFRecords     import preprocess           as preprocess_tfrecords
 
-class I3D_mean():
+class I3D_SR():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_alpha=1.0, verbose=True):
         """
         Args:
-            :k:          Temporal window width
-            :verbose:    Setting verbose command
-            :input_dims: Input dimensions (number of frames)
+            :input_alpha: Value of alpha to resample inputs to network 
+            :verbose:     Setting verbose command
 
         Return:
             Does not return anything
         """
-        self.name       = 'i3d'
-        self.verbose    = verbose
+        self.name        = 'i3d_sr'
+        self.input_alpha = input_alpha
+        self.model_alpha = tf.Variable(1.6, dtype=tf.float32)
+        self.verbose     = verbose
 
-        print "I3D initialized"
+        if verbose:
+            print "I3D SR initialized"
 
 
     def _unit_3d(self, layer_numbers, input_layer, kernel_size=(1,1,1,1), stride=(1,1,1), activation_fn=tf.nn.relu, use_batch_norm=True, use_bias=False, is_training=True, name='unit_3d'):
@@ -72,7 +74,7 @@ class I3D_mean():
 
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.7, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -103,13 +105,16 @@ class I3D_mean():
             with tf.variable_scope('RGB/inception_i3d'):
                 layers = {}
 
-                layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=is_training))
+                # To help with logging
+                #layers['Parameterization_Variables'] = self.alpha_tensor
+
+                layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=False))
 
                 layers['4'] = tf.nn.max_pool3d(layers['3'], ksize=[1,1,3,3,1], strides=[1,1,2,2,1], padding='SAME', name='MaxPool3d_2a_3x3')
 
-                layers.update(self._unit_3d(layer_numbers=['5','6','7'], input_layer=layers['4'], kernel_size=[1,1,1,64], name='Conv3d_2b_1x1', is_training=is_training))
+                layers.update(self._unit_3d(layer_numbers=['5','6','7'], input_layer=layers['4'], kernel_size=[1,1,1,64], name='Conv3d_2b_1x1', is_training=False))
 
-                layers.update(self._unit_3d(layer_numbers=['8','9','10'], input_layer=layers['7'], kernel_size=[3,3,3,192], name='Conv3d_2c_3x3', is_training=is_training))
+                layers.update(self._unit_3d(layer_numbers=['8','9','10'], input_layer=layers['7'], kernel_size=[3,3,3,192], name='Conv3d_2c_3x3', is_training=False))
 
                 layers['11_inp'] = tf.nn.max_pool3d(layers['10'], ksize=[1,1,3,3,1], strides=[1,1,2,2,1], padding='SAME', name='MaxPool3d_3a_3x3')
 
@@ -117,28 +122,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_3b'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['11','12','13'], input_layer=layers['11_inp'], kernel_size=[1,1,1,64], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['11','12','13'], input_layer=layers['11_inp'], kernel_size=[1,1,1,64], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['14','15','16'], input_layer=layers['11_inp'], kernel_size=[1,1,1,96], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['14','15','16'], input_layer=layers['11_inp'], kernel_size=[1,1,1,96], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['17','18','19'], input_layer=layers['16'], kernel_size=[3,3,3,128], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['17','18','19'], input_layer=layers['16'], kernel_size=[3,3,3,128], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['20','21','22'], input_layer=layers['11_inp'], kernel_size=[1,1,1,16], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['20','21','22'], input_layer=layers['11_inp'], kernel_size=[1,1,1,16], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['23','24','24'], input_layer=layers['22'], kernel_size=[3,3,3,32], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['23','24','24'], input_layer=layers['22'], kernel_size=[3,3,3,32], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['25'] = tf.nn.max_pool3d(layers['11_inp'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['26','27','28'], input_layer=layers['25'], kernel_size=[1,1,1,32], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['26','27','28'], input_layer=layers['25'], kernel_size=[1,1,1,32], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -152,28 +157,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_3c'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['30','31','32'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['30','31','32'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['33','34','35'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['33','34','35'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['36','37','38'], input_layer=layers['35'], kernel_size=[3,3,3,192], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['36','37','38'], input_layer=layers['35'], kernel_size=[3,3,3,192], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['39','40','41'], input_layer=layers['29'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['39','40','41'], input_layer=layers['29'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['42','43','44'], input_layer=layers['41'], kernel_size=[3,3,3,96], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['42','43','44'], input_layer=layers['41'], kernel_size=[3,3,3,96], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['45'] = tf.nn.max_pool3d(layers['29'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['46','47','48'], input_layer=layers['45'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['46','47','48'], input_layer=layers['45'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -189,28 +194,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_4b'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['51','52','53'], input_layer=layers['50'], kernel_size=[1,1,1,192], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['51','52','53'], input_layer=layers['50'], kernel_size=[1,1,1,192], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['54','55','56'], input_layer=layers['50'], kernel_size=[1,1,1,96], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['54','55','56'], input_layer=layers['50'], kernel_size=[1,1,1,96], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['57','58','59'], input_layer=layers['56'], kernel_size=[3,3,3,208], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['57','58','59'], input_layer=layers['56'], kernel_size=[3,3,3,208], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['60','61','62'], input_layer=layers['50'], kernel_size=[1,1,1,16], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['60','61','62'], input_layer=layers['50'], kernel_size=[1,1,1,16], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['63','64','65'], input_layer=layers['62'], kernel_size=[3,3,3,48], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['63','64','65'], input_layer=layers['62'], kernel_size=[3,3,3,48], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['66'] = tf.nn.max_pool3d(layers['50'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['67','68','69'], input_layer=layers['66'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['67','68','69'], input_layer=layers['66'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -224,28 +229,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_4c'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['71','72','73'], input_layer=layers['70'], kernel_size=[1,1,1,160], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['71','72','73'], input_layer=layers['70'], kernel_size=[1,1,1,160], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['74','75','76'], input_layer=layers['70'], kernel_size=[1,1,1,112], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['74','75','76'], input_layer=layers['70'], kernel_size=[1,1,1,112], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['77','78','79'], input_layer=layers['76'], kernel_size=[3,3,3,224], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['77','78','79'], input_layer=layers['76'], kernel_size=[3,3,3,224], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['80','81','82'], input_layer=layers['70'], kernel_size=[1,1,1,24], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['80','81','82'], input_layer=layers['70'], kernel_size=[1,1,1,24], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['83','84','85'], input_layer=layers['82'], kernel_size=[3,3,3,64], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['83','84','85'], input_layer=layers['82'], kernel_size=[3,3,3,64], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['86'] = tf.nn.max_pool3d(layers['70'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['87','88','89'], input_layer=layers['86'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['87','88','89'], input_layer=layers['86'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -259,28 +264,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_4d'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['91','92','93'], input_layer=layers['90'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['91','92','93'], input_layer=layers['90'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['94','95','96'], input_layer=layers['90'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['94','95','96'], input_layer=layers['90'], kernel_size=[1,1,1,128], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['97','98','99'], input_layer=layers['96'], kernel_size=[3,3,3,256], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['97','98','99'], input_layer=layers['96'], kernel_size=[3,3,3,256], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['100','101','102'], input_layer=layers['90'], kernel_size=[1,1,1,24], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['100','101','102'], input_layer=layers['90'], kernel_size=[1,1,1,24], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['103','104','105'], input_layer=layers['102'], kernel_size=[3,3,3,64], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['103','104','105'], input_layer=layers['102'], kernel_size=[3,3,3,64], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['106'] = tf.nn.max_pool3d(layers['90'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['107','108','109'], input_layer=layers['106'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['107','108','109'], input_layer=layers['106'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -294,28 +299,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_4e'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['111','112','113'], input_layer=layers['110'], kernel_size=[1,1,1,112], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['111','112','113'], input_layer=layers['110'], kernel_size=[1,1,1,112], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['114','115','116'], input_layer=layers['110'], kernel_size=[1,1,1,144], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['114','115','116'], input_layer=layers['110'], kernel_size=[1,1,1,144], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['117','118','119'], input_layer=layers['116'], kernel_size=[3,3,3,288], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['117','118','119'], input_layer=layers['116'], kernel_size=[3,3,3,288], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['120','121','122'], input_layer=layers['110'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['120','121','122'], input_layer=layers['110'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['123','124','125'], input_layer=layers['122'], kernel_size=[3,3,3,64], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['123','124','125'], input_layer=layers['122'], kernel_size=[3,3,3,64], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['126'] = tf.nn.max_pool3d(layers['110'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['127','128','129'], input_layer=layers['126'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['127','128','129'], input_layer=layers['126'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -329,28 +334,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_4f'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['131','132','133'], input_layer=layers['130'], kernel_size=[1,1,1,256], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['131','132','133'], input_layer=layers['130'], kernel_size=[1,1,1,256], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['134','135','136'], input_layer=layers['130'], kernel_size=[1,1,1,160], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['134','135','136'], input_layer=layers['130'], kernel_size=[1,1,1,160], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['137','138','139'], input_layer=layers['136'], kernel_size=[3,3,3,320], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['137','138','139'], input_layer=layers['136'], kernel_size=[3,3,3,320], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['140','141','142'], input_layer=layers['130'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['140','141','142'], input_layer=layers['130'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['143','144','145'], input_layer=layers['142'], kernel_size=[3,3,3,128], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['143','144','145'], input_layer=layers['142'], kernel_size=[3,3,3,128], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['146'] = tf.nn.max_pool3d(layers['130'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['147','148','149'], input_layer=layers['146'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['147','148','149'], input_layer=layers['146'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -366,28 +371,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_5b'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['152','153','154'], input_layer=layers['151'], kernel_size=[1,1,1,256], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['152','153','154'], input_layer=layers['151'], kernel_size=[1,1,1,256], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['155','156','157'], input_layer=layers['151'], kernel_size=[1,1,1,160], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['155','156','157'], input_layer=layers['151'], kernel_size=[1,1,1,160], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['158','159','160'], input_layer=layers['157'], kernel_size=[3,3,3,320], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['158','159','160'], input_layer=layers['157'], kernel_size=[3,3,3,320], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['161','162','163'], input_layer=layers['151'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['161','162','163'], input_layer=layers['151'], kernel_size=[1,1,1,32], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['164','165','166'], input_layer=layers['163'], kernel_size=[3,3,3,128], name='Conv3d_0a_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['164','165','166'], input_layer=layers['163'], kernel_size=[3,3,3,128], name='Conv3d_0a_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['167'] = tf.nn.max_pool3d(layers['151'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['168','169','170'], input_layer=layers['167'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['168','169','170'], input_layer=layers['167'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -401,28 +406,28 @@ class I3D_mean():
 
                 with tf.variable_scope('Mixed_5c'):
                     with tf.variable_scope('Branch_0'):
-                        layers.update(self._unit_3d(layer_numbers=['172','173','174'], input_layer=layers['171'], kernel_size=[1,1,1,384], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['172','173','174'], input_layer=layers['171'], kernel_size=[1,1,1,384], name='Conv3d_0a_1x1', is_training=False))
 
                     # END WITH
 
                     with tf.variable_scope('Branch_1'):
-                        layers.update(self._unit_3d(layer_numbers=['175','176','177'], input_layer=layers['171'], kernel_size=[1,1,1,192], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['175','176','177'], input_layer=layers['171'], kernel_size=[1,1,1,192], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['178','179','180'], input_layer=layers['177'], kernel_size=[3,3,3,384], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['178','179','180'], input_layer=layers['177'], kernel_size=[3,3,3,384], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_2'):
-                        layers.update(self._unit_3d(layer_numbers=['181','182','183'], input_layer=layers['171'], kernel_size=[1,1,1,48], name='Conv3d_0a_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['181','182','183'], input_layer=layers['171'], kernel_size=[1,1,1,48], name='Conv3d_0a_1x1', is_training=False))
 
-                        layers.update(self._unit_3d(layer_numbers=['184','185','186'], input_layer=layers['183'], kernel_size=[3,3,3,128], name='Conv3d_0b_3x3', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['184','185','186'], input_layer=layers['183'], kernel_size=[3,3,3,128], name='Conv3d_0b_3x3', is_training=False))
                                     
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
                         layers['187'] = tf.nn.max_pool3d(layers['171'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
-                        layers.update(self._unit_3d(layer_numbers=['188','189','190'], input_layer=layers['187'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=is_training))
+                        layers.update(self._unit_3d(layer_numbers=['188','189','190'], input_layer=layers['187'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=False))
                                     
                     # END WITH
 
@@ -438,7 +443,7 @@ class I3D_mean():
 
                 layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False))
                 
-                layers['logits'] = tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1)
+                layers['logits'] = tf.expand_dims(tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1), 1)
 
             # END WITH
 
@@ -464,7 +469,10 @@ class I3D_mean():
         Return:
             Pointer to preprocessing function of current model
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+        #self.alpha_tensor    = tf.Variable(alpha_tensor, trainable=False)
+
+        return output 
 
     """ Function to return loss calculated on all the outputs of a given network """
     def full_loss(self, logits, labels):
@@ -480,7 +488,7 @@ class I3D_mean():
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
-                                                                  logits=logits)
+                                                                    logits=logits)
         return cross_entropy_loss
 
     """ Function to return loss calculated on given network """
