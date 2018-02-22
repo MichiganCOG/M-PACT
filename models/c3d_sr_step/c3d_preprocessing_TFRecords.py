@@ -154,7 +154,7 @@ def sinusoidal_resample(video, sample_dims, frame_count, tracker, num_vids, num_
     return output, r_alpha
 
 
-def uniform(video, sample_dims, frame_count, alpha):
+def resample_model(video, sample_dims, frame_count, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
@@ -173,7 +173,7 @@ def uniform(video, sample_dims, frame_count, alpha):
     output  = tf.gather(video, tf.convert_to_tensor(indices))
     return output
 
-def uniform_input(video, sample_dims, frame_count, alpha):
+def resample_input(video, sample_dims, frame_count, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
@@ -254,12 +254,12 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 
-    input_data_tensor = uniform_input(input_data_tensor, frames, frames, input_alpha)
+    input_data_tensor = resample_input(input_data_tensor, frames, frames, input_alpha)
 
     if istraining:
         input_data_tensor, alpha_tensor = sinusoidal_resample(input_data_tensor, input_dims, frames, tracker, num_vids, num_epochs, batch_size, num_clips, num_gpus, cvr)
     else:
-        input_data_tensor = uniform(input_data_tensor, input_dims, frames, cvr)
+        input_data_tensor = resample_model(input_data_tensor, input_dims, frames, cvr)
         alpha_tensor = tf.convert_to_tensor(cvr)
 
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=size[0]), input_data_tensor)
