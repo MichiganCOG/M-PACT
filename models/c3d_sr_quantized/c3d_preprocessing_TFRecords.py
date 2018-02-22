@@ -137,7 +137,7 @@ def step_resample(video, sample_dims, frame_count, tracker, num_vids, num_epochs
 
     indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
 
-    curr_epoch = tracker * num_gpus * batch_size / (num_vids * num_clips)
+    curr_epoch = tf.cast(tracker * num_gpus * batch_size / (num_vids * num_clips), tf.int32)
 
     alpha_ind = tf.mod(curr_epoch, 4)
     r_alpha = alpha_list[alpha_ind] * tf.cast(frame_count, tf.float32) / float(sample_dims)
