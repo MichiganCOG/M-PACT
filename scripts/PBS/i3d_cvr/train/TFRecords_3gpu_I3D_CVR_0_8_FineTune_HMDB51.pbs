@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_3gpu_I3D_CVR_0_4_FineTune_HMDB51     # Name of the job
+#PBS -N TFRecords_3gpu_I3D_CVR_0_8_FineTune_HMDB51     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -108,7 +108,7 @@ export CUDA_VISIBLE_DEVICES="${allocatedgpus[0]}"
 module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 
 cd /z/home/madantrg/tf-activity-recognition-framework/
-echo "Train I3D CVR 0.4 Fine Tune HMDB51"
+echo "Train I3D CVR 0.8 Fine Tune HMDB51"
 
 python train_test_TFRecords_multigpu_model.py \
 --model i3d_cvr \
@@ -121,7 +121,7 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 51 \
 --seqLength 1 \
 --size 224 \
---expName i3d_cvr_0_4_full_loss_HMDB51 \
+--expName i3d_cvr_0_8_full_loss_HMDB51 \
 --numVids 3570 \
 --split 1 \
 --wd 0.0 \
@@ -131,6 +131,5 @@ python train_test_TFRecords_multigpu_model.py \
 --fName trainlist \
 --saveFreq 1 \
 --returnLayer Parameterization_Variables \
---modelAlpha 0.4
-
+--modelAlpha 0.8
 echo "end"

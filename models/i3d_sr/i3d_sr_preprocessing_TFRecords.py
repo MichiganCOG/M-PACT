@@ -311,7 +311,7 @@ def resample_input(video, sample_dims, frame_count, alpha):
         Sampled video
     """
 
-    indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
     r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
     indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
     indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
@@ -354,7 +354,7 @@ def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
     upper_limit = 3.0
     lower_limit = 0.2
 
-    indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
 
     # Sinusoidal variation with alpha being the DC offset
     r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
