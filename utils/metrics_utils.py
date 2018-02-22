@@ -6,8 +6,9 @@ import os
 
 import h5py
 import numpy      as np
-import tensorflow as tf
+#import tensorflow as tf
 from   sklearn    import svm
+from   scipy.spatial.distance import cityblock
 
 
 class Metrics():
@@ -26,7 +27,7 @@ class Metrics():
         :_svm_classify:
     """
 
-    def __init__(self, output_dims, logger, method, is_training, model_name, exp_name, dataset, metrics_dir='default', verbose=1, load_svm=False):
+    def __init__(self, output_dims, seq_length, logger, method, is_training, model_name, exp_name, dataset, metrics_dir='default', verbose=1, load_svm=False):
         """
         Args:
             :output_dims: Output dimensions of the model, used to verify the shape of predictions
@@ -40,6 +41,7 @@ class Metrics():
             :load_svm:    Boolean indication whether to load saved svm testlist features or to extract them. Intended for debugging.
         """
         self.output_dims=output_dims
+        self.seq_length=seq_length
         self.verbose=verbose
         self.model_name = model_name
         self.exp_name = exp_name
@@ -62,7 +64,7 @@ class Metrics():
 
         # END IF
 
-        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5')) and ('svm' not in self.method and 'features' not in self.method):
+        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5')) and (('avg_pooling' in self.method) or ('last_frame' in self.method)):
             os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         if self.method == 'svm':
@@ -139,11 +141,14 @@ class Metrics():
         elif 'svm' in self.method:
             prediction = -1
 
+        elif self.method == 'DTW':
+        	prediction = -1
+
         elif self.method == 'extract_features':
             prediction = -1
 
         else:
-            print "Error: Invalid classification method ", self.method
+            print "Error: Invalid classification method: ", self.method
             exit()
 
         # END IF
@@ -182,6 +187,9 @@ class Metrics():
 
         elif self.method == 'last_frame':
             accuracy = self._last_frame_classify()
+
+        elif self.method == 'DTW':
+            accuracy = self._DTW_classify()
 
         elif self.method == 'svm':
             accuracy = self._svm_classify()
@@ -466,6 +474,98 @@ class Metrics():
         return current_accuracy
 
 
+    def _DTW_classify(self, feature_dims=-1):
+        if feature_dims < 0:
+            feature_dims = self.output_dims
+    	feature_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,self.metrics_dir,'tempextract_features.hdf5'), 'r')
+    #    import pdb; pdb.set_trace()
+    	standard_feat = np.zeros((self.output_dims, self.seq_length,feature_dims))
+    	training_names = []
+    	#training_output = []
+    	training_labels = []
+    	for vid_name in feature_hdf5.keys():
+    		Curr_label = feature_hdf5[vid_name]['Label'].value
+    		training_labels.append(Curr_label)
+
+    		temp_data = []
+    		for clip in feature_hdf5[vid_name]['Data'].keys():
+    			temp_data.append(feature_hdf5[vid_name]['Data'][clip].value)
+
+    		#mean_feature = np.array(temp_data)
+    		feature = np.array(temp_data)
+    		feature = np.mean(feature, 0)
+    		standard_feat[Curr_label, :, :] = standard_feat[Curr_label, :, :] + feature
+    		#model_output_dimensions = len(mean_feature.shape)
+
+    		training_names.append(vid_name)
+
+        training_labels = np.array(training_labels)
+
+        training_labels, num_vids_per_label = np.unique(training_labels, return_counts=True)
+        for label in range(self.output_dims):
+            standard_feat[label, :, :] = standard_feat[label, :, :]/num_vids_per_label[label]
+
+    	#model_output = []
+        labels = []
+        names = []
+        predictions = []
+    	#output_dims = 51
+    		# Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in self.save_file.keys():
+            labels.append(self.save_file[vid_name]['Label'].value)
+            temp_data = []
+
+            for clip in self.save_file[vid_name]['Data'].keys():
+                temp_data.append(self.save_file[vid_name]['Data'][clip].value)
+
+
+
+            feature = np.array(temp_data)
+            model_output_dimensions = len(feature.shape)
+            feature = np.mean(feature, 0)
+            cost = np.zeros(self.output_dims)
+            for var in range(self.output_dims):
+            	cost[var] = self.DTWdist(standard_feat[var, :, :], feature)
+
+            predictions.append(np.argmin(cost))
+            names.append(vid_name)
+
+
+        for video in range(len(predictions)):
+        	prediction = predictions[video]
+        	label = labels[video]
+        	if self.verbose:
+        		print "vidName: ",names[video]
+        		print "label:  ", label
+        		print "prediction: ", prediction
+
+
+        	self.predictions_array.append((prediction, label))
+        	self.total_predictions += 1
+        	if int(prediction) == int(label):
+        		self.correct_predictions += 1
+
+        current_accuracy = self.correct_predictions / float(self.total_predictions)
+
+        # END FOR
+
+        self.save_file.close()
+        return current_accuracy
+
+    def DTWdist(self, std_feat, feature):
+    	DTW = np.zeros((len(std_feat),len(feature)))
+    	for i in range(len(std_feat)):
+    		DTW[i, 0] = np.inf
+    	for i in range(len(std_feat)):
+    		DTW[0, i] = np.inf
+    	DTW[0, 0] = 0
+
+    	for i in range(len(std_feat)):
+    		for j in range(len(std_feat)):
+    			cost = cityblock(std_feat[i], feature[j])
+    			DTW[i, j] = cost + min(DTW[i-1,j], DTW[i,j-1], DTW[i-1, j-1])
+
+    	return DTW[-1,-1 ]
 
 
     def _save_prediction(self, label, prediction, name):
