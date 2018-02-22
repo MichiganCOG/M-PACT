@@ -97,7 +97,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
         :loaded_checkpoint:  Specify the exact checkpoint of saved model to be loaded for further training/testing
         :verbose:            Boolean to indicate if all print statement should be procesed or not
-        :opt_choice:         String indicating optimizer selected 
+        :opt_choice:         String indicating optimizer selected
 
     Returns:
         Does not return anything
@@ -307,7 +307,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 
             time_pre_train = time.time()
-            
+
             _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
@@ -491,7 +491,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = Metrics( output_dims, curr_logger, metrics_method, is_training, model.name, experiment_name, dataset, metrics_dir, verbose=verbose)
+        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, is_training, model.name, experiment_name, dataset, metrics_dir, verbose=verbose)
 
         # Variables get randomly initialized into tf graph
         sess.run(init)
@@ -641,16 +641,16 @@ if __name__=="__main__":
 
     parser.add_argument('--metricsDir', action='store', type=str, default='default',
             help = 'Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.')
-    
+
     parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
             help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
 
     parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
             help = 'Resampling factor for constant value resampling and alpha initialization')
-    
+
     parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
             help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
-    
+
     parser.add_argument('--resampleFrames', action='store', type=int, default=16,
             help = 'Number of frames remaining after resampling within model inference.')
 

@@ -123,7 +123,7 @@ def _aspect_preserving_resize(image, smallest_side):
   return resized_image
 
 
-def sinusoidal_resample(video, sample_dims, frame_count, tracker):
+def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
     """Return video sampled at random rate
     Args:
         :video:       Raw input data
@@ -137,7 +137,7 @@ def sinusoidal_resample(video, sample_dims, frame_count, tracker):
     upper_limit = 3.0
     lower_limit = 0.2
 
-    indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
 
     # Sinusoidal variation with alpha being the DC offset
     r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
@@ -150,7 +150,7 @@ def sinusoidal_resample(video, sample_dims, frame_count, tracker):
     return output, (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32)))
 
 
-def uniform(video, sample_dims, frame_count, alpha):
+def resample_model(video, sample_dims, frame_count, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
@@ -161,7 +161,7 @@ def uniform(video, sample_dims, frame_count, alpha):
         Sampled video
     """
 
-    indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
     r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
     indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
     indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
@@ -169,7 +169,7 @@ def uniform(video, sample_dims, frame_count, alpha):
     output  = tf.gather(video, tf.convert_to_tensor(indices))
     return output
 
-def uniform_input(video, sample_dims, frame_count, alpha):
+def resample_input(video, sample_dims, frame_count, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
@@ -242,21 +242,19 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     num_frames_per_clip = input_dims
 
-    # Selecting a random, seeded temporal offset
-#    temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-num_frames_per_clip, shape=np.asarray([1]))[0]
-#    input_data_tensor = input_data_tensor[temporal_offset:temporal_offset+num_frames_per_clip,:,:,:]
-
     tracker = [v for v in tf.global_variables() if v.name == 'my_scope/global_step:0'][0]
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 
-    input_data_tensor = uniform_input(input_data_tensor, frames, frames, input_alpha)
+    input_data_tensor = resample_input(input_data_tensor, frames, frames, input_alpha)
 
     if istraining:
-        input_data_tensor, alpha_tensor = sinusoidal_resample(input_data_tensor, input_dims, frames, tracker)
+        input_data_tensor, alpha_tensor = resample_model_sinusoidal(input_data_tensor, input_dims, frames, tracker)
     else:
-        input_data_tensor = uniform(input_data_tensor, input_dims, frames, cvr)
-        alpha_tensor = tf.convert_to_tensor(cvr)
+        input_data_tensor = resample_model(input_data_tensor, input_dims, frames, cvr)
+        alpha_tensor      = tf.convert_to_tensor(cvr)
+
+    # END IF
 
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=size[0]), input_data_tensor)
 

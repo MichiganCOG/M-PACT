@@ -2,9 +2,9 @@ import tensorflow as tf
 import numpy as np
 
 
-_R_MEAN = 123.68 
-_G_MEAN = 116.78 
-_B_MEAN = 103.94 
+_R_MEAN = 123.68
+_G_MEAN = 116.78
+_B_MEAN = 103.94
 
 _RESIZE_SIDE_MIN = 256
 _RESIZE_SIDE_MAX = 512
@@ -427,7 +427,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     temporal_offset   = tf.cond(tf.greater(frames, 250), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - 250 + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
 
-    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, 250), 
+    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, 250),
                                 lambda: _loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, 250),
                                 lambda: input_data_tensor[temporal_offset:temporal_offset + 250, :, :, :])
 
@@ -439,14 +439,14 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # Resample input to desired rate (input fluctuation only, not related to model)
     input_data_tensor = resample_input(input_data_tensor, 250, 250, input_alpha)
-    
+
     # Resample input to desired rate (resampling as a model requirement)
     if istraining:
         input_data_tensor, alpha_tensor = resample_model_sinusoidal(input_data_tensor, footprint, 250, tracker)
-    
+
     else:
         input_data_tensor = resample_model(input_data_tensor, footprint, 250, 1.0)
-        alpha_tensor = tf.convert_to_tensor(1.0) 
+        alpha_tensor = tf.convert_to_tensor(1.0)
 
     # END IF
 
