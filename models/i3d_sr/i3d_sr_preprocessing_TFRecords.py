@@ -393,7 +393,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
 
     return output_data
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, input_alpha, model_alpha):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, input_alpha):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -451,5 +451,4 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # END IF
 
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
-
     return input_data_tensor, alpha_tensor

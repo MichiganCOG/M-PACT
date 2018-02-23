@@ -25,7 +25,6 @@ class I3D_SR():
         """
         self.name        = 'i3d_sr'
         self.input_alpha = input_alpha
-        self.model_alpha = tf.Variable(1.6, dtype=tf.float32)
         self.verbose     = verbose
 
         if verbose:

@@ -518,9 +518,9 @@ if __name__=="__main__":
 
     network = I3D(16)
     XX =  network.inference(x, is_training=True, input_dims=16, output_dims=51, seq_length=50, scope='RGB/inception_i3d')
-    ckpt = network.load_default_weights()
+    #ckpt = network.load_default_weights()
     sess = tf.Session()
     init = tf.global_variables_initializer()
     sess.run(init)
-    initialize_from_dict(sess, ckpt) 
+    #initialize_from_dict(sess, ckpt) 
     import pdb; pdb.set_trace()
