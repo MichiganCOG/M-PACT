@@ -9,6 +9,7 @@ import numpy      as np
 #import tensorflow as tf
 from   sklearn    import svm
 from   scipy.spatial.distance import cityblock
+from   scipy.spatial.distance import euclidean
 
 
 class Metrics():
@@ -477,27 +478,28 @@ class Metrics():
     def _DTW_classify(self, feature_dims=-1):
         if feature_dims < 0:
             feature_dims = self.output_dims
-    	feature_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,self.metrics_dir,'tempextract_features.hdf5'), 'r')
-    #    import pdb; pdb.set_trace()
-    	standard_feat = np.zeros((self.output_dims, self.seq_length,feature_dims))
-    	training_names = []
-    	#training_output = []
-    	training_labels = []
+        feature_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,self.metrics_dir,'tempextract_features.hdf5'), 'r')
+
+        standard_feat = np.zeros((self.output_dims, self.seq_length,feature_dims))
+        training_names = []
+        #training_output = []
+        training_labels = []
     	for vid_name in feature_hdf5.keys():
-    		Curr_label = feature_hdf5[vid_name]['Label'].value
-    		training_labels.append(Curr_label)
+            Curr_label = feature_hdf5[vid_name]['Label'].value
+            training_labels.append(Curr_label)
 
-    		temp_data = []
-    		for clip in feature_hdf5[vid_name]['Data'].keys():
-    			temp_data.append(feature_hdf5[vid_name]['Data'][clip].value)
+            temp_data = []
+            for clip in feature_hdf5[vid_name]['Data'].keys():
+            	temp_data.append(feature_hdf5[vid_name]['Data'][clip].value)
+            #mean_feature = np.array(temp_data)
+            feature = np.array(temp_data)
 
-    		#mean_feature = np.array(temp_data)
-    		feature = np.array(temp_data)
-    		feature = np.mean(feature, 0)
-    		standard_feat[Curr_label, :, :] = standard_feat[Curr_label, :, :] + feature
+            if len(feature.shape) > 2:
+                feature = np.mean(feature, 0)
+            standard_feat[Curr_label, :, :] = standard_feat[Curr_label, :, :] + feature
     		#model_output_dimensions = len(mean_feature.shape)
 
-    		training_names.append(vid_name)
+            training_names.append(vid_name)
 
         training_labels = np.array(training_labels)
 
@@ -505,12 +507,12 @@ class Metrics():
         for label in range(self.output_dims):
             standard_feat[label, :, :] = standard_feat[label, :, :]/num_vids_per_label[label]
 
-    	#model_output = []
+        #model_output = []
         labels = []
         names = []
         predictions = []
-    	#output_dims = 51
-    		# Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        #output_dims = 51
+        	# Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
         for vid_name in self.save_file.keys():
             labels.append(self.save_file[vid_name]['Label'].value)
             temp_data = []
@@ -522,7 +524,9 @@ class Metrics():
 
             feature = np.array(temp_data)
             model_output_dimensions = len(feature.shape)
-            feature = np.mean(feature, 0)
+
+            if len(feature.shape) > 2:
+                feature = np.mean(feature, 0)
             cost = np.zeros(self.output_dims)
             for var in range(self.output_dims):
             	cost[var] = self.DTWdist(standard_feat[var, :, :], feature)
@@ -562,7 +566,7 @@ class Metrics():
 
     	for i in range(len(std_feat)):
     		for j in range(len(std_feat)):
-    			cost = cityblock(std_feat[i], feature[j])
+    			cost = euclidean(std_feat[i], feature[j])
     			DTW[i, j] = cost + min(DTW[i-1,j], DTW[i,j-1], DTW[i-1, j-1])
 
     	return DTW[-1,-1 ]
