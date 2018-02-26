@@ -16,6 +16,11 @@ from i3d.i3d_model  			     import I3D
 from i3d_cvr.i3d_cvr_model  		     import I3D_CVR
 from i3d_rr.i3d_rr_model  		     import I3D_RR
 from i3d_sr.i3d_sr_model  		     import I3D_SR
+from tsn.tsn_model                                        import TSN
+from tsn_RIL.tsn_model                                    import TSN_RIL
+from tsn_cvr.tsn_model                                    import TSN_CVR
+from tsn_rr.tsn_model                                    import TSN_RR
+from tsn_sr.tsn_model                                    import TSN_SR
 
 ## RAIN layer model imports
 #from resnet_RIL.resnet_RIL_interp_median_model_v23_2_1    import ResNet_RIL_Interp_Median_v23_2_1

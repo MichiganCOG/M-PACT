@@ -33,7 +33,6 @@ This README will walk you through the process of installing dependencies, downlo
 #### Python Dependencies:
 * Tensorflow 1.2.1
 * Numpy
-* OpenCV
 
 
 ## Introduction and Setup
@@ -42,7 +41,9 @@ This README will walk you through the process of installing dependencies, downlo
 ### Implemented Models:
 
 * ResNet50 + LSTM
-* VGG16 + LSTM
+* TSN
+* C3D
+* I3D
 
 
 ### Implemented Datasets:
@@ -51,8 +52,6 @@ This README will walk you through the process of installing dependencies, downlo
 * UCF101
 
 ### Future Models:
-* TSN
-* C3D
 * ARTNet
 
 
@@ -112,7 +111,7 @@ python  train_test_TFRecords_multigpu_model.py \
 -returnLayer	List of strings indicating parameters within the model to be tracked during training (default ['logits'])
 ```
 
-Ex. Train ResNet on HMDB51 using 4 GPUs
+Ex. Train ResNet50+LSTM on HMDB51 using 4 GPUs
 
 ```
 python train_test_TFRecords_multigpu_model.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName example_1  --numVids 3570  --lr 0.001  --wd 0.0  --nEpochs 30  --split 1  --baseDataPath /z/dat  --fName trainlist
@@ -205,7 +204,7 @@ python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset UCF101  
 
 
 train_test_TFRecords_multigpu_model.py - Main program for training and testing models
-load_dataset.py - Loads specified dataset using a given models preprocessing
+load_dataset_tfrecords.py - Loads specified dataset using a given models preprocessing
 trainlist, testlist, vallist - Lists of videos for training testing and validation splits
 
 models - Includes the model class and video preprocessing required for that model

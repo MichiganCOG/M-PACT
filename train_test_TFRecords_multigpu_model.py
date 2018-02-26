@@ -237,7 +237,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         gradients            = _average_gradients(tower_grads)
         gradients, variables = zip(*gradients)
-        clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 5.0)
+        if 'tsn' in model.name:
+            clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 10.0)
+        else:
+            clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 5.0)
         gradients            = list(zip(clipped_gradients, variables))
         grad_updates         = opt.apply_gradients(gradients, global_step=global_step, name="train")
         train_op             = grad_updates
@@ -262,7 +265,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         sess.run(init)
 
         # Model variables initialized from previous saved models
-        initialize_from_dict(sess, ckpt)
+        initialize_from_dict(sess, ckpt, model.name)
         del ckpt
 
         # Initialize tracking variables
@@ -484,6 +487,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
+        make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
 
         # TF session setup
@@ -497,7 +501,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         sess.run(init)
 
         # Model variables initialized from previous saved models
-        initialize_from_dict(sess, ckpt)
+        initialize_from_dict(sess, ckpt, model.name)
         del ckpt
 
         acc               = 0
@@ -719,6 +723,62 @@ if __name__=="__main__":
 
     elif model_name == 'i3d_sr':
        model = I3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'tsn':
+        num_seg = args.inputDims
+        if args.train:
+            num_seg = 3
+
+        init = False
+        if 'init' in args.expName:
+            init = True
+        model = TSN(args.inputDims, args.outputDims, args.expName, num_seg, init)
+
+    elif model_name == 'tsn_RIL':
+        num_seg = args.inputDims
+        if args.train:
+            num_seg = 3
+
+        init = False
+        if 'init' in args.expName:
+            init = True
+
+        model = TSN_RIL(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames)
+
+    elif model_name == 'tsn_cvr':
+        num_seg = args.inputDims
+        if args.train:
+            num_seg = 3
+
+        init = False
+        if 'init' in args.expName:
+            init = True
+
+        model = TSN_CVR(args.inputDims, args.outputDims, args.expName, num_seg, init, cvr=args.modelAlpha, input_alpha=args.inputAlpha)
+
+    elif model_name == 'tsn_rr':
+        num_seg = args.inputDims
+        if args.train:
+            num_seg = 3
+
+        init = False
+        if 'init' in args.expName:
+            init = True
+
+        model = TSN_RR(args.inputDims, args.outputDims, args.expName, num_seg, init, input_alpha=args.inputAlpha)
+
+    elif model_name == 'tsn_sr':
+        num_seg = args.inputDims
+        if args.train:
+            num_seg = 3
+
+        init = False
+        if 'init' in args.expName:
+            init = True
+
+        model = TSN_SR(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha)
+
+
 
     #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
     #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)

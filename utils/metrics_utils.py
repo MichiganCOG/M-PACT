@@ -263,15 +263,16 @@ class Metrics():
         for index in range(len(model_output)):
             prediction = model_output[index].argmax()
             label = labels[index]
+            name = names[index]
 
             if self.verbose:
-                print "vidName: ",names[index]
+                print "vidName: ",name
                 print "label:  ", label
                 print "prediction: ", prediction
 
             # END IF
 
-            self.predictions_array.append((prediction, label))
+            self.predictions_array.append((prediction, label, name))
             self.total_predictions += 1
 
             if int(prediction) == int(label):
@@ -336,13 +337,14 @@ class Metrics():
         for index in range(len(model_output)):
             prediction = model_output[index].argmax()
             label = labels[index]
+            name = names[index]
 
             if self.verbose:
-                print "vidName: ",names[index]
+                print "vidName: ",name
                 print "label:  ", label
                 print "prediction: ", prediction
 
-            self.predictions_array.append((prediction, label))
+            self.predictions_array.append((prediction, label, name))
             self.total_predictions += 1
             if int(prediction) == int(label):
                 self.correct_predictions += 1
@@ -374,7 +376,7 @@ class Metrics():
         training_labels = []
         training_names = []
 
-        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'_train.hdf5'), 'r')
+        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'tempextract_features.hdf5'), 'r')#+self.method+'_train.hdf5'), 'r')
 
         # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
         for vid_name in train_hdf5.keys():
@@ -450,15 +452,16 @@ class Metrics():
         for video in range(len(predictions)):
             prediction = predictions[video]
             label = labels[video]
+            name = names[video]
 
             if self.verbose:
-                print "vidName: ",names[video]
+                print "vidName: ",name
                 print "label:  ", label
                 print "prediction: ", prediction
 
             # END IF
 
-            self.predictions_array.append((prediction, label))
+            self.predictions_array.append((prediction, label, name))
             self.total_predictions += 1
 
             if int(prediction) == int(label):
@@ -536,15 +539,17 @@ class Metrics():
 
 
         for video in range(len(predictions)):
-        	prediction = predictions[video]
-        	label = labels[video]
-        	if self.verbose:
-        		print "vidName: ",names[video]
-        		print "label:  ", label
-        		print "prediction: ", prediction
+            prediction = predictions[video]
+            label = labels[video]
+            name = names[video]
+
+            if self.verbose:
+            	print "vidName: ",name
+            	print "label:  ", label
+            	print "prediction: ", prediction
 
 
-        	self.predictions_array.append((prediction, label))
+        	self.predictions_array.append((prediction, label, name))
         	self.total_predictions += 1
         	if int(prediction) == int(label):
         		self.correct_predictions += 1

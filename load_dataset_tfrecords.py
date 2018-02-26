@@ -3,7 +3,7 @@ import os
 import numpy      as np
 import tensorflow as tf
 from tensorflow.python.training import queue_runner
-from random import shuffle
+
 
 
 
