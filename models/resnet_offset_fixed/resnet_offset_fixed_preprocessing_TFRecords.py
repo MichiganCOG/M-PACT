@@ -363,7 +363,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
     return output_data
 
 
-def resample_input(video, sample_dims, frame_count, alpha):
+def resample_input(video, frame_count,sample_dims, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
@@ -379,30 +379,30 @@ def resample_input(video, sample_dims, frame_count, alpha):
     indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
     indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
     indices = tf.cast(indices, tf.int32)
-    output  = tf.gather(video, tf.convert_to_tensor(indices))
-
-    return output
-
-def resample_model(video, frame_count, sample_dims, alpha=1.0):
-    """Return video sampled at desired rate (model based)
-    Args:
-        :video:       Raw input data
-        :frame_count: Total number of frames
-        :sample_dims: Number of frames to be provided as input to model
-        :alpha        relative sampling rate
-    Return:
-        Sampled video
-    """
-
-    #sample_dims = tf.cast(sample_dims, tf.float32)
-    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
-    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
-    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
-    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
-    indices = tf.cast(indices, tf.int32)
 
     output = tf.gather(video, tf.convert_to_tensor(indices))
     return output
+
+def resample_model(video, frame_count, sample_dims, alpha=1.0):
+	"""Return video sampled at desired rate (model based)
+	Args:
+	:video:       Raw input data
+	:frame_count: Total number of frames
+	:sample_dims: Number of frames to be provided as input to model
+	:alpha        relative sampling rate
+	Return:
+	Sampled video
+	"""
+
+    	#sample_dims = tf.cast(sample_dims, tf.float32)
+    	indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+	r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
+	indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+	indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+	indices = tf.cast(indices, tf.int32)
+
+	output = tf.gather(video, tf.convert_to_tensor(indices))
+	return output
 
 
 
@@ -450,11 +450,11 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     
 
-    # Resample input to desired rate (resampling as a model requirement) 
-    
-    input_data_tensor = resample_input(input_data_tensor, 250, 250, input_alpha)
-
     # Reduce footprint to sample_dims in size by uniformly sampling
+    
+    input_data_tensor = resample_input(input_data_tensor, footprint, sample_dims, input_alpha)
+
+    
     #input_data_tensor = _sample_video_cb(input_data_tensor, footprint, sample_dims, cvr)
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)

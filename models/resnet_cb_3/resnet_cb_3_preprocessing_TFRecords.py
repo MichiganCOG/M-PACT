@@ -353,7 +353,7 @@ def Sinusoidal_sampling(video, frame_count, sample_dims, tracker):
 	output = tf.gather(video, tf.convert_to_tensor(indices))
 
 	return output
-def resample_input(video, sample_dims, frame_count, alpha):
+def resample_input(video, frame_count, sample_dims, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
