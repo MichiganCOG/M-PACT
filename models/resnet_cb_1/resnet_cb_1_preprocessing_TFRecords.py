@@ -332,7 +332,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
     return output_data
 
 
-def resample_input(video, sample_dims, frame_count, alpha):
+def resample_input(video, frame_count, sample_dims, alpha):
     """Return video sampled at uniform rate
     Args:
         :video:       Raw input data
@@ -411,7 +411,7 @@ def preprocess(input_data_tensor, frames, height, width, channel,  input_dims, o
 		input_data_tensor = resample_model(input_data_tensor, footprint, sample_dims, cvr)
 	else:
 		# Resample input to desired rate (input fluctuation only, not related to model)
-		input_data_tensor = resample_input(input_data_tensor, 250, 250, input_alpha)
+		input_data_tensor = resample_input(input_data_tensor, footprint, sample_dims, input_alpha)
 
 		# Reduce footprint to sample_dims in size by uniform sampling rate
 		#input_data_tensor = _sample_video(input_data_tensor, footprint, int(footprint/sample_dims))

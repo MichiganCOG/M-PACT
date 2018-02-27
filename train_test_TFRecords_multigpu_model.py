@@ -679,6 +679,18 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
+    elif model_name == 'resnet_cb_1':
+	model = ResNet_cb_1(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'resnet_cb_2':
+	model = ResNet_cb_2(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'resnet_cb_3':
+	model = ResNet_cb_3(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+
+    elif model_name == 'resnet_offset_fixed':
+        model = ResNet_Offset_Fixed(args.inputDims, 25, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+
     elif model_name == 'c3d':
         model = C3D(input_alpha=args.inputAlpha, verbose=args.verbose)
 
