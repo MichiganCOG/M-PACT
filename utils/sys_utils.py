@@ -158,7 +158,7 @@ def _assign_tensors_tsn(sess, curr_dict, tensor_name):
     try:
         if type(curr_dict) == type({}):
             for key in curr_dict.keys():
-                _assign_tensors(sess, curr_dict[key], tensor_name+'/'+key)
+                _assign_tensors_tsn(sess, curr_dict[key], tensor_name+'/'+key)
 
             # END FOR
 
@@ -248,7 +248,6 @@ def initialize_from_dict(sess, data_dict, model_name):
     print 'Initializing model weights...'
     try:
         data_dict = data_dict.tolist()
-
         if 'tsn' in model_name:
             for key in data_dict.keys():
                 _assign_tensors_tsn(sess, data_dict[key], key)

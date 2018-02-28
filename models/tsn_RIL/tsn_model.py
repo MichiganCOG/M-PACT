@@ -153,7 +153,7 @@ class TSN_RIL():
                 input_seg_list.append(input_seg_data)
 
             input_data_tensor = tf.stack(input_seg_list, 1)
-            #input_data_tensor = tf.reshape(input_data_tensor, [L*(input_dims/model_input), 224, 224, 3])
+            input_data_tensor = tf.reshape(input_data_tensor, [L*(input_dims/model_input), 224, 224, 3])
             input_data_tensor = tf.expand_dims(input_data_tensor, 0)
             input_data_list.append(input_data_tensor)
 
