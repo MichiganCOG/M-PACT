@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 
-f = open('template.pbs', 'r')
+f = open('template_i3d.pbs', 'r')
 l = f.read()
 
 parser = argparse.ArgumentParser()
