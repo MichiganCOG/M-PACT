@@ -346,7 +346,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
 
     return output_data
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, input_alpha):
     """
     Preprocessing function corresponding to the chosen model
     Args:
