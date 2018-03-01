@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_I3D_Train_CVR_2_5_HMDB51_Test_HMDB51_1_0_Alpha_ALPHA_UNDERSCORE     # Name of the job
+#PBS -N TFRecords_1gpu_I3D_Train_CVR_2_5_HMDB51_Test_HMDB51_1_0_Alpha_1_2     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -127,8 +127,8 @@ python train_test_TFRecords_multigpu_model.py \
 --fName testlist \
 --verbose 1 \
 --modelAlpha 1.0 \
---inputAlpha ALPHA_DECIMAL \
---metricsDir input_alpha_ALPHA_UNDERSCORE
+--inputAlpha 1.2 \
+--metricsDir input_alpha_1_2
 
 
 
