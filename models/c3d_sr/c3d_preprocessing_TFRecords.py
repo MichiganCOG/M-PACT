@@ -218,7 +218,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
 
 
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, cvr=1.0, input_alpha=1.0):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, tracker, cvr=1.0, input_alpha=1.0):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -242,7 +242,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     num_frames_per_clip = input_dims
 
-    tracker = [v for v in tf.global_variables() if v.name == 'my_scope/global_step:0'][0]
+#    tracker = [v for v in tf.global_variables() if v.name == 'my_scope/global_step:0'][0]
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 
@@ -260,4 +260,4 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     input_data_tensor = input_data_tensor - _mean_image[...,::-1].tolist()
 
-    return input_data_tensor, alpha_tensor
+    return input_data_tensor, tf.cast(tracker, tf.float32) #alpha_tensor

@@ -153,7 +153,7 @@ class C3D_SR():
         return np.load('models/c3d/c3d_Sports1M.npy')
         # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
 
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
             :index:       Integer indicating the index of video frame from the text file containing video lists
@@ -162,7 +162,7 @@ class C3D_SR():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.model_alpha, self.input_alpha)
         return output
 
 
