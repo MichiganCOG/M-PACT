@@ -24,7 +24,7 @@ class C3D_RR():
         self.verbose=verbose
         self.input_alpha = input_alpha
         self.name = 'c3d_rr'
-
+        self.store_alpha = True
         if verbose:
             print "C3D Model Initialized"
 
@@ -58,6 +58,7 @@ class C3D_RR():
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
+	    layers['Alpha'] = self.store_alpha
 
             layers['conv1'] = conv3d_layer(input_tensor=inputs,
                     filter_dims=[3, 3, 3, 64],
@@ -162,8 +163,8 @@ class C3D_RR():
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
         output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
-        return output
-
+        return output, alpha_tensor
+	
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels, loss_type):

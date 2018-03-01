@@ -260,4 +260,4 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     input_data_tensor = input_data_tensor - _mean_image[...,::-1].tolist()
 
-    return input_data_tensor, tf.cast(tracker, tf.float32) #alpha_tensor
+    return input_data_tensor, alpha_tensor

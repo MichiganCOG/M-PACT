@@ -24,6 +24,7 @@ class C3D_SR():
         self.verbose=verbose
         self.model_alpha = model_alpha
         self.input_alpha = input_alpha
+	self.store_alpha = True
         self.name = 'c3d_sr'
 
         if verbose:
@@ -59,6 +60,7 @@ class C3D_SR():
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
+	    layers['Alpha'] = self.store_alpha
 
             layers['conv1'] = conv3d_layer(input_tensor=inputs,
                     filter_dims=[3, 3, 3, 64],
@@ -163,7 +165,7 @@ class C3D_SR():
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
         output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.model_alpha, self.input_alpha)
-        return output
+        return output, alpha_tensor
 
 
     """ Function to return loss calculated on given network """
