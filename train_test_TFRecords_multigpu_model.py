@@ -468,6 +468,14 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
         video_step       = tf.Variable(1.0, name='video_step', trainable=False)
 
+	# TF session setup
+        config  = tf.ConfigProto(allow_soft_placement=True)
+        sess    = tf.Session(config=config)
+        init    = tf.global_variables_initializer()
+
+        # Variables get randomly initialized into tf graph
+        sess.run(init)	
+
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
@@ -497,7 +505,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
 
         # TF session setup
-        sess    = tf.Session()
+        #sess    = tf.Session()
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
