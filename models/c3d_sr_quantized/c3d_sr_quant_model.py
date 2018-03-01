@@ -31,6 +31,7 @@ class C3D_SR_QUANT():
         self.input_alpha = input_alpha
         self.num_gpus = num_gpus
         self.input_dims = input_dims
+	self.store_alpha = True
         self.name = 'c3d_sr_quant'
 
         if verbose:
@@ -66,13 +67,7 @@ class C3D_SR_QUANT():
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
-            alpha_list = tf.convert_to_tensor([0.4, 0.8, 1.5, 2.5])
-            tracker = [v for v in tf.global_variables() if v.name == 'my_scope/global_step:0'][0]
-            curr_epoch = tracker * self.num_gpus * self.batch_size / (self.num_vids * self.num_clips)
-
-            alpha_ind = tf.mod(curr_epoch, 4)
-
-            layers['Parameterization_Variables'] = alpha_list[alpha_ind] * tf.cast(self.clip_length, tf.float32) / float(self.input_dims)
+            layers['Parameterization_Variables'] = self.store_alpha
 
             layers['conv1'] = conv3d_layer(input_tensor=inputs,
                     filter_dims=[3, 3, 3, 64],
@@ -176,8 +171,8 @@ class C3D_SR_QUANT():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha, self.num_vids, self.num_epochs, self.batch_size, self.num_clips, self.num_gpus)
-        return output
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha, self.num_vids, self.num_epochs, self.batch_size, self.num_clips, self.num_gpus, video_step)
+        return output, alpha_tensor
 
 
     """ Function to return loss calculated on given network """

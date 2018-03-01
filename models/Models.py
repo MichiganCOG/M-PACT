@@ -48,6 +48,9 @@ class Models():
         elif self.model_name == 'c3d_rr':
             model = C3D_RR(input_alpha = self.inputAlpha, verbose = self.verbose)
 
+	else:
+	    model = -1
+
         # END IF
 
         return model

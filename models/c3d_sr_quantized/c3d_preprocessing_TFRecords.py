@@ -137,7 +137,7 @@ def step_resample(video, sample_dims, frame_count, tracker, num_vids, num_epochs
 
     indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
 
-    curr_epoch = tf.cast(tracker * num_gpus * batch_size / (num_vids * num_clips), tf.int32)
+    curr_epoch = tf.cast(tracker / num_vids, tf.int32)
 
     alpha_ind = tf.mod(curr_epoch, 4)
     r_alpha = alpha_list[alpha_ind] * tf.cast(frame_count, tf.float32) / float(sample_dims)
@@ -147,7 +147,7 @@ def step_resample(video, sample_dims, frame_count, tracker, num_vids, num_epochs
 
     indices = tf.cast(indices, tf.int32)
     output  = tf.gather(video, tf.convert_to_tensor(indices))
-    return output, r_alpha
+    return output, alpha_list[alpha_ind]
 
 
 def resample_model(video, sample_dims, frame_count, alpha):
@@ -218,7 +218,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
 
 
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, cvr, input_alpha, num_vids, num_epochs, batch_size, num_clips, num_gpus):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, cvr, input_alpha, num_vids, num_epochs, batch_size, num_clips, num_gpus, tracker):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -245,8 +245,6 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # Selecting a random, seeded temporal offset
 #    temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-num_frames_per_clip, shape=np.asarray([1]))[0]
 #    input_data_tensor = input_data_tensor[temporal_offset:temporal_offset+num_frames_per_clip,:,:,:]
-
-    tracker = [v for v in tf.global_variables() if v.name == 'my_scope/global_step:0'][0]
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 

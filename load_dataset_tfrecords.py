@@ -56,7 +56,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     # END IF
 
     # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
-    clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[]])
+    clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[],[]])
 
     # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
     enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step))
@@ -66,9 +66,13 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     queue_runner.add_queue_runner(qr)
 
     # Dequeue the required number of clips so that each gpu contains batch_size clips
-    input_data_tensor, labels_tensor, names_tensor, video_step_tensor = clip_q.dequeue_many(num_gpus*batch_size)
+    input_data_tensor, labels_tensor, names_tensor, video_step_tensor, alpha_tensor = clip_q.dequeue_many(num_gpus*batch_size)
 
-    return input_data_tensor, labels_tensor, names_tensor, video_step_tensor
+    # Track scalar value defined in a models preprocessing function in a class variable called 'store_alpha'
+    if hasattr(model, 'store_alpha'):
+        model.store_alpha = alpha_tensor
+
+    return input_data_tensor, labels_tensor, names_tensor
 
 
 def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step):
@@ -127,10 +131,19 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     # clips shape - [num_clips, clip_length or frames, height, width, channels]
     # model.preprocess_tfrecords input shape - [clip_length or frames, height, width, channels]
     # Call preprocessing function related to model chosen that preprocesses each clip as an individual video
-    clips_tensor = tf.map_fn(lambda clip:
-        model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
-        clips, dtype=tf.float32)
+    if hasattr(model, 'store_alpha'):
+        clips_tensor = tf.map_fn(lambda clip:
+            model.preprocess_tfrecords(clip[0], tf.shape(clip[0])[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
+            (clips, np.array([clips.get_shape()[0].value]*clips.get_shape()[0].value)), dtype=(tf.float32, tf.float32))
 
+        #model.store_alpha = clips_tensor[1]
+        alpha_tensor = clips_tensor[1]#model.store_alpha
+        clips_tensor = clips_tensor[0]
+    else:
+        clips_tensor = tf.map_fn(lambda clip:
+            model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
+            clips, dtype=tf.float32)
+        alpha_tensor = np.array([1.0]*clips.get_shape()[0].value)
 
     num_clips = tf.shape(clips_tensor)[0]
     video_step = tf.assign_add(video_step, 1)
@@ -138,7 +151,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     names_tensor = tf.tile( [name], [num_clips])
     video_step_tensor = tf.tile([video_step], [num_clips])
     # clips_tensor shape - [num_clips, input_dims, size[0], size[1], channels]
-    return [clips_tensor, tf.tile([labels_tensor], [num_clips,1]), names_tensor, video_step_tensor]
+    return [clips_tensor, tf.tile([labels_tensor], [num_clips,1]), names_tensor, video_step_tensor, alpha_tensor]
 
 
 def _read_tfrecords(filename_queue):

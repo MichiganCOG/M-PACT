@@ -172,7 +172,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
-        input_data_tensor, labels_tensor, names_tensor, video_step_update = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
 
         if ((batch_size == 1) and (num_clips==1)):
             sess.run(tf.assign_add(video_step, -2))
@@ -207,7 +207,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         ################################################## Setup TF graph block ######################################################
         for gpu_idx in range(num_gpus):
             with tf.device('/gpu:'+str(gpu_list[gpu_idx])):
-                with tf.name_scope('%s_%d' % ('tower', gpu_list[gpu_idx])) as scope:
+                with tf.name_scope('%s_%d' % ('tower', int(gpu_list[gpu_idx]))) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
                         returned_layers = model.inference(input_data_tensor[gpu_idx*batch_size:gpu_idx*batch_size+batch_size,:,:,:,:],
                                                  istraining,
@@ -305,9 +305,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         tot_load_time     = 0.0
         tot_train_time    = 0.0
 
-        losses     = []
-        total_pred = []
-        save_data  = []
+        losses       = []
+        total_pred   = []
+        save_data    = []
+	total_params = []
 
         lr            = learning_rate_init
         learning_rate = lr
@@ -343,11 +344,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             time_pre_train = time.time()
 
             ######################################### Running TF training session block ##################################
-
-            _, loss_train, predictions, gs, labels, params, vid_names, idt, vid_step = sess.run([train_op, tower_losses,
+            
+	    _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
-                                                                       names_tensor, input_data_tensor, video_step_update])
+                                                                       names_tensor, input_data_tensor])
 
             ###############################################################################################################
 
@@ -420,6 +421,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             # END FOR
 
+	    total_params.append(params_array)
+
         # END WHILE
 
         #########################################################################################################################################################
@@ -436,6 +439,14 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         if verbose:
             print "Tot train time: ", tot_train_time
             print "Tot time:       ", time.time()-time_init
+
+	if len(total_params) != 0:
+	    total_params = np.array(total_params).flatten()
+            make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
+	    if os.path.isfile(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
+	        loaded_params = np.load(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
+		total_params = np.concatenate([loaded_params, total_params])
+	    np.save(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
 
     # END WITH
 
@@ -520,7 +531,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor, video_step_update = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
 
         ######### GPU list check block ####################
 
@@ -592,7 +603,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         ########################################## Testing loop block ################################################################
 
         while videos_loaded <= num_vids:
-            output_predictions, labels, names, vid_step = sess.run([softmax, labels_tensor, names_tensor, video_step_update])
+            output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
 
                 # END IF
 
