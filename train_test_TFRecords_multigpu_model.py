@@ -65,7 +65,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -98,6 +98,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :loaded_checkpoint:  Specify the exact checkpoint of saved model to be loaded for further training/testing
         :verbose:            Boolean to indicate if all print statement should be procesed or not
         :opt_choice:         String indicating optimizer selected
+        :gpu_list:           List of GPU IDs to be used
+        :grad_clip_value:    Float value at which to clip normalized gradients
 
     Returns:
         Does not return anything
@@ -119,6 +121,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         ckpt    = None
         gs_init = 0
 
+        ################################### Checkpoint loading block #######################################################
+
         # Load pre-trained/saved model to continue training (or fine-tune)
         if load_model:
             try:
@@ -136,6 +140,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             ckpt = model.load_default_weights()
 
         # END IF
+
+        ######################################################################################################################
 
         # Initialize model variables
         global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
@@ -185,9 +191,23 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         """ Multi-GPU setup: 1) Associate gpu device to specific model replica
                              2) Setup tower name scope for variables
         """
+
+        ################# GPU list check block ####################
+
+        assert((len(gpu_list) == num_gpus) or (len(gpu_list) == 0))
+
+        if len(gpu_list) == 0:
+            gpu_list = [str(x) for x in range(num_gpus)]
+
+        # END IF
+
+        ###########################################################
+
+
+        ################################################## Setup TF graph block ######################################################
         for gpu_idx in range(num_gpus):
-            with tf.device('/gpu:'+str(gpu_idx)):
-                with tf.name_scope('%s_%d' % ('tower', gpu_idx)) as scope:
+            with tf.device('/gpu:'+str(gpu_list[gpu_idx])):
+                with tf.name_scope('%s_%d' % ('tower', gpu_list[gpu_idx])) as scope:
                     with tf.variable_scope(tf.get_variable_scope(), reuse = reuse_variables):
                         returned_layers = model.inference(input_data_tensor[gpu_idx*batch_size:gpu_idx*batch_size+batch_size,:,:,:,:],
                                                  istraining,
@@ -242,14 +262,15 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         gradients            = _average_gradients(tower_grads)
         gradients, variables = zip(*gradients)
-        if 'tsn' in model.name:
-            clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 10.0)
-        else:
-            clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, 5.0)
+        clipped_gradients, _ = clip_ops.clip_by_global_norm(gradients, grad_clip_value)
         gradients            = list(zip(clipped_gradients, variables))
         grad_updates         = opt.apply_gradients(gradients, global_step=global_step, name="train")
         train_op             = grad_updates
 
+        ############################################################################################################################################
+
+
+        ######################### Logger Setup block ######################################
 
         # Logging setup initialization (Naming format: Date, month, hour, minute, second)
         log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
@@ -261,6 +282,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
         curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
+
+        ####################################################################################
 
         init    = tf.global_variables_initializer()
         coord   = tf.train.Coordinator()
@@ -293,7 +316,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         time_init = time.time()
 
         batch_count = 0
-        epoch_acc = 0
+        epoch_acc   = 0
+
+        ########################################## Training loop block ################################################################
+
         # Loop epoch number of time over the training set
         while videos_loaded < n_epochs*num_vids:
             # Variable to update during epoch intervals
@@ -316,10 +342,14 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             time_pre_train = time.time()
 
+            ######################################### Running TF training session block ##################################
+
             _, loss_train, predictions, gs, labels, params, vid_names, idt, vid_step = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
                                                                        names_tensor, input_data_tensor, video_step_update])
+
+            ###############################################################################################################
 
             if verbose:
                 print vid_names
@@ -348,12 +378,14 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             # END FOR
 
 
-            # Compute training epoch accuracy
-            for gpu_idx in range(len(predictions)):
-                for batch_idx in range(predictions[gpu_idx].shape[0]):
-                    pred = np.mean(predictions[gpu_idx][batch_idx], 0).argmax()
+            #################### Training accuracy computation block ###############
 
-                    if pred == labels[gpu_idx*batch_size + batch_idx][0]:
+            # Compute training epoch accuracy
+            for gpu_pred_idx in range(len(predictions)):
+                for batch_idx in range(predictions[gpu_pred_idx].shape[0]):
+                    pred = np.mean(predictions[gpu_pred_idx][batch_idx], 0).argmax()
+
+                    if pred == labels[gpu_pred_idx*batch_size + batch_idx][0]:
                         epoch_acc +=1
 
                     # END IF
@@ -363,6 +395,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 # END FOR
 
             # END FOR
+
+            ##########################################################################
 
             time_post_train = time.time()
             tot_train_time += time_post_train - time_pre_train
@@ -388,6 +422,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END WHILE
 
+        #########################################################################################################################################################
+
         if verbose:
             print "Saving..."
 
@@ -404,7 +440,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # END WITH
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -431,6 +467,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
         :loaded_checkpoint:  Specify the exact checkpoint of saved model to be loaded for further training/testing
         :verbose:            Boolean to indicate if all print statement should be procesed or not
+        :gpu_list:           List of GPU IDs to be used
 
     Returns:
         Does not return anything
@@ -442,6 +479,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Initializers for checkpoint and global step variable
         ckpt    = None
         gs_init = 0
+
+        ################################### Checkpoint loading block #######################################################
 
         # Load pre-trained/saved model
         if load_model:
@@ -462,30 +501,57 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # END IF
 
+        ######################################################################################################################
+
         # Initialize model variables
         istraining       = False
         global_step      = tf.Variable(gs_init, name='global_step', trainable=False)
         number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
         video_step       = tf.Variable(1.0, name='video_step', trainable=False)
 
+	# TF session setup
+        config  = tf.ConfigProto(allow_soft_placement=True)
+        sess    = tf.Session(config=config)
+        init    = tf.global_variables_initializer()
+
+        # Variables get randomly initialized into tf graph
+        sess.run(init)	
+
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
         input_data_tensor, labels_tensor, names_tensor, video_step_update = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
-        # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
+
+        ######### GPU list check block ####################
+
+        assert(len(gpu_list)<=1)
+
+        if len(gpu_list) == 0:
+            gpu_list = ['0'] # Default choice is ID = 0           
+
+        # END IF
+
+        ###################################################
+
+        ################################################## Setup TF graph block ######################################################
 
         # Model Inference
-        logits = model.inference(input_data_tensor[0:batch_size,:,:,:,:],
-                                 istraining,
-                                 input_dims,
-                                 output_dims,
-                                 seq_length,
-                                 scope,
-                                 return_layer = return_layer)[0]
+        with tf.device('/gpu:'+gpu_list[0]):
+            logits = model.inference(input_data_tensor[0:batch_size,:,:,:,:],
+                                     istraining,
+                                     input_dims,
+                                     output_dims,
+                                     seq_length,
+                                     scope,
+                                     return_layer = return_layer)[0]
 
-        # Logits
-        softmax = tf.nn.softmax(logits)
+            # Logits
+            softmax = tf.nn.softmax(logits)
 
+        ############################################################################################################################################
+
+
+        ######################### Logger Setup block ######################################
 
         # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
         log_name    = ("exp_test_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
@@ -496,8 +562,10 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         make_dir(os.path.join('results',model.name, dataset, experiment_name))
         make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
 
+        ###################################################################################
+
         # TF session setup
-        sess    = tf.Session()
+        #sess    = tf.Session()
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
@@ -520,6 +588,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
             print "Begin Testing"
 
         # END IF
+
+        ########################################## Testing loop block ################################################################
 
         while videos_loaded <= num_vids:
             output_predictions, labels, names, vid_step = sess.run([softmax, labels_tensor, names_tensor, video_step_update])
@@ -546,6 +616,8 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # END WHILE
 
+        #########################################################################################################################################################
+
     # END WITH
 
     coord.request_stop()
@@ -565,23 +637,10 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
 
+    # Model parameters
+
     parser.add_argument('--model', action= 'store', required=True,
             help= 'Model architecture (c3d, lrcn, tsn, vgg16, resnet)')
-
-    parser.add_argument('--dataset', action= 'store', required=True,
-            help= 'Dataset (UCF101, HMDB51)')
-
-    parser.add_argument('--numGpus', action= 'store', type=int, default=1,
-            help = 'Number of Gpus used for calculation')
-
-    parser.add_argument('--train', action= 'store', required=True, type=int,
-            help = 'Binary value to indicate training or evaluation instance')
-
-    parser.add_argument('--load', action='store', type=int, default=0,
-            help = 'Whether you want to load a saved model to train from scratch.')
-
-    parser.add_argument('--size', action='store', required=True, type=int,
-            help = 'Input frame size')
 
     parser.add_argument('--inputDims', action='store', required=True, type=int,
             help = 'Input Dimensions (Number of frames to pass as input to the model)')
@@ -590,19 +649,68 @@ if __name__=="__main__":
             help = 'Output Dimensions (Number of classes in dataset)')
 
     parser.add_argument('--seqLength', action='store', required=True, type=int,
-            help = 'Length of sequences for LSTM')
+            help = 'Number of output frames expected from model')
 
-    parser.add_argument('--expName', action='store', required=True,
-            help = 'Unique name of experiment being run')
+    parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
+            help = 'Resampling factor for constant value resampling and alpha initialization')
 
-    parser.add_argument('--numVids', action='store', required=True, type=int,
-            help = 'Number of videos to be used for training')
+    parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
+            help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
+
+    parser.add_argument('--resampleFrames', action='store', type=int, default=16,
+            help = 'Number of frames remaining after resampling within model inference.')
+
+    # Optimization parameters
 
     parser.add_argument('--lr', action='store', type=float, default=0.001,
             help = 'Learning Rate')
 
     parser.add_argument('--wd', action='store', type=float, default=0.0,
             help = 'Weight Decay')
+
+    parser.add_argument('--lossType', action='store', default='full_loss',
+            help = 'String defining loss type associated with chosen model.')
+
+    parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
+            help = 'Which model layers to be returned by the models\' inference and logged.')
+
+    parser.add_argument('--optChoice', action='store', default='default',
+            help = 'String indicating optimizer choice')
+
+    parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
+            help = 'Value of normalized gradient at which to clip.')
+
+    # Experiment parameters
+
+    parser.add_argument('--dataset', action= 'store', required=True,
+            help= 'Dataset (UCF101, HMDB51)')
+
+    parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
+            help= 'Dataset (UCF101, HMDB51)')
+
+    parser.add_argument('--numGpus', action= 'store', type=int, default=1,
+            help = 'Number of Gpus used for calculation')
+
+    parser.add_argument('--gpuList', nargs='+',type=str, default=[],
+            help = 'List of GPU IDs to be used')
+
+    parser.add_argument('--train', action= 'store', required=True, type=int,
+            help = 'Binary value to indicate training or evaluation instance')
+
+    parser.add_argument('--load', action='store', type=int, default=0,
+            help = 'Whether you want to load a saved model to train from scratch.')
+
+    parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
+            help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
+
+    parser.add_argument('--size', action='store', required=True, type=int,
+            help = 'Input frame size')
+
+    parser.add_argument('--expName', action='store', required=True,
+            help = 'Unique name of experiment being run')
+
+    parser.add_argument('--numVids', action='store', required=True, type=int,
+            help = 'Number of videos to be used for training')
 
     parser.add_argument('--nEpochs', action='store', type=int, default=1,
             help = 'Number of Epochs')
@@ -619,9 +727,6 @@ if __name__=="__main__":
     parser.add_argument('--saveFreq', action='store', type=int, default=1,
             help = 'Frequency in epochs to save model checkpoints')
 
-    parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
-            help= 'Dataset (UCF101, HMDB51)')
-
     parser.add_argument('--clipLength', action='store', type=int, default=-1,
             help = 'Length of clips to cut video into, -1 indicates using the entire video as one clip')
 
@@ -637,46 +742,28 @@ if __name__=="__main__":
     parser.add_argument('--numClips', action='store', type=int, default=-1,
             help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
 
-    parser.add_argument('--metricsMethod', action='store', default='avg_pooling',
-            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)')
-
-    parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
-            help = 'Which model layers to be returned by the models\' inference and logged.')
-
     parser.add_argument('--batchSize', action='store', type=int, default=1,
             help = 'Number of clips to load into the model each step.')
-
-    parser.add_argument('--lossType', action='store', default='full_loss',
-            help = 'String defining loss type associated with chosen model.')
 
     parser.add_argument('--metricsDir', action='store', type=str, default='default',
             help = 'Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.')
 
-    parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
-            help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
-
-    parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
-            help = 'Resampling factor for constant value resampling and alpha initialization')
-
-    parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
-            help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
-
-    parser.add_argument('--resampleFrames', action='store', type=int, default=16,
-            help = 'Number of frames remaining after resampling within model inference.')
+    parser.add_argument('--metricsMethod', action='store', default='avg_pooling',
+            help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)')
 
     parser.add_argument('--verbose', action='store', type=int, default=1,
             help = 'Boolean switch to display all print statements or not')
 
-    parser.add_argument('--optChoice', action='store', default='default',
-            help = 'String indicating optimizer choice')
 
     args = parser.parse_args()
 
     print "Setup of current experiments"
-    print "############################"
+    print "\n############################"
     print args
     print "############################ \n"
     model_name = args.model
+
+    model = Models(model_name = model_name, inputAlpha = args.inputAlpha, modelAlpha = args.modelAlpha).assign_model()
 
     # Associating models
     #if model_name == 'vgg16':
@@ -696,15 +783,6 @@ if __name__=="__main__":
 
     elif model_name == 'resnet_offset_fixed':
         model = ResNet_Offset_Fixed(args.inputDims, 25, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'c3d':
-        model = C3D(input_alpha=args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'c3d_cvr':
-        model = C3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'c3d_rr':
-        model = C3D_RR(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'c3d_sr':
         model = C3D_SR(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
@@ -729,15 +807,6 @@ if __name__=="__main__":
 
     elif model_name == 'c3d_alpha_div_100':
         model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
-    elif model_name == 'i3d':
-        model = I3D(input_alpha=args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'i3d_cvr':
-       model = I3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'i3d_rr':
-       model = I3D_RR(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'i3d_sr':
        model = I3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
@@ -797,39 +866,9 @@ if __name__=="__main__":
         model = TSN_SR(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha)
 
 
-
-    #elif model_name == 'resnet_RIL_interp_median_v23_2_1':
-    #    model = ResNet_RIL_Interp_Median_v23_2_1(args.inputDims, 25, verbose=args.verbose)
-
     elif model_name == 'resnet_RIL_interp_median_v23_4':
         model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
 
-    #elif model_name == 'resnet_RIL_interp_median_v23_7_1':
-    #    model = ResNet_RIL_Interp_Median_v23_7_1(inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v31_3':
-    #    model = ResNet_RIL_Interp_Median_v31_3(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v34_3_lstm':
-    #    model = ResNet_RIL_Interp_Median_v34_3_lstm(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v35_lstm':
-    #    model = ResNet_RIL_Interp_Median_v35_lstm(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v36_lstm':
-    #    model = ResNet_RIL_Interp_Median_v36_lstm(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v37_lstm':
-    #    model = ResNet_RIL_Interp_Median_v37_lstm(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v38':
-    #    model = ResNet_RIL_Interp_Median_v38(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v39':
-    #    model = ResNet_RIL_Interp_Median_v39(args.inputDims, 25, verbose=args.verbose)
-
-    #elif model_name == 'resnet_RIL_interp_median_v40':
-    #    model = ResNet_RIL_Interp_Median_v40(args.inputDims, 25, verbose=args.verbose)
 
     else:
         print("Model not found, check the import and elif statements")
@@ -865,7 +904,9 @@ if __name__=="__main__":
                 metrics_dir         = args.metricsDir,
                 loaded_checkpoint   = args.loadedCheckpoint,
                 verbose             = args.verbose,
-                opt_choice          = args.optChoice)
+                opt_choice          = args.optChoice,
+                gpu_list            = args.gpuList,
+                grad_clip_value     = args.gradClipValue)
 
     else:
         test(   model             = model,
@@ -891,4 +932,5 @@ if __name__=="__main__":
                 batch_size        = args.batchSize,
                 metrics_dir       = args.metricsDir,
                 loaded_checkpoint = args.loadedCheckpoint,
-                verbose           = args.verbose)
+                verbose           = args.verbose,
+                gpu_list          = args.gpuList)
