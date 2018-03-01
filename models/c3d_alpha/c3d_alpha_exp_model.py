@@ -130,7 +130,7 @@ class C3D_ALPHA_EXP():
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
-            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(self.alpha))]        
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(self.alpha))]
 
             layers['RAINlayer'] = tf.map_fn(lambda clip: self._extraction_layer(inputs=clip,
                                                        params=layers['Parameterization_Variables'],
@@ -229,7 +229,7 @@ class C3D_ALPHA_EXP():
         return np.load('models/c3d/c3d_Sports1M.npy')
         # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
 
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
             :index:       Integer indicating the index of video frame from the text file containing video lists

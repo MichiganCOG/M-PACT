@@ -7,7 +7,7 @@ from tensorflow.python.training import queue_runner
 
 
 
-def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose=True):
+def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose=True):
     """
     Function load dataset, setup queue and read data into queue
     Args:
@@ -48,7 +48,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
     if istraining:
-        thread_count = 6
+        thread_count = 1
 
     else:
         thread_count = 1
@@ -56,22 +56,22 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     # END IF
 
     # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
-    clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[]])
+    clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[]])
 
     # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
-    enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue))
+    enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step))
 
     # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
-    qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*batch_size*thread_count)
+    qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*thread_count)
     queue_runner.add_queue_runner(qr)
 
     # Dequeue the required number of clips so that each gpu contains batch_size clips
-    input_data_tensor, labels_tensor, names_tensor = clip_q.dequeue_many(num_gpus*batch_size)
+    input_data_tensor, labels_tensor, names_tensor, video_step_tensor = clip_q.dequeue_many(num_gpus*batch_size)
 
-    return input_data_tensor, labels_tensor, names_tensor
+    return input_data_tensor, labels_tensor, names_tensor, video_step_tensor
 
 
-def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue):
+def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step):
     """
     Function to load a single video and preprocess its' frames
     Args:
@@ -128,16 +128,17 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     # model.preprocess_tfrecords input shape - [clip_length or frames, height, width, channels]
     # Call preprocessing function related to model chosen that preprocesses each clip as an individual video
     clips_tensor = tf.map_fn(lambda clip:
-        model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining),
+        model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
         clips, dtype=tf.float32)
 
 
     num_clips = tf.shape(clips_tensor)[0]
+    video_step = tf.assign_add(video_step, 1)
     labels_tensor = tf.tile( [label], [seq_length])
     names_tensor = tf.tile( [name], [num_clips])
-
+    video_step_tensor = tf.tile([video_step], [num_clips])
     # clips_tensor shape - [num_clips, input_dims, size[0], size[1], channels]
-    return [clips_tensor, tf.tile([labels_tensor], [num_clips,1]), names_tensor]
+    return [clips_tensor, tf.tile([labels_tensor], [num_clips,1]), names_tensor, video_step_tensor]
 
 
 def _read_tfrecords(filename_queue):

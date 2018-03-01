@@ -141,7 +141,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         global_step        = tf.Variable(gs_init, name='global_step', trainable=False)
         number_of_videos   = tf.Variable(num_vids, name='number_of_videos', trainable=False)
         number_of_epochs   = tf.Variable(n_epochs, name='number_of_epochs', trainable=False)
-
+        video_step         = tf.Variable(1.0, name='video_step', trainable=False)
         istraining         = True
         reuse_variables    = None
 
@@ -166,7 +166,12 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose)
+        input_data_tensor, labels_tensor, names_tensor, video_step_update = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
+
+        if ((batch_size == 1) and (num_clips==1)):
+            sess.run(tf.assign_add(video_step, -2))
+        else:
+            sess.run(tf.assign_add(video_step, -1))
 
         # Define optimizer (Current selection is only momentum optimizer)
         if opt_choice == 'gd':
@@ -311,10 +316,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             time_pre_train = time.time()
 
-            _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, params, vid_names, idt, vid_step = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
-                                                                       names_tensor, input_data_tensor])
+                                                                       names_tensor, input_data_tensor, video_step_update])
 
             if verbose:
                 print vid_names
@@ -461,11 +466,12 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         istraining       = False
         global_step      = tf.Variable(gs_init, name='global_step', trainable=False)
         number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
+        video_step       = tf.Variable(1.0, name='video_step', trainable=False)
 
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, verbose)
+        input_data_tensor, labels_tensor, names_tensor, video_step_update = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
         # input_data_tensor shape - [num_gpus*batch_size, input_dims, size[0], size[1], channels]
 
         # Model Inference
@@ -516,7 +522,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # END IF
 
         while videos_loaded <= num_vids:
-            output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
+            output_predictions, labels, names, vid_step = sess.run([softmax, labels_tensor, names_tensor, video_step_update])
 
                 # END IF
 
