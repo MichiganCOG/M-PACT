@@ -731,7 +731,7 @@ if __name__=="__main__":
         model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
 
     elif model_name == 'i3d':
-        model = I3D(verbose=args.verbose)
+        model = I3D(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'i3d_cvr':
        model = I3D_CVR(cvr=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)

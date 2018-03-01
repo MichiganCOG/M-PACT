@@ -14,18 +14,19 @@ from i3d_preprocessing_TFRecords        import preprocess           as preproces
 
 class I3D():
 
-    def __init__(self, verbose=True):
+    def __init__(self, input_alpha=1.0, verbose=True):
         """
         Args:
             :k:          Temporal window width
+            :input_alpha: Value of alpha to resample inputs to network 
             :verbose:    Setting verbose command
-            :input_dims: Input dimensions (number of frames)
 
         Return:
             Does not return anything
         """
-        self.name       = 'i3d'
-        self.verbose    = verbose
+        self.name        = 'i3d'
+        self.input_alpha = input_alpha
+        self.verbose     = verbose
 
         print "I3D initialized"
 
@@ -464,7 +465,7 @@ class I3D():
         Return:
             Pointer to preprocessing function of current model
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
     """ Function to return loss calculated on all the outputs of a given network """
     def full_loss(self, logits, labels):
