@@ -121,7 +121,7 @@ class TSN_CVR():
 
         return weights
 
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_seg, self.input_dims, self.cvr, self.input_alpha)
         self.alpha_tensor = tf.Variable(alpha_tensor, trainable=False)
         return output

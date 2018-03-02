@@ -1,21 +1,17 @@
-" RESNET-50 50 Frames + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 + RAIN (INTERP + MEDIAN) v23_4 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
-import h5py
 import os
-import time
-import sys
-sys.path.append('../..')
 
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils                             import *
-from tensorflow.contrib.rnn                   import static_rnn
-from resnet_50_frames_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from utils.layers_utils              import *
+from tensorflow.contrib.rnn          import static_rnn
+from resnet_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_50_Frames():
+class ResNet_ALPHA():
 
-    def __init__(self, input_dims, verbose=True):
+    def __init__(self, input_dims, k, verbose=True):
         """
         Args:
             :k:          Temporal window width
@@ -25,11 +21,78 @@ class ResNet_50_Frames():
         Return:
             Does not return anything
         """
-        self.name       = 'resnet_50_frames'
+        self.k          = k
         self.verbose    = verbose
         self.input_dims = input_dims
+        self.j          = input_dims / k
+        self.name       = 'resnet_alpha'
 
-        print "ResNet50_50_Frames + LSTM initialized"
+        print "resnet alpha initialized"
+
+    def _extraction_layer(self, inputs, params, sets, K, L):
+        """
+        Args:
+            :inputs: Original inputs to the model
+            :params: Offset and sampling parameter estimates from Parameterization Network
+            :sets:   Number of non overlapping sets obtained from applying a temporal slid
+                     ing window over the input
+            :K:      Size of temporal sliding window
+            :L:      Expected number of output frames
+
+        Return:
+            :output: Extracted features
+        """
+
+        # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
+        sample_alpha_tick = tf.exp(-tf.nn.relu(params[0]))
+
+        # Extract shape of input signal
+        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+
+        # Generate indices for output
+        output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
+
+        output_idx = tf.slice(output_idx, [0],[L])
+
+        # Sampling parameter scaling to match inputs temporal dimension
+        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
+
+        # Include sampling parameter to correct output indices
+        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
+
+        # Clip output index values to >= 1 and <=N (valid cases only)
+        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
+
+        # Create x0 and x1 float
+        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
+        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
+
+
+        # Deltas :
+        d1 = (output_idx - x0)
+        d2 = (x1 - x0)
+        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [L,224,224,3])
+        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [L,224,224,3])
+
+        # Create x0 and x1 indices
+        output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
+        output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
+        output_idx   = tf.cast(output_idx, 'int32')
+
+	# Create y0 and y1 outputs
+        output_0 = tf.gather(inputs, output_idx_0-1)
+        output_1 = tf.gather(inputs, output_idx_1-1)
+        output   = tf.gather(inputs, output_idx-1)
+
+        d3     = output_1 - output_0
+
+        output = tf.add_n([(d1/d2)*d3, output_0])
+
+        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
+
+        return output
+
+
 
     def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
         """
@@ -53,11 +116,12 @@ class ResNet_50_Frames():
         lstm_outputs, states = static_rnn(lstm_cell, inputs, dtype=tf.float32)
 
         # Condense output shape from:
-        # list of n_time_steps itmes, each item of size (batch_size x cell_size)
+        # list of n_time_steps itmes, each item of size (batch_size x cellSize)
         # To:
-        # Tensor: [(n_time_steps x 1), cell_size] (Specific to our case)
+        # Tensor: [(n_time_steps x 1), cellSize] (Specific to our case)
         lstm_outputs = tf.stack(lstm_outputs)
         lstm_outputs = tf.reshape(lstm_outputs,[-1,cell_size])
+
 
         return lstm_outputs
 
@@ -169,7 +233,6 @@ class ResNet_50_Frames():
 
         return layers
 
-
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
@@ -180,7 +243,7 @@ class ResNet_50_Frames():
             :seq_length:   Length of output sequence from LSTM
             :scope:        Scope name for current model instance
             :dropout_rate: Value indicating proability of keep inputs
-            :return_layer: List of strings matching name of a layer in current model
+            :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
 
         Return:
@@ -188,19 +251,36 @@ class ResNet_50_Frames():
         """
 
         ############################################################################
-        #                Creating ResNet50 50 Frames + LSTM Network Layers                   #
+        #               Creating ResNet50 + RAIN (interp) + LSTM Network Layers                   #
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET 50 Frames network layers')
+            print('Generating RESNET ALPHA network layers')
 
         # END IF
 
+        inputs = inputs[0]
 
         with tf.name_scope(scope, 'resnet', [inputs]):
             layers = {}
 
-            layers['1'] = conv_layer(input_tensor=inputs,
+            # Input shape:  [(K frames in a set x J number of sets) x Height x Width x Channels]
+            # Output shape: [(K frames in a set x J number of sets) x Height x Width x 32]
+
+            ############################################################################
+            #                           Parameterization Network                       #
+            ############################################################################
+
+            layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.25))]
+
+
+            layers['RIlayer'] = self._extraction_layer(inputs=inputs,
+                                                       params=layers['Parameterization_Variables'],
+                                                       sets=self.j, L=seq_length, K=self.k)
+
+            ############################################################################
+
+            layers['1'] = conv_layer(input_tensor=layers['RIlayer'],
                     filter_dims=[7, 7, 64], stride_dims=[2,2],
                     padding = 'VALID',
                     name='conv1',
@@ -270,18 +350,22 @@ class ResNet_50_Frames():
 
             layers['126'] = tf.layers.dropout(layers['125'], training=is_training, rate=0.5)
 
-            layers['logits'] = fully_connected_layer(input_tensor=layers['126'],
+            layers['logits'] = [fully_connected_layer(input_tensor=layers['126'],
                                                      out_dim=output_dims, non_linear_fn=None,
-                                                     name='logits', weight_decay=weight_decay)
+                                                     name='logits', weight_decay=weight_decay)]
+
             # END WITH
 
         return [layers[x] for x in return_layer]
+
+
 
     def load_default_weights(self):
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
         return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
+
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
@@ -298,7 +382,7 @@ class ResNet_50_Frames():
         return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
 
     """ Function to return loss calculated on given network """
-    def loss(self, logits, labels):
+    def loss(self, logits, labels, loss_type):
         """
         Args:
             :logits: Unscaled logits returned from final layer in model
@@ -307,24 +391,8 @@ class ResNet_50_Frames():
         Return:
             Cross entropy loss value
         """
-
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
-                                                                  logits=logits)
+                                                                    logits=logits)
         return cross_entropy_loss
-
-
-
-
-
-#if __name__=="__main__":
-#
-#    import os
-#    x = tf.placeholder(tf.float32, shape=(None, 224,224,3))
-#    y = tf.placeholder(tf.int32, [None])
-#    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
-#    data_dict = h5py.File(path,'r')
-#
-#    network = _gen_resnet50_baseline1_network(x, True, data_dict, 35, 51)
-#    import pdb; pdb.set_trace()

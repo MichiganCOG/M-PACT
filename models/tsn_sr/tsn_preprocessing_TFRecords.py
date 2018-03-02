@@ -107,7 +107,7 @@ def _loop_video(offset_tensor, input_data_tensor, frames, height, width, channel
 
     return output_data
 
-def preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, num_seg, input_dims, cvr, input_alpha=1.0):
+def preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, num_seg, input_dims, cvr, input_alpha, tracker):
     new_height, new_width = _get_new_length(height, width)
     new_height = tf.to_int32(new_height)
     new_width = tf.to_int32(new_width)
@@ -115,7 +115,6 @@ def preprocess(input_data_tensor, frames, height, width, channel, size, label, i
     w_size = tf.convert_to_tensor(size[1], dtype=tf.float32)
 
     num_seg = 3
-    tracker = [v for v in tf.global_variables() if v.name == 'my_scope/global_step:0'][0]
 
     # Reduce the total video to have exactly footprint frames
     footprint = input_dims*num_seg

@@ -24,6 +24,7 @@ class TSN_SR():
         self.model_alpha = model_alpha
         self.input_alpha = input_alpha
         self.dropout     = 0.8
+	self.store_alpha = True
 
         if self.verbose:
             print('TSN_SR initialized')
@@ -121,9 +122,9 @@ class TSN_SR():
 
         return weights
 
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_seg, self.input_dims, self.model_alpha, self.input_alpha)
-        return output
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_seg, self.input_dims, self.model_alpha, self.input_alpha, video_step)
+        return output, alpha_tensor
 
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.8, return_layer=['logits'], weight_decay=0.0005):
         if self.verbose:
@@ -139,7 +140,7 @@ class TSN_SR():
 
         with tf.name_scope(scope, 'tsn_sr', [inputs]):
             layers = {}
-            #layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.25))]
+            layers['Parameterization_Variables'] = self.store_alpha
             #layers['RIlayer'] = self._extraction_layer(inputs=inputs, params=layers['Parameterization_Variables'], sets=input_dims, L=30, K=1)
             layers['base'] = BNInception(inputs,
                                      dropout_rate=dropout_rate,

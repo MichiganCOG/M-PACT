@@ -1,20 +1,21 @@
-" RESNET-50 Custom baseline 1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 Custom baseline 3 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
+import h5py
+import os
+import time
 import sys
 sys.path.append('../..')
-import os
 
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils             import *
-from tensorflow.contrib.rnn         import static_rnn
-from resnet_cb_1_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from utils.layers_utils                             import *
+from tensorflow.contrib.rnn                   import static_rnn
+from resnet_sr_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
+class ResNet_SR():
 
-class ResNet_cb_1():
-
-	def __init__(self, input_dims, model_alpha, input_alpha, verbose=True):
+	def __init__(self, input_dims, alpha, verbose=True):
 		"""
 		Args:
 		    :k:          Temporal window width
@@ -24,14 +25,14 @@ class ResNet_cb_1():
 		Return:
 		    Does not return anything
 		"""
-		self.name       = 'resnet_cb_1'
+		self.name       = 'resnet_sr'
 		self.verbose    = verbose
 		self.input_dims = input_dims
 		self.model_alpha= model_alpha
 		self.input_alpha= input_alpha
-
-		print "ResNet50_CB_1 + LSTM initialized"
-
+		self.store_alpha= store_alpha
+		print "ResNet50_sr + LSTM initialized"
+	
 	def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
 		"""
 		Args:
@@ -191,11 +192,11 @@ class ResNet_cb_1():
 		"""
 
 		############################################################################
-		#                Creating ResNet50 Custom Baseline 1 + LSTM Network Layers                   #
+		#                Creating ResNet50 Custom Baseline 3 + LSTM Network Layers                   #
 		############################################################################
 
 		if self.verbose:
-		    print('Generating RESNET Custom Baseline 1 network layers')
+		    print('Generating RESNET Custom Baseline 3 network layers')
 
 		# END IF
 
@@ -203,6 +204,8 @@ class ResNet_cb_1():
 
 		with tf.name_scope(scope, 'resnet', [inputs]):
 		    layers = {}
+		    
+		    layers['Alpha'] = self.store_alpha
 
 		    layers['1'] = conv_layer(input_tensor=inputs,
 		            filter_dims=[7, 7, 64], stride_dims=[2,2],
@@ -287,7 +290,7 @@ class ResNet_cb_1():
 		"""
 		return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
 
-	def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+	def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
 		"""
 		Args:
 		    :index:       Integer indicating the index of video frame from the text file containing video lists
@@ -299,7 +302,7 @@ class ResNet_cb_1():
 		Return:
 		    Pointer to preprocessing function of current model
 		"""
-		return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining)
+		return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining, video_step)
 
 	""" Function to return loss calculated on half the outputs of a given network """
 	def half_loss(self, logits, labels):
@@ -350,6 +353,8 @@ class ResNet_cb_1():
 
 		else:
 		    return self.half_loss(logits, labels)
+
+
 
 
 

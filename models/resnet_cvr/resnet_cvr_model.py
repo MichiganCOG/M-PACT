@@ -1,19 +1,18 @@
-" RESNET-50 Custom baseline 2 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" RESNET-50 Custom baseline 1 + LSTM MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
-import h5py
-import os
-import time
 import sys
 sys.path.append('../..')
+import os
 
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                             import *
-from tensorflow.contrib.rnn                   import static_rnn
-from resnet_cb_2_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from utils.layers_utils             import *
+from tensorflow.contrib.rnn         import static_rnn
+from resnet_cvr_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
-class ResNet_cb_2():
+
+class ResNet_CVR():
 
 	def __init__(self, input_dims, model_alpha, input_alpha, verbose=True):
 		"""
@@ -25,13 +24,13 @@ class ResNet_cb_2():
 		Return:
 		    Does not return anything
 		"""
-		self.name       = 'resnet_cb_2'
+		self.name       = 'resnet_cvr'
 		self.verbose    = verbose
 		self.input_dims = input_dims
 		self.model_alpha= model_alpha
 		self.input_alpha= input_alpha
 
-		print "ResNet50_CB_2 + LSTM initialized"
+		print "ResNet50_CVR + LSTM initialized"
 
 	def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
 		"""
@@ -192,11 +191,11 @@ class ResNet_cb_2():
 		"""
 
 		############################################################################
-		#                Creating ResNet50 Custom Baseline 2 + LSTM Network Layers                   #
+		#                Creating ResNet50 Custom Baseline 1 + LSTM Network Layers                   #
 		############################################################################
 
 		if self.verbose:
-		    print('Generating RESNET Custom Baseline 2 network layers')
+		    print('Generating RESNET Custom Baseline 1 network layers')
 
 		# END IF
 
@@ -204,6 +203,8 @@ class ResNet_cb_2():
 
 		with tf.name_scope(scope, 'resnet', [inputs]):
 		    layers = {}
+
+		    layers['Parameterization_Variables'] = self.model_alpha
 
 		    layers['1'] = conv_layer(input_tensor=inputs,
 		            filter_dims=[7, 7, 64], stride_dims=[2,2],
@@ -288,7 +289,7 @@ class ResNet_cb_2():
 		"""
 		return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
 
-	def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+	def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
 		"""
 		Args:
 		    :index:       Integer indicating the index of video frame from the text file containing video lists

@@ -783,14 +783,14 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    elif model_name == 'resnet_cb_1':
-	model = ResNet_cb_1(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+    elif ((model_name == 'resnet_cb_1') or (model_name == 'resnet_cvr')):
+	model = ResNet_CVR(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
 
-    elif model_name == 'resnet_cb_2':
-	model = ResNet_cb_2(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+    elif ((model_name == 'resnet_cb_2') or (model_name == 'resnet_rr')):
+	model = ResNet_RR(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
 
-    elif model_name == 'resnet_cb_3':
-	model = ResNet_cb_3(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
+    elif ((model_name == 'resnet_cb_3') or (model_name == 'resnet_sr')):
+	model = ResNet_SR(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'resnet_offset_fixed':
         model = ResNet_Offset_Fixed(args.inputDims, 25, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
@@ -877,8 +877,8 @@ if __name__=="__main__":
         model = TSN_SR(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha)
 
 
-    elif model_name == 'resnet_RIL_interp_median_v23_4':
-        model = ResNet_RIL_Interp_Median_v23_4(args.inputDims, 25, verbose=args.verbose)
+    elif ((model_name == 'resnet_RIL_interp_median_v23_4') or (model_name == 'resnet_alpha')):
+        model = ResNet_ALPHA(args.inputDims, 25, verbose=args.verbose)
 
 
     else:
