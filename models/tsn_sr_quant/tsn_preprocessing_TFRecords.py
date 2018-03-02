@@ -48,6 +48,58 @@ def resample_input(video, sample_dims, frame_count, alpha):
     output  = tf.gather(video, tf.convert_to_tensor(indices))
     return output
 
+def resample_model_sinusoidal_quant(video, sample_dims, frame_count, num_vids, tracker):
+    """Return video sampled at random rate
+    Args:
+        :video:       Raw input data
+        :frame_count: Total number of frames
+        :sample_dims: Number of frames to be provided as input to model
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
+    alpha_list = tf.convert_to_tensor([0.4, 0.8, 1.5, 2.5])
+
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
+
+    curr_epoch = tf.cast(tracker / num_vids, tf.int32)
+
+    alpha_ind = tf.mod(curr_epoch, 4)
+    r_alpha = alpha_list[alpha_ind] * tf.cast(frame_count, tf.float32) / float(sample_dims)
+
+    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output, alpha_list[alpha_ind]
+
+def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
+    """Return video sampled at random rate
+    Args:
+        :video:       Raw input data
+        :frame_count: Total number of frames
+        :sample_dims: Number of frames to be provided as input to model
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
+    alpha       = 1.6
+    upper_limit = 3.0
+    lower_limit = 0.2
+
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
+
+    # Sinusoidal variation with alpha being the DC offset
+    r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
+
+    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output, (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32)))
+
 def crop_and_resize_(input_data_tensor, offsets, crop_sizes, size):
     input_seg_list = []
     num_element = len(offsets)
@@ -139,7 +191,7 @@ def get_cropping_offsets_(new_height, new_width, istraining, num_sample):
 
     return offsets, crop_sizes
 
-def preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, num_seg, input_dims, input_alpha=1.0):
+def preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, num_seg, input_dims, cvr, input_alpha, num_vids, tracker):
     new_height, new_width = _get_new_length(height, width)
     new_height = tf.to_int32(new_height)
     new_width = tf.to_int32(new_width)
@@ -147,9 +199,6 @@ def preprocess(input_data_tensor, frames, height, width, channel, size, label, i
     w_size = tf.convert_to_tensor(size[1], dtype=tf.float32)
 
     num_seg = 3
-    rr = 1.0
-    if istraining:
-        rr = tf.random_uniform(dtype=tf.float32, minval=0.2, maxval=3.0, shape=np.asarray([1]))[0]
 
     # Reduce the total video to have exactly footprint frames
     footprint = input_dims*num_seg
@@ -178,8 +227,16 @@ def preprocess(input_data_tensor, frames, height, width, channel, size, label, i
         if istraining and np.random.randint(2):
             input_seg_tensor = tf.map_fn(lambda img: tf.image.flip_left_right(img), input_seg_tensor)
 
-        # Apply the RR resampling
-        input_seg_tensor = resample_model(input_seg_tensor, SAMPLE_NUM/num_seg, SAMPLE_NUM, rr)
+        # Apply the SR resampling
+        if istraining:
+            input_seg_tensor, alpha_tensor = resample_model_sinusoidal_quant(input_seg_tensor, SAMPLE_NUM/num_seg, SAMPLE_NUM, num_vids, tracker)
+
+        else:
+            input_seg_tensor = resample_model(input_seg_tensor, SAMPLE_NUM/num_seg, SAMPLE_NUM, cvr)
+            alpha_tensor      = tf.convert_to_tensor(cvr)
+
+        # END IF
+
         input_seg_list.append(input_seg_tensor)
 
     input_data_tensor = tf.stack(input_seg_list, 1)
@@ -188,4 +245,4 @@ def preprocess(input_data_tensor, frames, height, width, channel, size, label, i
     input_data_tensor = _mean_image_subtraction(input_data_tensor, [_R_MEAN, _G_MEAN, _B_MEAN])
     input_data_tensor = tf.map_fn(lambda img: tf.image.rot90(img, 1), input_data_tensor)
 
-    return input_data_tensor, rr
+    return input_data_tensor, alpha_tensor

@@ -41,53 +41,6 @@ def _loop_video(offset_tensor, input_data_tensor, frames, height, width, channel
 
     return output_data
 
-def preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, num_seg, input_dims):
-    new_height, new_width = _get_new_length(height, width)
-    new_height = tf.to_int32(new_height)
-    new_width = tf.to_int32(new_width)
-    h_size = tf.convert_to_tensor(size[0], dtype=tf.float32)
-    w_size = tf.convert_to_tensor(size[1], dtype=tf.float32)
-
-    num_seg = 3
-
-    # Reduce the total video to have exactly footprint frames
-    footprint = input_dims*num_seg
-    input_data_tensor = tf.cond(tf.less(frames, footprint),
-                        lambda: _loop_video(input_data_tensor, input_data_tensor, frames, height, width, channel, footprint),
-                        lambda: input_data_tensor)
-    frames = tf.shape(input_data_tensor)[0]
-    indices = tf.range(0, frames, tf.div(frames,footprint))
-    input_data_tensor = tf.gather(input_data_tensor, indices[:footprint])
-
-    # For the baseline TSN, reduce again to have frames of input_dims
-    indices = tf.range(0, footprint, tf.div(footprint,input_dims))
-    input_data_tensor = tf.gather(input_data_tensor, indices[:input_dims])
-    SAMPLE_NUM = input_dims/num_seg
-
-    input_data_tensor = tf.cast(input_data_tensor, tf.float32)
-
-    # Preprocessing for each segment
-    input_seg_list = []
-    for i in range(num_seg):
-        input_seg_tensor = tf.gather(input_data_tensor, tf.range(i*SAMPLE_NUM, (i+1)*SAMPLE_NUM))
-        input_seg_tensor = tf.map_fn(lambda img: resize_bilinear(img, [new_height, new_width], align_corners=True), input_seg_tensor)
-
-        offsets, crop_sizes = get_cropping_offsets_(new_height, new_width, istraining, SAMPLE_NUM)
-        input_seg_tensor = crop_and_resize_(input_seg_tensor, offsets, crop_sizes, size)
-
-        # Flipping block-wise in the training
-        if istraining and np.random.randint(2):
-            input_seg_tensor = tf.map_fn(lambda img: tf.image.flip_left_right(img), input_seg_tensor)
-
-        input_seg_list.append(input_seg_tensor)
-
-    input_data_tensor = tf.stack(input_seg_list, 1)
-    input_data_tensor = tf.reshape(input_data_tensor, [SAMPLE_NUM*num_seg, tf.to_int32(h_size), tf.to_int32(w_size), channel])
-    input_data_tensor = _mean_image_subtraction(input_data_tensor, [_R_MEAN, _G_MEAN, _B_MEAN])
-    input_data_tensor = tf.map_fn(lambda img: tf.image.rot90(img, 1), input_data_tensor)
-
-    return input_data_tensor
-
 def _mean_image_subtraction(images, means):
     num_channels = 3
     channels = tf.split(axis=3, num_or_size_splits=num_channels, value=images)
@@ -144,4 +97,76 @@ def get_cropping_offsets_(new_height, new_width, istraining, num_sample):
         crop_sizes.append(crop_size)
 
     return offsets, crop_sizes
+
+def resample_input(video, sample_dims, frame_count, alpha):
+    """Return video sampled at desired rate (model based)
+    Args:
+        :video:       Raw input data
+        :frame_count: Total number of frames
+        :sample_dims: Number of frames to be provided as input to model
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
+
+    sample_dims = tf.cast(sample_dims, tf.float32)
+    indices = tf.range(start=0., limit=sample_dims, delta=1., dtype=tf.float32)
+    r_alpha = alpha * tf.cast(frame_count, tf.float32) / sample_dims
+    indices = tf.multiply(tf.tile([r_alpha], [tf.cast(sample_dims, tf.int32)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output
+
+def preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, num_seg, input_dims, input_alpha):
+    new_height, new_width = _get_new_length(height, width)
+    new_height = tf.to_int32(new_height)
+    new_width = tf.to_int32(new_width)
+    h_size = tf.convert_to_tensor(size[0], dtype=tf.float32)
+    w_size = tf.convert_to_tensor(size[1], dtype=tf.float32)
+
+    num_seg = 3
+
+    # Reduce the total video to have exactly footprint frames
+    footprint = input_dims*num_seg
+    input_data_tensor = tf.cond(tf.less(frames, footprint),
+                        lambda: _loop_video(input_data_tensor, input_data_tensor, frames, height, width, channel, footprint),
+                        lambda: input_data_tensor)
+    frames = tf.shape(input_data_tensor)[0]
+    indices = tf.range(0, frames, tf.div(frames,footprint))
+    input_data_tensor = tf.gather(input_data_tensor, indices[:footprint])
+
+    # For the baseline TSN, reduce again to have frames of input_dims
+    input_data_tensor = resample_input(input_data_tensor, footprint, footprint, input_alpha)
+
+    # Uniformly sample down to input_dims
+    input_data_tensor = resample_input(input_data_tensor, input_dims, footprint, 1.0)
+
+    #indices = tf.range(0, footprint, tf.div(footprint,input_dims))
+    #input_data_tensor = tf.gather(input_data_tensor, indices[:input_dims])
+    SAMPLE_NUM = input_dims/num_seg
+
+    input_data_tensor = tf.cast(input_data_tensor, tf.float32)
+
+    # Preprocessing for each segment
+    input_seg_list = []
+    for i in range(num_seg):
+        input_seg_tensor = tf.gather(input_data_tensor, tf.range(i*SAMPLE_NUM, (i+1)*SAMPLE_NUM))
+        input_seg_tensor = tf.map_fn(lambda img: resize_bilinear(img, [new_height, new_width], align_corners=True), input_seg_tensor)
+
+        offsets, crop_sizes = get_cropping_offsets_(new_height, new_width, istraining, SAMPLE_NUM)
+        input_seg_tensor = crop_and_resize_(input_seg_tensor, offsets, crop_sizes, size)
+
+        # Flipping block-wise in the training
+        if istraining and np.random.randint(2):
+            input_seg_tensor = tf.map_fn(lambda img: tf.image.flip_left_right(img), input_seg_tensor)
+
+        input_seg_list.append(input_seg_tensor)
+
+    input_data_tensor = tf.stack(input_seg_list, 1)
+    input_data_tensor = tf.reshape(input_data_tensor, [SAMPLE_NUM*num_seg, tf.to_int32(h_size), tf.to_int32(w_size), channel])
+    input_data_tensor = _mean_image_subtraction(input_data_tensor, [_R_MEAN, _G_MEAN, _B_MEAN])
+    input_data_tensor = tf.map_fn(lambda img: tf.image.rot90(img, 1), input_data_tensor)
+
+    return input_data_tensor
 

@@ -13,7 +13,7 @@ from BNInception                              import BNInception
 
 
 class TSN():
-    def __init__(self, input_dims, output_dims, exp_name, num_seg=3, init=False, verbose=True):
+    def __init__(self, input_dims, output_dims, exp_name, num_seg=3, init=False, input_alpha = 1.0, verbose=True):
         self.name        = 'tsn'
         self.verbose     = verbose
         self.input_dims  = input_dims
@@ -22,6 +22,7 @@ class TSN():
         self.num_seg     = num_seg
         self.init        = init
         self.dropout     = 0.8
+        self.input_alpha = input_alpha
 
         if self.verbose:
             print('TSN initialized')
@@ -111,7 +112,7 @@ class TSN():
         return weights
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_seg, self.input_dims)
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_seg, self.input_dims, self.input_alpha)
 
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.8, return_layer=['logits'], weight_decay=0.0005):
         if self.verbose:

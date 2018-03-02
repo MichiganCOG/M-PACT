@@ -774,8 +774,7 @@ if __name__=="__main__":
     print "############################ \n"
     model_name = args.model
 
-    model = Models(model_name = model_name, inputAlpha = args.inputAlpha, modelAlpha = args.modelAlpha, clipLength = args.clipLength, numVids = args.numVids, numEpochs = args.nEpochs, batchSize = args.batchSize, numClips = args.numClips, numGpus = args.numGpus).assign_model()
-    import pdb; pdb.set_trace()
+    model = Models(model_name = model_name, inputAlpha = args.inputAlpha, modelAlpha = args.modelAlpha, clipLength = args.clipLength, numVids = args.numVids, numEpochs = args.nEpochs, batchSize = args.batchSize, numClips = args.numClips, numGpus = args.numGpus, train = args.train, expName = args.expName, outputDims = args.outputDims, inputDims = args.inputDims).assign_model()
 
     # Associating models
     #if model_name == 'vgg16':
@@ -784,15 +783,6 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    elif model_name == 'tsn':
-        num_seg = args.inputDims
-        if args.train:
-            num_seg = 3
-
-        init = False
-        if 'init' in args.expName:
-            init = True
-        model = TSN(args.inputDims, args.outputDims, args.expName, num_seg, init)
 
     elif model_name == 'tsn_RIL':
         num_seg = args.inputDims
@@ -804,40 +794,6 @@ if __name__=="__main__":
             init = True
 
         model = TSN_RIL(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames)
-
-    elif model_name == 'tsn_cvr':
-        num_seg = args.inputDims
-        if args.train:
-            num_seg = 3
-
-        init = False
-        if 'init' in args.expName:
-            init = True
-
-        model = TSN_CVR(args.inputDims, args.outputDims, args.expName, num_seg, init, cvr=args.modelAlpha, input_alpha=args.inputAlpha)
-
-    elif model_name == 'tsn_rr':
-        num_seg = args.inputDims
-        if args.train:
-            num_seg = 3
-
-        init = False
-        if 'init' in args.expName:
-            init = True
-
-        model = TSN_RR(args.inputDims, args.outputDims, args.expName, num_seg, init, input_alpha=args.inputAlpha)
-
-    elif model_name == 'tsn_sr':
-        num_seg = args.inputDims
-        if args.train:
-            num_seg = 3
-
-        init = False
-        if 'init' in args.expName:
-            init = True
-
-        model = TSN_SR(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha)
-
 
     elif ((model_name == 'resnet_RIL_interp_median_v23_4') or (model_name == 'resnet_alpha')):
         model = ResNet_ALPHA(args.inputDims, 25, verbose=args.verbose)

@@ -20,13 +20,20 @@ from c3d_rr.c3d_rr_model 		            import C3D_RR
 from c3d_sr.c3d_sr_model 		            import C3D_SR
 from c3d_sr_quantized.c3d_sr_quant_model            import C3D_SR_QUANT
 
+# TSN models
+from tsn.tsn_model                                  import TSN
+from tsn_cvr.tsn_model                              import TSN_CVR
+from tsn_rr.tsn_model                               import TSN_RR
+from tsn_sr.tsn_model                               import TSN_SR
+from tsn_sr_quant.tsn_model                         import TSN_SR_QUANT
+
 class Models():
     """
     An abstraction layer to import models and keep the training file clean
 
     """
 
-    def __init__(self, model_name, inputDims = 250, inputAlpha = 1.0, modelAlpha = 1.0, clipLength = 1.0, numVids = 1.0, numEpochs = 1.0, batchSize = 1.0, numClips = 1.0, numGpus = 1.0, verbose = 1):
+    def __init__(self, model_name, inputDims = 250, inputAlpha = 1.0, modelAlpha = 1.0, clipLength = 1.0, numVids = 1.0, numEpochs = 1.0, batchSize = 1.0, numClips = 1.0, numGpus = 1.0, train = 1.0, expName = 'dummy', outputDims = 51, verbose = 1):
         self.model_name = model_name
         self.inputDims  = inputDims
         self.inputAlpha = inputAlpha 
@@ -37,6 +44,9 @@ class Models():
         self.batchSize  = batchSize
         self.numClips   = numClips
         self.numGpus    = numGpus
+        self.train      = train
+        self.expName    = expName
+        self.outputDims = outputDims
         self.verbose    = verbose
 
     def assign_model(self):
@@ -88,6 +98,91 @@ class Models():
 
         elif self.model_name == 'c3d_sr_quant':
             model = C3D_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
+
+        elif self.model_name == 'tsn':
+            num_seg = self.inputDims
+
+            if self.train:
+                num_seg = 3
+
+            # END IF
+
+            init = False
+
+            if 'init' in self.expName:
+                init = True
+
+            # END IF
+
+            model = TSN(self.inputDims, self.outputDims, self.expName, num_seg, init, self.inputAlpha)
+
+        elif self.model_name == 'tsn_cvr':
+            num_seg = self.inputDims
+
+            if self.train:
+                num_seg = 3
+    
+            # END IF
+
+            init = False
+
+            if 'init' in self.expName:
+                init = True
+
+            # END IF
+
+            model = TSN_CVR(self.inputDims, self.outputDims, self.expName, num_seg, init, cvr = self.modelAlpha, input_alpha = self.inputAlpha)
+
+        elif self.model_name == 'tsn_rr':
+            num_seg = self.inputDims
+
+            if self.train:
+                num_seg = 3
+
+            # END IF
+
+            init = False
+
+            if 'init' in self.expName:
+                init = True
+
+            # END IF
+
+            model = TSN_RR(self.inputDims, self.outputDims, self.expName, num_seg, init, input_alpha = self.inputAlpha)
+
+        elif self.model_name == 'tsn_sr':
+            num_seg = self.inputDims
+
+            if self.train:
+                num_seg = 3
+
+            # END IF
+
+            init = False
+
+            if 'init' in self.expName:
+                init = True
+
+            # END IF
+
+            model = TSN_SR(self.inputDims, self.outputDims, self.expName, num_seg, init, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha)
+
+        elif self.model_name == 'tsn_sr_quant':
+            num_seg = self.inputDims
+
+            if self.train:
+                num_seg = 3
+
+            # END IF
+
+            init = False
+
+            if 'init' in self.expName:
+                init = True
+
+            # END IF
+
+            model = TSN_SR_QUANT(self.inputDims, self.outputDims, self.expName, self.numVids, num_seg, init, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha)
 
 	else:
 	    model = -1
