@@ -60,7 +60,7 @@ class C3D_SR():
         with tf.name_scope(scope, 'c3d', [inputs]):
             layers = {}
 
-	    layers['Alpha'] = self.store_alpha
+	    layers['Parameterization_Variables'] = self.store_alpha
 
             layers['conv1'] = conv3d_layer(input_tensor=inputs,
                     filter_dims=[3, 3, 3, 64],
