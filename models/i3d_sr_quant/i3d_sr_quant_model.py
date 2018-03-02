@@ -1,4 +1,4 @@
-" I3D RR MODEL WITH FROZEN BATCH-NORM WEIGHTS IMPLEMENTATION FOR USE WITH TENSORFLOW "
+" I3D SR MODEL WITH FROZEN BATCH-NORM WEIGHTS IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import os
 import time
@@ -8,13 +8,13 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                 import *
-from utils                              import initialize_from_dict
-from i3d_rr_preprocessing_TFRecords     import preprocess           as preprocess_tfrecords
+from utils.layers_utils                   import *
+from utils                                import initialize_from_dict
+from i3d_sr_quant_preprocessing_TFRecords import preprocess           as preprocess_tfrecords
 
-class I3D_RR():
+class I3D_SR_QUANT():
 
-    def __init__(self, input_alpha=1.0, verbose=True):
+    def __init__(self, input_dims, clip_length, num_vids, num_epochs, batch_size, num_clips, model_alpha=1.0, input_alpha=1.0, num_gpus=1, verbose=True):
         """
         Args:
             :input_alpha: Value of alpha to resample inputs to network 
@@ -23,12 +23,22 @@ class I3D_RR():
         Return:
             Does not return anything
         """
-        self.name        = 'i3d_rr'
+        self.name        = 'i3d_sr_quant'
+        self.clip_length = clip_length
+        self.model_alpha = model_alpha
+        self.num_vids    = num_vids
+        self.num_epochs  = num_epochs
+        self.batch_size  = batch_size
+        self.num_clips   = num_clips
+        self.input_alpha = input_alpha
+        self.num_gpus    = num_gpus
+        self.input_dims  = input_dims
         self.input_alpha = input_alpha
         self.store_alpha = True
         self.verbose     = verbose
+
         if verbose:
-            print "I3D RR initialized"
+            print "I3D SR initialized"
 
 
     def _unit_3d(self, layer_numbers, input_layer, kernel_size=(1,1,1,1), stride=(1,1,1), activation_fn=tf.nn.relu, use_batch_norm=True, use_bias=False, is_training=True, name='unit_3d'):
@@ -468,8 +478,7 @@ class I3D_RR():
         Return:
             Pointer to preprocessing function of current model
         """
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
-        #self.alpha_tensor    = tf.Variable(alpha_tensor, trainable=False)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha, self.num_vids, self.num_epochs, self.batch_size, self.num_clips, self.num_gpus, video_step)
 
         return output, alpha_tensor 
 

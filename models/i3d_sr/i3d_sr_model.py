@@ -25,6 +25,7 @@ class I3D_SR():
         """
         self.name        = 'i3d_sr'
         self.input_alpha = input_alpha
+        self.store_alpha = True
         self.verbose     = verbose
 
         if verbose:
@@ -105,7 +106,7 @@ class I3D_SR():
                 layers = {}
 
                 # To help with logging
-                #layers['Parameterization_Variables'] = self.alpha_tensor
+                layers['Parameterization_Variables'] = self.store_alpha
 
                 layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=False))
 
@@ -456,7 +457,7 @@ class I3D_SR():
         """
         return np.load('models/i3d/i3d_rgb.npy')
 
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
             :index:       Integer indicating the index of video frame from the text file containing video lists
@@ -468,10 +469,9 @@ class I3D_SR():
         Return:
             Pointer to preprocessing function of current model
         """
-        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
-        #self.alpha_tensor    = tf.Variable(alpha_tensor, trainable=False)
+        output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha, video_step)
 
-        return output 
+        return output, alpha_tensor 
 
     """ Function to return loss calculated on all the outputs of a given network """
     def full_loss(self, logits, labels):

@@ -774,7 +774,8 @@ if __name__=="__main__":
     print "############################ \n"
     model_name = args.model
 
-    model = Models(model_name = model_name, inputAlpha = args.inputAlpha, modelAlpha = args.modelAlpha).assign_model()
+    model = Models(model_name = model_name, inputAlpha = args.inputAlpha, modelAlpha = args.modelAlpha, clipLength = args.clipLength, numVids = args.numVids, numEpochs = args.nEpochs, batchSize = args.batchSize, numClips = args.numClips, numGpus = args.numGpus).assign_model()
+    import pdb; pdb.set_trace()
 
     # Associating models
     #if model_name == 'vgg16':
@@ -795,11 +796,6 @@ if __name__=="__main__":
     elif model_name == 'resnet_offset_fixed':
         model = ResNet_Offset_Fixed(args.inputDims, 25, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
 
-    elif model_name == 'c3d_sr':
-        model = C3D_SR(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'c3d_sr_quant':
-        model = C3D_SR_QUANT(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
 
     elif model_name == 'c3d_sr_step':
         model = C3D_SR_STEP(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
@@ -818,9 +814,6 @@ if __name__=="__main__":
 
     elif model_name == 'c3d_alpha_div_100':
         model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
-    elif model_name == 'i3d_sr':
-       model = I3D_SR(input_alpha=args.inputAlpha, verbose=args.verbose)
 
     elif model_name == 'tsn':
         num_seg = args.inputDims
