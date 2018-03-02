@@ -406,20 +406,14 @@ def preprocess(input_data_tensor, frames, height, width, channel,  input_dims, o
 	input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
 	input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
 
+	# Resample input to desired rate (input fluctuation only, not related to model)
+	input_data_tensor = resample_input(input_data_tensor, footprint, footprint, input_alpha)
+	
 	# Resample input to desired rate (resampling as a model requirement) 
-	if istraining:
-		input_data_tensor = resample_model(input_data_tensor, footprint, sample_dims, cvr)
-	else:
-		# Resample input to desired rate (input fluctuation only, not related to model)
-		input_data_tensor = resample_input(input_data_tensor, footprint, sample_dims, input_alpha)
-
-		# Reduce footprint to sample_dims in size by uniform sampling rate
-		#input_data_tensor = _sample_video(input_data_tensor, footprint, int(footprint/sample_dims))
+	input_data_tensor = resample_model(input_data_tensor, footprint, sample_dims, cvr)
 
 	input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 	input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining), input_data_tensor)
 
-
-	labels_tensor = tf.tile( [label], [seq_length])
 
 	return input_data_tensor

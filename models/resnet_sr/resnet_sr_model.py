@@ -15,7 +15,7 @@ from resnet_sr_preprocessing_TFRecords import preprocess   as preprocess_tfrecor
 
 class ResNet_SR():
 
-	def __init__(self, input_dims, alpha, verbose=True):
+	def __init__(self, input_dims, model_alpha, input_alpha, verbose=True):
 		"""
 		Args:
 		    :k:          Temporal window width
