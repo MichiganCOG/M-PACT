@@ -422,6 +422,4 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 	input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining,resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
 
 
-	labels_tensor = tf.tile( [label], [seq_length])
-
 	return input_data_tensor, alpha_tensor

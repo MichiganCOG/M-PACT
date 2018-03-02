@@ -395,7 +395,7 @@ def resample_model(video, frame_count, sample_dims, alpha=1.0):
 	"""
 
     	#sample_dims = tf.cast(sample_dims, tf.float32)
-    	indices = tf.range(start=1., limit=float(sample_dims)+1., delta=1., dtype=tf.float32)
+    	indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
 	r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
 	indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
 	indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))

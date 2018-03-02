@@ -80,7 +80,6 @@ class ResNet_RR():
 		"""
 
 		layers = {}
-		layers['Alpha'] = self.store_alpha
 		# Conv block
 		layers[layer_numbers[0]] = conv_layer(input_tensor=input_layer,
 		        filter_dims=[1,1,n_filters[0]], stride_dims=[strides,strides],
