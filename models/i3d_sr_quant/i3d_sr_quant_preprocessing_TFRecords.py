@@ -340,7 +340,7 @@ def resample_model(video, sample_dims, frame_count, alpha):
     output  = tf.gather(video, tf.convert_to_tensor(indices))
     return output
 
-def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
+def resample_model_sinusoidal_quant(video, sample_dims, frame_count, tracker, num_vids, num_epochs, batch_size, num_clips, num_gpus):
     """Return video sampled at random rate
     Args:
         :video:       Raw input data
@@ -350,22 +350,21 @@ def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
     Return:
         Sampled video
     """
-    alpha       = 1.6
-    upper_limit = 3.0
-    lower_limit = 0.2
+    alpha_list = tf.convert_to_tensor([0.4, 0.8, 1.5, 2.5])
 
     indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
 
-    # Sinusoidal variation with alpha being the DC offset
-    r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
+    curr_epoch = tf.cast(tracker / num_vids, tf.int32)
+
+    alpha_ind = tf.mod(curr_epoch, 4)
+    r_alpha = alpha_list[alpha_ind] * tf.cast(frame_count, tf.float32) / float(sample_dims)
 
     indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
     indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
 
     indices = tf.cast(indices, tf.int32)
     output  = tf.gather(video, tf.convert_to_tensor(indices))
-    return output, (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32)))
-
+    return output, alpha_list[alpha_ind]
 
 def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
     """
@@ -393,7 +392,7 @@ def _loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fra
 
     return output_data
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, input_alpha, tracker):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, model_alpha, input_alpha, num_vids, num_epochs, batch_size, num_clips, num_gpus, tracker):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -440,7 +439,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # Resample input to desired rate (resampling as a model requirement)
     if istraining:
-        input_data_tensor, alpha_tensor = resample_model_sinusoidal(input_data_tensor, footprint, 250, tracker)
+        input_data_tensor, alpha_tensor = resample_model_sinusoidal_quant(input_data_tensor, footprint, 250, tracker, num_vids, num_epochs, batch_size, num_clips, num_gpus)
 
     else:
         input_data_tensor = resample_model(input_data_tensor, footprint, 250, 1.0)

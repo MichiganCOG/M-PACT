@@ -6,11 +6,11 @@ from resnet_cb_2.resnet_cb_2_model 		import ResNet_cb_2
 from resnet_cb_3.resnet_cb_3_model 		import ResNet_cb_3
 #from resnet_offset_fixed.resnet_offset_fixed_model			import ResNet_Offset_Fixed
 from resnet_RIL.resnet_RIL_interp_median_model_v23_4      import ResNet_RIL_Interp_Median_v23_4
-from c3d_cvr.c3d_cvr_model 		     import C3D_CVR
-from c3d_rr.c3d_rr_model 		     import C3D_RR
-from c3d_sr.c3d_sr_model 		     import C3D_SR
+#from c3d_cvr.c3d_cvr_model 		     import C3D_CVR
+#from c3d_rr.c3d_rr_model 		     import C3D_RR
+#from c3d_sr.c3d_sr_model 		     import C3D_SR
 from c3d_sr_step.c3d_sr_step_model 	     import C3D_SR_STEP
-from c3d_sr_quantized.c3d_sr_quant_model     import C3D_SR_QUANT
+#from c3d_sr_quantized.c3d_sr_quant_model     import C3D_SR_QUANT
 from c3d_alpha.c3d_alpha_model 		     import C3D_ALPHA
 from c3d_alpha.c3d_alpha_sine_model 	     import C3D_ALPHA_SINE
 from c3d_alpha.c3d_alpha_sine_mult_100_model import C3D_ALPHA_SINE_100
