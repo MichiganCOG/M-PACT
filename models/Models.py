@@ -1,19 +1,24 @@
 # ResNet50 + LSTM models
-from resnet.resnet_model                     import ResNet
+from resnet.resnet_model                            import ResNet
+from resnet_cvr.resnet_cvr_model 	            import ResNet_CVR
+from resnet_rr.resnet_rr_model 		            import ResNet_RR
+from resnet_sr.resnet_sr_model 		            import ResNet_SR
+from resnet_sr_quant.resnet_sr_quant_model 	    import ResNet_SR_QUANT
+from resnet_offset_fixed.resnet_offset_fixed_model  import ResNet_Offset_Fixed
 
 # I3D models
-from i3d.i3d_model  			     import I3D
-from i3d_cvr.i3d_cvr_model  		     import I3D_CVR
-from i3d_rr.i3d_rr_model  		     import I3D_RR
-from i3d_sr.i3d_sr_model  		     import I3D_SR
-from i3d_sr_quant.i3d_sr_quant_model  	     import I3D_SR_QUANT
+from i3d.i3d_model  			            import I3D
+from i3d_cvr.i3d_cvr_model  		            import I3D_CVR
+from i3d_rr.i3d_rr_model  		            import I3D_RR
+from i3d_sr.i3d_sr_model  		            import I3D_SR
+from i3d_sr_quant.i3d_sr_quant_model  	            import I3D_SR_QUANT
 
 # C3D models
-from c3d.c3d_model  			     import C3D
-from c3d_cvr.c3d_cvr_model 		     import C3D_CVR
-from c3d_rr.c3d_rr_model 		     import C3D_RR
-from c3d_sr.c3d_sr_model 		     import C3D_SR
-from c3d_sr_quantized.c3d_sr_quant_model     import C3D_SR_QUANT
+from c3d.c3d_model  			            import C3D
+from c3d_cvr.c3d_cvr_model 		            import C3D_CVR
+from c3d_rr.c3d_rr_model 		            import C3D_RR
+from c3d_sr.c3d_sr_model 		            import C3D_SR
+from c3d_sr_quantized.c3d_sr_quant_model            import C3D_SR_QUANT
 
 class Models():
     """
@@ -38,6 +43,21 @@ class Models():
 
         if self.model_name == 'resnet':
             model = ResNet(self.inputDims, 25, verbose = self.verbose)
+
+        elif self.model_name == 'resnet_offset_fixed':
+            model = ResNet_Offset_Fixed(self.inputDims, 25, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
+
+        elif self.model_name == 'resnet_cvr':
+    	    model = ResNet_CVR(self.inputDims, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
+    
+        elif self.model_name == 'resnet_rr':
+    	    model = ResNet_RR(self.inputDims, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
+    
+        elif self.model_name == 'resnet_sr':
+    	    model = ResNet_SR(self.inputDims, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
+
+        elif self.model_name == 'resnet_sr_quant':
+            model = ResNet_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
 
         elif self.model_name == 'i3d':
             model = I3D(input_alpha = self.inputAlpha, verbose = self.verbose)

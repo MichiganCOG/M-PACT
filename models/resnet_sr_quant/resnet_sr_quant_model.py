@@ -9,13 +9,13 @@ sys.path.append('../..')
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                             import *
+from utils.layers_utils                       import *
 from tensorflow.contrib.rnn                   import static_rnn
-from resnet_sr_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from resnet_sr_quant_preprocessing_TFRecords  import preprocess   as preprocess_tfrecords
 
-class ResNet_SR():
+class ResNet_SR_QUANT():
 
-	def __init__(self, input_dims, model_alpha, input_alpha, verbose=True):
+	def __init__(self,  input_dims, clip_length, num_vids, num_epochs, batch_size, num_clips, model_alpha=1.0, input_alpha=1.0, num_gpus=1, verbose=True):
 		"""
 		Args:
 		    :k:          Temporal window width
@@ -25,13 +25,20 @@ class ResNet_SR():
 		Return:
 		    Does not return anything
 		"""
-		self.name       = 'resnet_sr'
-		self.verbose    = verbose
-		self.input_dims = input_dims
-		self.model_alpha= model_alpha
-		self.input_alpha= input_alpha
-		self.store_alpha= True 
-		print "ResNet50_sr + LSTM initialized"
+		self.name       = 'resnet_sr_quant'
+                self.clip_length = clip_length
+                self.model_alpha = model_alpha
+                self.num_vids    = num_vids
+                self.num_epochs  = num_epochs
+                self.batch_size  = batch_size
+                self.num_clips   = num_clips
+                self.input_alpha = input_alpha
+                self.num_gpus    = num_gpus
+                self.input_dims  = input_dims
+                self.input_alpha = input_alpha
+                self.store_alpha = True
+                self.verbose     = verbose
+		print "ResNet50_sr_quant + LSTM initialized"
 	
 	def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
 		"""
@@ -302,7 +309,7 @@ class ResNet_SR():
 		Return:
 		    Pointer to preprocessing function of current model
 		"""
-		return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining, video_step)
+		return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining, self.num_vids, self.num_epochs, self.batch_size, self.num_clips, self.num_gpus, video_step)
 
 	""" Function to return loss calculated on half the outputs of a given network """
 	def half_loss(self, logits, labels):

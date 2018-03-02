@@ -784,37 +784,6 @@ if __name__=="__main__":
     if model_name == 'resnet':
         model = ResNet(args.inputDims, 25, verbose=args.verbose)
 
-    elif ((model_name == 'resnet_cb_1') or (model_name == 'resnet_cvr')):
-	model = ResNet_CVR(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
-
-    elif ((model_name == 'resnet_cb_2') or (model_name == 'resnet_rr')):
-	model = ResNet_RR(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
-
-    elif ((model_name == 'resnet_cb_3') or (model_name == 'resnet_sr')):
-	model = ResNet_SR(args.inputDims, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
-
-    elif model_name == 'resnet_offset_fixed':
-        model = ResNet_Offset_Fixed(args.inputDims, 25, args.modelAlpha, args.inputAlpha, verbose=args.verbose)
-
-
-    elif model_name == 'c3d_sr_step':
-        model = C3D_SR_STEP(input_dims=args.inputDims, clip_length=args.clipLength, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, num_vids=args.numVids, num_epochs=args.nEpochs, batch_size=args.batchSize, num_clips=args.numClips, num_gpus=args.numGpus, verbose=args.verbose)
-
-    elif model_name == 'c3d_alpha':
-        model = C3D_ALPHA(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
-    elif model_name == 'c3d_alpha_sine':
-        model = C3D_ALPHA_SINE(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
-    elif model_name == 'c3d_alpha_sine_100':
-        model = C3D_ALPHA_SINE_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
-    elif model_name == 'c3d_alpha_exp':
-        model = C3D_ALPHA_EXP(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
-    elif model_name == 'c3d_alpha_div_100':
-        model = C3D_ALPHA_DIV_100(model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames, verbose=args.verbose)
-
     elif model_name == 'tsn':
         num_seg = args.inputDims
         if args.train:
