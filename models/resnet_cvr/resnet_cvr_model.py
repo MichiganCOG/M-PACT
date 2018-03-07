@@ -204,7 +204,7 @@ class ResNet_CVR():
 		with tf.name_scope(scope, 'resnet', [inputs]):
 		    layers = {}
 
-		    layers['Parameterization_Variables'] = self.model_alpha
+		    layers['Parameterization_Variables'] = tf.Variable(self.model_alpha, trainable=False)
 
 		    layers['1'] = conv_layer(input_tensor=inputs,
 		            filter_dims=[7, 7, 64], stride_dims=[2,2],
