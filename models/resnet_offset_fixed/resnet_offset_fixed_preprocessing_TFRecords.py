@@ -283,10 +283,10 @@ def preprocess_for_train(image,
       [], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
 
   image = _aspect_preserving_resize(image, resize_side_min)
-  image = _random_crop([image], output_height, output_width)[0]
+  image = _central_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
-  image = tf.image.random_flip_left_right(image)
+  #image = tf.image.random_flip_left_right(image)
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
@@ -441,20 +441,20 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # Loop video video if it is shorter than footprint
     input_data_tensor =_loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint)
-                           
+
 
 
     # Remove excess frames after looping to reduce to footprint size
     input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
     input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
 
-    
+
 
     # Reduce footprint to sample_dims in size by uniformly sampling
-    
+
     input_data_tensor = resample_input(input_data_tensor, footprint, sample_dims, input_alpha)
 
-    
+
     #input_data_tensor = _sample_video_cb(input_data_tensor, footprint, sample_dims, cvr)
 
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
