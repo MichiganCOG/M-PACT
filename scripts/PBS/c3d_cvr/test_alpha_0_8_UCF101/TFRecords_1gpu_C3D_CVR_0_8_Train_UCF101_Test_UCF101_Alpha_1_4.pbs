@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_C3D_CVR_0_8_Train_UCF101_Test_UCF101_Alpha_ALPHA_UNDERSCORE     # Name of the job
+#PBS -N TFRecords_1gpu_C3D_CVR_0_8_Train_UCF101_Test_UCF101_Alpha_1_4     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=1:ppn=1:gpus=1    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=macula:ppn=1:gpus=1    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -131,8 +131,8 @@ python train_test_TFRecords_multigpu_model.py \
 --fName testlist \
 --verbose 1 \
 --modelAlpha 0.8 \
---inputAlpha ALPHA_DECIMAL \
---metricsDir input_alpha_ALPHA_UNDERSCORE
+--inputAlpha 1.4 \
+--metricsDir input_alpha_1_4
 
 
 echo "end"
