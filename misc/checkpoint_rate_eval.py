@@ -52,6 +52,33 @@ def get_rates_by_bin(rates):
     return rate0, rate1, rate2, rate3
 
 
+def gen_plot(totaccr, xLabel, labels, modelName):
+    modelName = modelName.upper()
+    fig = plt.figure(num=1, figsize=(13, 8), dpi=80, facecolor='w', edgecolor='k')
+    ax = fig.add_subplot(111)
+
+    # plt.plot(labels, totaccr[0], ls=(0,(5,10)), label=str(xLabel[0]))
+    # plt.plot(labels, totaccr[1], ls='--', label=str(xLabel[1]))
+    # plt.plot(labels, totaccr[2], ls='-.', label=str(xLabel[2]))
+    # plt.plot(labels, totaccr[3], ls='-', label=str(xLabel[3]))
+    #plt.plot(x, totaccr[4], ls=(0,(5,10)), label=str(labels[4]))
+    plt.plot(labels, totaccr[0], '-', marker='o', markersize=10, linewidth=3, label=str(xLabel[0]), color='#db9e29')
+    plt.plot(labels, totaccr[1], '-', marker='^', markersize=10, linewidth=2,label=str(xLabel[1]), color='#328717')
+    plt.plot(labels, totaccr[2], '-', marker='h', markersize=10, linewidth=2,label=str(xLabel[2]), color='#0c78df')
+    plt.plot(labels, totaccr[3], '-', marker='*', markersize=20, linewidth=2,label=str(xLabel[3]), color='#df0c0f')
+    #plt.plot(alphas, acc_values[4], '-', marker='s', markersize=10, linewidth=2,label='CVR 2.5', color='#610cdf')
+
+    actual_title= 'HMDB51Rate Bin Classification Accuracy During Training of ' + modelName
+    plt.title(actual_title, fontsize=25)
+    plt.xlabel('Training Step', fontsize=25)
+    plt.ylabel('Accuracy (%)', fontsize=25)
+    plt.legend(fontsize=20, loc='best')
+    plt.tick_params(labelsize=15)
+    ttl = ax.title
+    ttl.set_position([0.5, 1.05])
+    plt.tick_params(labelsize=20)
+    plt.show()
+
 print 'loading names and rates'
 
 rates_HMDB51 = np.load('/z/home/erichof/CVPR2018_data/testHMDB51Rate.npy')
@@ -119,22 +146,24 @@ totaccr = np.array([acc1r, acc2r, acc3r, acc4r, acc5r]).T
 #plt.xticks(x, label)
 #ax.grid(axis='x', linestyle='dashed')
 
-import pdb; pdb.set_trace()
+#import pdb; pdb.set_trace()
+modelName = 'c3d'
+gen_plot(totaccr, xLabel, labels, modelName)
 
-fig = plt.figure(num=1, figsize=(13, 13), dpi=80, facecolor='w', edgecolor='k')
-ax = fig.add_subplot(111)
-fig.subplots_adjust(right=0.2)
-plt.plot(labels, totaccr[0], ls=(0,(5,10)), label=str(xLabel[0]))
-plt.plot(labels, totaccr[1], ls='--', label=str(xLabel[1]))
-plt.plot(labels, totaccr[2], ls='-.', label=str(xLabel[2]))
-plt.plot(labels, totaccr[3], ls='-', label=str(xLabel[3]))
-#plt.plot(x, totaccr[4], ls=(0,(5,10)), label=str(labels[4]))
-bbox_anch = (1.308,1.019)
-plt.legend(bbox_to_anchor=bbox_anch, numpoints=1)
-#lgd = ax.legend(loc=9, bbox_to_anchor=(0.5,-0.02))
-plt.show()
-
-plt.savefig('testfig.pdf')
+# fig = plt.figure(num=1, figsize=(13, 13), dpi=80, facecolor='w', edgecolor='k')
+# ax = fig.add_subplot(111)
+# fig.subplots_adjust(right=0.2)
+# plt.plot(labels, totaccr[0], ls=(0,(5,10)), label=str(xLabel[0]))
+# plt.plot(labels, totaccr[1], ls='--', label=str(xLabel[1]))
+# plt.plot(labels, totaccr[2], ls='-.', label=str(xLabel[2]))
+# plt.plot(labels, totaccr[3], ls='-', label=str(xLabel[3]))
+# #plt.plot(x, totaccr[4], ls=(0,(5,10)), label=str(labels[4]))
+# bbox_anch = (1.308,1.019)
+# plt.legend(bbox_to_anchor=bbox_anch, numpoints=1)
+# #lgd = ax.legend(loc=9, bbox_to_anchor=(0.5,-0.02))
+# plt.show()
+#
+# #plt.savefig('testfig.pdf')
 
 
 import pdb; pdb.set_trace()

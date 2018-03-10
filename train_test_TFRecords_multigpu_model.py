@@ -642,7 +642,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         print total_pred
 
     # Save results in numpy format
-    np.save(os.path.join('results', model.name, loaded_dataset, experiment_name, metrics_dir, 'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
+    np.save(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
 
 
 if __name__=="__main__":
