@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_C3D_CVR_2_5_Train_UCF101_Test_UCF101_Alpha_ALPHA_UNDERSCORE     # Name of the job
+#PBS -N TFRecords_1gpu_C3D_CVR_1_5_Train_UCF101_Test_UCF101_Alpha_1_8     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -121,7 +121,7 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 101 \
 --seqLength 1 \
 --size 112  \
---expName c3d_cvr_2_5_UCF101 \
+--expName c3d_cvr_1_5_UCF101 \
 --numClips 1 \
 --clipLength 50 \
 --clipOffset random \
@@ -130,9 +130,9 @@ python train_test_TFRecords_multigpu_model.py \
 --baseDataPath /z/dat \
 --fName testlist \
 --verbose 1 \
---modelAlpha 2.5 \
---inputAlpha ALPHA_DECIMAL \
---metricsDir input_alpha_ALPHA_UNDERSCORE
+--modelAlpha 1.5 \
+--inputAlpha 1.8 \
+--metricsDir input_alpha_1_8
 
 
 echo "end"

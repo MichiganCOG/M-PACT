@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_C3D_CVR_2_5_Train_UCF101_Test_UCF101_Alpha_ALPHA_UNDERSCORE     # Name of the job
+#PBS -N TFRecords_1gpu_C3D_Train_UCF101_Test_UCF101Rate_BGR_17882     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -111,9 +111,9 @@ cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
 echo "Train C3D: UCF101"
 
 python train_test_TFRecords_multigpu_model.py \
---model c3d_cvr \
+--model c3d \
 --numGpus 1 \
---dataset UCF101 \
+--dataset UCF101Rate \
 --loadedDataset UCF101 \
 --train 0 \
 --load 1 \
@@ -121,18 +121,17 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 101 \
 --seqLength 1 \
 --size 112  \
---expName c3d_cvr_2_5_UCF101 \
+--expName c3d_UCF101 \
 --numClips 1 \
---clipLength 50 \
+--clipLength 16 \
 --clipOffset random \
---numVids 3783 \
+--numVids 37830 \
 --split 1 \
 --baseDataPath /z/dat \
 --fName testlist \
 --verbose 1 \
---modelAlpha 2.5 \
---inputAlpha ALPHA_DECIMAL \
---metricsDir input_alpha_ALPHA_UNDERSCORE
+--loadedCheckpoint 17882 \
+--metricsDir checkpoint_17882_rate
 
 
 echo "end"

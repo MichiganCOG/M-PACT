@@ -257,10 +257,10 @@ def preprocess_for_train(image,
       [], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
 
   image = _aspect_preserving_resize(image, resize_side_min)
-  image = _random_crop([image], output_height, output_width)[0]
+  image = _central_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
-  image = tf.image.random_flip_left_right(image)
+  #image = tf.image.random_flip_left_right(image)
   return _mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
@@ -343,7 +343,7 @@ def model_resample_sinusoidal(video, frame_count, sample_dims, tracker):
 	# Sinusoidal variation with alpha being the DC offset
 	#reduction_factor = tf.asin(tf.cast((1.0 - alpha)*2.0/float(upper_limit - lower_limit),tf.float32))*4.0/tf.cast(tf.multiply(number_of_videos, number_of_epochs),tf.float32)
 	indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
-	
+
 	# Sinusoidal variation with alpha being the DC offset
 	r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
 	#r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.multiply(tf.cast(tracker,tf.float32),reduction_factor))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
@@ -374,7 +374,7 @@ def resample_input(video, frame_count, sample_dims, alpha):
     return output
 
 
-	
+
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label,cvr, input_alpha, istraining, tracker):
 	"""
 	Preprocessing function corresponding to the chosen model
