@@ -479,6 +479,9 @@ class Metrics():
 
 
     def _DTW_classify(self, feature_dims=-1):
+
+        self.clear_all()
+
         if feature_dims < 0:
             feature_dims = self.output_dims
         feature_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name,self.metrics_dir,'tempextract_features.hdf5'), 'r')
