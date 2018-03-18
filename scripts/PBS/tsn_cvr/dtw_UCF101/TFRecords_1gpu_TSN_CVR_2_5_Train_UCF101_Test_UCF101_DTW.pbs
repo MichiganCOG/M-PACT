@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_TSN_CVR_1_5_Train_UCF101_Test_UCF101_DTW     # Name of the job
+#PBS -N TFRecords_1gpu_TSN_CVR_2_5_Train_UCF101_Test_UCF101_DTW     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -121,13 +121,13 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 101 \
 --seqLength 60 \
 --size 224  \
---expName tsn_init_cvr_1_5_ucf \
+--expName tsn_init_cvr_2_5_ucf \
 --numVids 3783 \
 --split 1 \
 --baseDataPath /z/dat \
 --fName testlist \
 --verbose 1 \
---modelAlpha 1.5 \
+--modelAlpha 2.5 \
 --metricsMethod DTW \
 --metricsDir features
 

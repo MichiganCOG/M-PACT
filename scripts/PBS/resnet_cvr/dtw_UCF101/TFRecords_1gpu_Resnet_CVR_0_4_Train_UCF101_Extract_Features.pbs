@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_1gpu_Resnet_CVR_0_4_Train_UCF101_Test_Extract_Features     # Name of the job
+#PBS -N TFRecords_1gpu_Resnet_CVR_0_4_Train_UCF101_Extract_Features     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
