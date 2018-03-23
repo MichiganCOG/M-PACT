@@ -121,7 +121,7 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 101 \
 --seqLength 50 \
 --size 224  \
---expName resnet_offset_sr_full_UCF101_test \
+--expName resnet_offset_sr_full_loss_UCF101_test \
 --numVids 3783 \
 --split 1 \
 --baseDataPath /z/dat \
