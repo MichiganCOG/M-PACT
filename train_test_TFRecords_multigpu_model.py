@@ -345,7 +345,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             ######################################### Running TF training session block ##################################
             
-	    _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
                                                                        names_tensor, input_data_tensor])
