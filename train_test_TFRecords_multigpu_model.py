@@ -168,7 +168,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         tower_losses       = []
         tower_grads        = []
         tower_slogits      = []
-
+        
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
@@ -732,7 +732,7 @@ if __name__=="__main__":
     parser.add_argument('--baseDataPath', action='store', default='/z/dat',
             help = 'Path to datasets')
 
-    parser.add_argument('--fName', action='store',
+    parser.add_argument('--fName', action='store', required=True,
             help = 'Which dataset list to use (trainlist, testlist, vallist)')
 
     parser.add_argument('--saveFreq', action='store', type=int, default=1,
@@ -780,27 +780,27 @@ if __name__=="__main__":
     #if model_name == 'vgg16':
     #    model = VGG16(args.inputDims, 25, verbose=args.verbose)
 
-    if model_name == 'resnet':
-        model = ResNet(args.inputDims, 25, verbose=args.verbose)
-
-
-    elif model_name == 'tsn_RIL':
-        num_seg = args.inputDims
-        if args.train:
-            num_seg = 3
-
-        init = False
-        if 'init' in args.expName:
-            init = True
-
-        model = TSN_RIL(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames)
-
-    elif ((model_name == 'resnet_RIL_interp_median_v23_4') or (model_name == 'resnet_alpha')):
-        model = ResNet_ALPHA(args.inputDims, 25, verbose=args.verbose)
-
-
-    else:
-        print("Model not found, check the import and elif statements")
+#    if model_name == 'resnet':
+#        model = ResNet(args.inputDims, 25, verbose=args.verbose)
+#
+#
+#    elif model_name == 'tsn_RIL':
+#        num_seg = args.inputDims
+#        if args.train:
+#            num_seg = 3
+#
+#        init = False
+#        if 'init' in args.expName:
+#            init = True
+#
+#        model = TSN_RIL(args.inputDims, args.outputDims, args.expName, num_seg, init, model_alpha=args.modelAlpha, input_alpha=args.inputAlpha, resample_frames=args.resampleFrames)
+#
+#    elif ((model_name == 'resnet_RIL_interp_median_v23_4') or (model_name == 'resnet_alpha')):
+#        model = ResNet_ALPHA(args.inputDims, 25, verbose=args.verbose)
+#
+#
+#    else:
+#        print("Model not found, check the import and elif statements")
 
     # END IF
 

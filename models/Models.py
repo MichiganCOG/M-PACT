@@ -3,29 +3,29 @@ from resnet.resnet_model                            import ResNet
 from resnet_cvr.resnet_cvr_model 	            import ResNet_CVR
 from resnet_rr.resnet_rr_model 		            import ResNet_RR
 from resnet_sr.resnet_sr_model 		            import ResNet_SR
-from resnet_sr_quant.resnet_sr_quant_model 	    import ResNet_SR_QUANT
-from resnet_offset_fixed.resnet_offset_fixed_model  import ResNet_Offset_Fixed
+#from resnet_sr_quant.resnet_sr_quant_model 	    import ResNet_SR_QUANT
+#from resnet_offset_fixed.resnet_offset_fixed_model  import ResNet_Offset_Fixed
 
 # I3D models
 from i3d.i3d_model  			            import I3D
 from i3d_cvr.i3d_cvr_model  		            import I3D_CVR
 from i3d_rr.i3d_rr_model  		            import I3D_RR
 from i3d_sr.i3d_sr_model  		            import I3D_SR
-from i3d_sr_quant.i3d_sr_quant_model  	            import I3D_SR_QUANT
+#from i3d_sr_quant.i3d_sr_quant_model  	            import I3D_SR_QUANT
 
 # C3D models
 from c3d.c3d_model  			            import C3D
 from c3d_cvr.c3d_cvr_model 		            import C3D_CVR
 from c3d_rr.c3d_rr_model 		            import C3D_RR
 from c3d_sr.c3d_sr_model 		            import C3D_SR
-from c3d_sr_quantized.c3d_sr_quant_model            import C3D_SR_QUANT
+#from c3d_sr_quantized.c3d_sr_quant_model            import C3D_SR_QUANT
 
 # TSN models
 from tsn.tsn_model                                  import TSN
 from tsn_cvr.tsn_model                              import TSN_CVR
 from tsn_rr.tsn_model                               import TSN_RR
 from tsn_sr.tsn_model                               import TSN_SR
-from tsn_sr_quant.tsn_model                         import TSN_SR_QUANT
+#from tsn_sr_quant.tsn_model                         import TSN_SR_QUANT
 
 class Models():
     """
@@ -52,10 +52,10 @@ class Models():
     def assign_model(self):
 
         if self.model_name == 'resnet':
-            model = ResNet(self.inputDims, 25, verbose = self.verbose)
+            model = ResNet(self.inputDims, 25, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
 
         elif self.model_name == 'resnet_offset_fixed':
-            model = ResNet_Offset_Fixed(self.inputDims, 25, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
+            model = ResNet(self.inputDims, 25, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
 
         elif self.model_name == 'resnet_cvr':
     	    model = ResNet_CVR(self.inputDims, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
@@ -66,8 +66,8 @@ class Models():
         elif self.model_name == 'resnet_sr':
     	    model = ResNet_SR(self.inputDims, self.modelAlpha, self.inputAlpha, verbose = self.verbose)
 
-        elif self.model_name == 'resnet_sr_quant':
-            model = ResNet_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
+#        elif self.model_name == 'resnet_sr_quant':
+#            model = ResNet_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
 
         elif self.model_name == 'i3d':
             model = I3D(input_alpha = self.inputAlpha, verbose = self.verbose)
@@ -81,8 +81,8 @@ class Models():
         elif self.model_name == 'i3d_sr':
             model = I3D_SR(input_alpha = self.inputAlpha, verbose = self.verbose)
 
-        elif self.model_name == 'i3d_sr_quant':
-            model = I3D_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
+#        elif self.model_name == 'i3d_sr_quant':
+#            model = I3D_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
 
         elif self.model_name == 'c3d':
             model = C3D(input_alpha = self.inputAlpha, verbose = self.verbose)
@@ -96,8 +96,8 @@ class Models():
         elif self.model_name == 'c3d_sr':
             model = C3D_SR(model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, verbose = self.verbose)
 
-        elif self.model_name == 'c3d_sr_quant':
-            model = C3D_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
+#        elif self.model_name == 'c3d_sr_quant':
+#            model = C3D_SR_QUANT(input_dims = self.inputDims, clip_length = self.clipLength, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha, num_vids = self.numVids, num_epochs = self.numEpochs, batch_size = self.batchSize, num_clips = self.numClips, num_gpus = self.numGpus, verbose = self.verbose)
 
         elif self.model_name == 'tsn':
             num_seg = self.inputDims
@@ -167,22 +167,22 @@ class Models():
 
             model = TSN_SR(self.inputDims, self.outputDims, self.expName, num_seg, init, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha)
 
-        elif self.model_name == 'tsn_sr_quant':
-            num_seg = self.inputDims
-
-            if self.train:
-                num_seg = 3
-
-            # END IF
-
-            init = False
-
-            if 'init' in self.expName:
-                init = True
-
-            # END IF
-
-            model = TSN_SR_QUANT(self.inputDims, self.outputDims, self.expName, self.numVids, num_seg, init, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha)
+#        elif self.model_name == 'tsn_sr_quant':
+#            num_seg = self.inputDims
+#
+#            if self.train:
+#                num_seg = 3
+#
+#            # END IF
+#
+#            init = False
+#
+#            if 'init' in self.expName:
+#                init = True
+#
+#            # END IF
+#
+#            model = TSN_SR_QUANT(self.inputDims, self.outputDims, self.expName, self.numVids, num_seg, init, model_alpha = self.modelAlpha, input_alpha = self.inputAlpha)
 
 	else:
 	    model = -1

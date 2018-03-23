@@ -11,7 +11,7 @@ from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 class ResNet():
 
-    def __init__(self, input_dims, k, verbose=True):
+    def __init__(self, input_dims, k, model_alpha, input_alpha, verbose=True):
         """
         Args:
             :k:          Temporal window width
@@ -25,6 +25,8 @@ class ResNet():
         self.name       = 'resnet'
         self.verbose    = verbose
         self.input_dims = input_dims
+	self.model_alpha= model_alpha
+	self.input_alpha= input_alpha
 
         print "ResNet50 + LSTM initialized"
 
@@ -187,11 +189,11 @@ class ResNet():
         """
 
         ############################################################################
-        #                Creating ResNet50 + LSTM Network Layers                   #
+        #                Creating ResNet+ LSTM Network Layers                   #
         ############################################################################
 
         if self.verbose:
-            print('Generating RESNET network layers')
+            print('Generating ResNet_Preprocessing network layers')
 
         # END IF
 
@@ -282,7 +284,7 @@ class ResNet():
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
         return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
-
+	
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
@@ -295,7 +297,7 @@ class ResNet():
         Return:
             Pointer to preprocessing function of current model
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining)
 
     """ Function to return loss calculated on half the outputs of a given network """
     def half_loss(self, logits, labels):
