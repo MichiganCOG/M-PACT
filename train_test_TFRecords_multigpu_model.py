@@ -65,7 +65,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, lr_boundaries, lr_values):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -100,6 +100,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :opt_choice:         String indicating optimizer selected
         :gpu_list:           List of GPU IDs to be used
         :grad_clip_value:    Float value at which to clip normalized gradients
+        :lr_boundaries:      List of epoch boundaries at which lr will be updated 
+        :lr_values:          List of lr multipliers to learning_rate_init at boundaries mentioned in lr_boundaries
 
     Returns:
         Does not return anything
@@ -188,6 +190,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END IF
 
+        lr_boundaries = [int(float(num_vids)/float(num_gpus*batch_size)*i) for i in lr_boundaries]
+        lr_values     = [learning_rate_init*i for i in lr_values]
+
+
+
         """ Multi-GPU setup: 1) Associate gpu device to specific model replica
                              2) Setup tower name scope for variables
         """
@@ -227,8 +234,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
                         # Calculating Softmax for probability outcomes : Can be modified, make function internal to model
                         slogits = tf.nn.softmax(logits)
-
-                        lr = vs.get_variable("learning_rate", [],trainable=False,initializer=init_ops.constant_initializer(learning_rate_init))
+                        
+                        lr = tf.train.piecewise_constant(global_step, lr_boundaries, lr_values, name='learning_rate')
 
                     # END WITH
 
@@ -310,8 +317,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         save_data    = []
 	total_params = []
 
-        lr            = learning_rate_init
-        learning_rate = lr
+        l_r           = learning_rate_init
+        learning_rate = l_r
 
         # Timing test setup
         time_init = time.time()
@@ -344,13 +351,12 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             time_pre_train = time.time()
 
             ######################################### Running TF training session block ##################################
-            
             _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, model_params_array,
                                                                        names_tensor, input_data_tensor])
 
-            ###############################################################################################################
+            ################################################################################################################
 
             if verbose:
                 print vid_names
@@ -691,6 +697,12 @@ if __name__=="__main__":
     parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
             help = 'Value of normalized gradient at which to clip.')
 
+    parser.add_argument('--lrboundary', nargs='+',type=int, default=[],
+            help = 'List of boundary epochs at which lr will be updated')
+
+    parser.add_argument('--lrvalues', nargs='+',type=float, default=[],
+            help = 'List of lr multiplier values, length of list must equal lrboundary')
+
     # Experiment parameters
 
     parser.add_argument('--dataset', action= 'store', required=True,
@@ -835,7 +847,9 @@ if __name__=="__main__":
                 verbose             = args.verbose,
                 opt_choice          = args.optChoice,
                 gpu_list            = args.gpuList,
-                grad_clip_value     = args.gradClipValue)
+                grad_clip_value     = args.gradClipValue,
+                lr_boundaries       = args.lrboundary,
+                lr_values           = args.lrvalues)
 
     else:
         test(   model             = model,
