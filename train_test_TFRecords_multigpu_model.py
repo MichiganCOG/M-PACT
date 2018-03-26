@@ -113,6 +113,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         if len(return_layer) == 0:
             return_layer = ['logits']
 
+        # END IF
+
         # Ensure first layer requested in return sequence is "logits" always
         if return_layer[0] != 'logits':
             return_layer.insert(0, 'logits')
