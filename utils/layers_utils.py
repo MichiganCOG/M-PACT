@@ -305,6 +305,43 @@ def fully_connected_layer(input_tensor,
     return fc_out
 
 
+def reshape(input_tensor, shape, name):
+    """
+    Args:
+        :input_tensor:  Input tensor to be reshaped
+        :shape:         Shape to reshape input tensor into
+        :name:          Scope name to be provided for reshape operation
+
+    Return:
+        Reshaped Tensor
+    """
+    return tf.reshape(input_tensor, shape=shape, name=name)
+
+
+def dropout(input_tensor, training, rate):
+    """
+    Args:
+        :input_tensor:  Input tensor to be reshaped
+        :training:      Whether to return output during training or testing
+        :rate:          Dropout rate (ex. 0.1 would drop 10% of inputs)
+
+    Return:
+        Dropout applied to input tensorReshaped Tensor
+    """
+    return tf.dropout(input_tensor, training=training, rate=rate)
+
+
+def batch_normalization(input_tensor, training, name):
+    """
+    Args:
+        :input_tensor:  Input tensor to be reshaped
+        :training:      Whether to return output during training or testing
+        :name:          Scope name to be provided for reshape operation
+
+    Return:
+        Batch normalized input tensor
+    """
+    return tf.layers.batch_normalization(input_tensor, training, name)
 
 
 def pad(input_tensor,

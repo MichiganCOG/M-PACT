@@ -33,6 +33,8 @@ This README will walk you through the process of installing dependencies, downlo
 #### Python Dependencies:
 * Tensorflow 1.2.1
 * Numpy
+* Scikit Learn
+* h5py
 
 
 ## Introduction and Setup
@@ -40,10 +42,11 @@ This README will walk you through the process of installing dependencies, downlo
 
 ### Implemented Models:
 
-* ResNet50 + LSTM
+* I3D
 * TSN
 * C3D
-* I3D
+* ResNet50 + LSTM
+
 
 
 ### Implemented Datasets:
@@ -57,106 +60,163 @@ This README will walk you through the process of installing dependencies, downlo
 
 ### Future Datasets:
 * Kinetics
+* Moments in Time
 
 
 ### Using the framework
 
 From the root directory, the training and testing is done through train_test_TFRecords_multigpu_model.py
 
+Ex. Train ResNet50+LSTM on HMDB51 using 4 GPUs
+
+```
+python train_test_TFRecords_multigpu_model.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName example_1  --numVids 3570  --lr 0.001  --nEpochs 30  --split 1  --baseDataPath /data  --fName trainlist
+```
+
+
 The parameters to train are:
 
 ```
 python  train_test_TFRecords_multigpu_model.py \
 
---model         The model archetecture to be used (ResNet, VGG16)
+--model             The model archetecture to be used (i3d, c3d, tsn, resnet)
 
---dataset       The dataset to use for training (UCF101, HMDB51)
+--dataset           The dataset to use for training (UCF101, HMDB51)
 
---numGpus       Number of GPUs to train on (Not yet implemented)
+--numGpus           Number of GPUs to train on (Not yet implemented)
 
---train         1 or 0 whether this is a training or testing run
+--train             1 or 0 whether this is a training or testing run
 
---load          1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
+--load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
 
---size          Size of the input frame (224 for ResNet and VGG16)
+--size              Size of the input frame (224 for ResNet, I3D, TSN and 112 for C3D)
 
---inputDims     Input dimensions (number of frames to pass into model)
+--inputDims         Input dimensions (number of frames to pass into model)
+    
+--outputDims        Output dimensions(number of classes in dataset)
 
---outputDims    Output dimensions(number of classes in dataset)
+--seqLength         Sequence length to input into lstm (50 for ResNet50 and VGG16)
 
---seqLength     Sequence length to input into lstm (50 for ResNet50 and VGG16)
+--expName           Experiment name
 
---expName       Experiment name
+--numVids           Number of videos to train or test on within the split (Uses the first numVids videos in testlist/trainlist.txt)
 
---numVids       Number of videos to train or test on within the split (Uses the first numVids videos in testlist/trainlist.txt)
+--valNumVids    	Number of videos to be used for validation
+    
+--lr                Initial learning rate
 
---valNumVids 	Number of videos to be used for validation
+--wd                Weight decay value, defaults to 0.0
 
---lr            Initial learning rate
+--nEpochs           Number of epochs to train over
 
---wd            Weight decay value, defaults to 0.0
+--split             Dataset split to use
 
---nEpochs       Number of epochs to train over
+--baseDataPath      The path to where all datasets are stored (Ex. This directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)
 
---split         Dataset split to use
+--fName			    Which dataset list to use (trainlist, testlist, vallist)
 
---baseDataPath  The path to where all datasets are stored (Ex. This directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)
+--saveFreq		    Frequency in epochs to save model checkpoints (default 1 aka every epoch)
 
---fName			Which dataset list to use (trainlist, testlist, vallist)
+--valFreq		    Frequency in epochs to validate (default 3)
 
---saveFreq		Frequency in epochs to save model checkpoints (default 1 aka every epoch)
+--returnLayer	    List of strings indicating parameters within the model to be tracked during training (default ['logits'])
 
---valFreq		Frequency in epochs to validate (default 3)
+--clipLength        Length of clips to cut video into, -1 indicates using the entire video as one clip
 
--returnLayer	List of strings indicating parameters within the model to be tracked during training (default ['logits'])
+--videoOffset       (none or random) indicating where to begin selecting video clips assuming clipOffset is none
+
+--clipOffset        (none or random) indicating if clips are selected sequentially or randomly
+
+--numClips          Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset
+
+--clipOverlap       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+
+--batchSize         Number of clips to load into the model each step.
+
+--lossType          String defining loss type associated with chosen model. (full_loss or half_loss - only compute loss based off of first half of video)
+
+--metricsDir        Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.
+
+--loadedCheckpoint  Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.
+
+--optChoice         String indicating optimizer choice
+
+--gpuList           List of GPU IDs to be used
+
+--gradClipValue     Value of normalized gradient at which to clip.
+
+--lrboundary        List of boundary epochs at which lr will be updated
+
+--lrvalues          List of lr multiplier values, length of list must equal lrboundary
+
+--verbose           Boolean switch to display all print statements or not
 ```
 
-Ex. Train ResNet50+LSTM on HMDB51 using 4 GPUs
-
-```
-python train_test_TFRecords_multigpu_model.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName example_1  --numVids 3570  --lr 0.001  --wd 0.0  --nEpochs 30  --split 1  --baseDataPath /z/dat  --fName trainlist
-```
 
 The parameters to test are:
 
 ```
 python  train_test_TFRecords_multigpu_model.py \
 
---model         The model archetecture to be used (ResNet50, VGG16)
+--model             The model archetecture to be used (ResNet50, VGG16)
 
---dataset       The dataset to use (UCF101, HMDB51)
+--dataset           The dataset to use (UCF101, HMDB51)
 
---numGpus       Number of GPUs to train on (Not yet implemented)
+--numGpus           Number of GPUs to train on (Not yet implemented)
 
---train         1 or 0 whether this is a training or testing run
+--train             1 or 0 whether this is a training or testing run
 
---load          1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
+--load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
 
---size          Size of the input frame (224 for ResNet50 and VGG16)
+--size              Size of the input frame (224 for ResNet50 and VGG16)
 
---inputDims     Input dimensions (number of frames to pass into model)
+--inputDims         Input dimensions (number of frames to pass into model)
 
---outputDims    Output dimensions(number of classes in dataset)
+--outputDims        Output dimensions(number of classes in dataset)
 
---seqLength     Sequence length to input into lstm (50 for ResNet50 and VGG16)
+--seqLength         Sequence length to input into lstm (50 for ResNet50 and VGG16)
 
---expName       Experiment name
+--expName           Experiment name
 
---numVids       Number of videos to train or test on within the split (Uses the first numVids videos in testlist/trainlist.txt)
+--numVids           Number of videos to train or test on within the split (Uses the first numVids videos in testlist/trainlist.txt)
 
---split         Dataset split to use
+--split             Dataset split to use
 
---baseDataPath  The path to where all datasets are stored (Ex. This directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)
+--baseDataPath      The path to where all datasets are stored (Ex. This directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)
 
---fName			Which dataset list to use (trainlist, testlist, vallist)
+--fName			    Which dataset list to use (trainlist, testlist, vallist)
 
---loadedDataset	Dataset that the model was trained on. This is to be used when testing a model on a different dataset than it was trained on.  
+--loadedDataset	    Dataset that the model was trained on. This is to be used when testing a model on a different dataset than it was trained on.  
+
+--returnLayer	    String indicating which layer to apply 'metricsMethod' on (default ['logits'])
+
+--clipLength        Length of clips to cut video into, -1 indicates using the entire video as one clip
+
+--videoOffset       (none or random) indicating where to begin selecting video clips assuming clipOffset is none
+
+--clipOffset        (none or random) indicating if clips are selected sequentially or randomly
+
+--numClips          Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset
+
+--clipOverlap       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+
+--metricsMethod     Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)
+
+--batchSize         Number of clips to load into the model each step.
+
+--metricsDir        Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.
+
+--loadedCheckpoint  Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.
+
+--gpuList           List of GPU IDs to be used
+
+--verbose           Boolean switch to display all print statements or not
 ```
 
-Ex. Test VGG16 on UCF101 split 1
+Ex. Test C3D on UCF101 split 1
 
 ```
-python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset UCF101  --train 0  --load 1  --size 224  --inputDims 50  --outputDims 101  --seqLength 50  --expName example_2  --numVids 3783  --split 1  --baseDataPath /z/dat  --fName testlist
+python train_test_TFRecords_multigpu_model.py --model c3d --dataset UCF101 --loadedDataset UCF101 --train 0 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName example_2 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /data --fName testlist
 ```
 
 ### Framework File Structure
@@ -168,18 +228,14 @@ python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset UCF101  
    layers_utils.py
    utils.py
 
-    /datasets
-	    /dataset_name
-            /classInd.txt
-            /testlist01.txt
-            /trainlist01.txt
-            /vallist01.txt (Optional)
-
    /models
         /model_name
             model_class.py
             model_preprocessing.py
-            model_weights.npy (Optional)
+            model_weights.npy shortcut to ../weights/model_weights.npy (Optional)
+            
+        /weights
+            model_weights.npy
 
    /results  
         /model_name
@@ -188,17 +244,25 @@ python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset UCF101  
 	                checkpoint
 	                checkpoint-100.npy
 	                checkpoint-100.dat
+	            /metrics_method
+	                testing_results.npy
 
-    /Logs
+    /logs
         /model_name
             /dataset_name
-                /experiment_name
-                    tensorboard_log
+                /metrics_method
+                    /experiment_name
+                        tensorboard_log
 
     /scripts
+        generate_tfrecords_dataset.py
+        
         /PBS
 	        /model_name
-	            pbsScript.pbs
+	            /test
+	                pbsScript.pbs
+	            /train
+	                pbsScript.pbs
 
 ```
 
@@ -209,7 +273,7 @@ trainlist, testlist, vallist - Lists of videos for training testing and validati
 
 models - Includes the model class and video preprocessing required for that model
 results - Saved model weights at specified checkpoints
-Logs - Tensorboard logs
+logs - Tensorboard logs
 
 
 
@@ -226,7 +290,7 @@ Currently integrated datasets: HMDB51, UCF101
 
 In order to use this framework, the datasets will need to be downloaded and formatted correctly.  Datasets are not included and must be downloaded and converted to TFRecords format. Converting dataset videos into TFRecords binary files allows for optimized tensorflow data loading and processing.  
 
-The currently methods to import and configure the datasets correctly are to either use the follow section [Adding a Dataset](#adding-a-dataset) to convert HMDB51 and UCF101 to tfrecords manually or to contact us directly for the datasets.
+The currently methods to import and configure the datasets correctly are to either use the follow section [Adding a Dataset](#adding-a-dataset) to convert HMDB51 and UCF101 to tfrecords manually.
 
 
 
@@ -295,13 +359,10 @@ Create the model file:
 
 File Structure:
 ```
-import sys
-sys.path.append('../..')
-
 import tensorflow as tf
 import numpy      as np
 
-from layers_utils				   import *
+from utils.layers_utils				   import *
 from model_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
@@ -339,7 +400,7 @@ class ModelName():
 
 
 
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
             :index:       Integer indicating the index of video frame from the text file containing video lists
@@ -348,12 +409,12 @@ class ModelName():
             :size:        List detailing values of height and width for final frames
             :is_training: Boolean value indication phase (TRAIN OR TEST)
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining)
+        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step)
 
 
 
     """ Function to return loss calculated on given network """
-    def loss(self, logits, labels):
+    def loss(self, logits, labels, loss_type):
         """
         Args:
             :logits: Unscaled logits returned from final layer in model
@@ -463,15 +524,16 @@ The TFRecords for each dataset must be stored in a specific file structure, HMDB
 ### Accuracies of Models
 The install of this framework can be tested by comparing the output with these expected testing results of the various models trained on the datasets.
 
-|  Model Architecture  |      Dataset      |  Accepted Accuracy |  Framework Testing Accuracy at 30 Epochs |  Framework Testing Accuracy at 35 Epochs
+|  Model Architecture  |      Dataset      |  Accepted Accuracy |  Framework Testing Accuracy |
 |----------|:----------:|:------:| :----:| :----:|
-| ResNet50 + LSTM |   HMDB51   |  43.90%  |  43.46% | 43.06% |
-| VGG16 + LSTM | HMDB51 |  --   |  -- | -- |
-
-
-
-
-
+| I3D | HMDB51 |  --   |  60.92% | 
+| I3D | UCF101 |  --   |  88.95% | 
+| C3D | HMDB51 |  --   |  49.41% | 
+| C3D | UCF101 |  --   |  78.35% | 
+| TSN | HMDB51 |  --   |  44.12% | 
+| TSN | UCF101 |  --   |  77.40% | 
+| ResNet50 + LSTM |   HMDB51   |  43.90%  |  45.36% |
+| ResNet50 + LSTM |   UCF101   |  --  |  78.91% | 
 
 
 

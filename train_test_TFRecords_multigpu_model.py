@@ -100,7 +100,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :opt_choice:         String indicating optimizer selected
         :gpu_list:           List of GPU IDs to be used
         :grad_clip_value:    Float value at which to clip normalized gradients
-        :lr_boundaries:      List of epoch boundaries at which lr will be updated 
+        :lr_boundaries:      List of epoch boundaries at which lr will be updated
         :lr_values:          List of lr multipliers to learning_rate_init at boundaries mentioned in lr_boundaries
 
     Returns:
@@ -172,7 +172,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         tower_losses       = []
         tower_grads        = []
         tower_slogits      = []
-        
+
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
@@ -236,7 +236,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
                         # Calculating Softmax for probability outcomes : Can be modified, make function internal to model
                         slogits = tf.nn.softmax(logits)
-                        
+
                         lr = tf.train.piecewise_constant(global_step, lr_boundaries, lr_values, name='learning_rate')
 
                     # END WITH
@@ -534,7 +534,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         init    = tf.global_variables_initializer()
 
         # Variables get randomly initialized into tf graph
-        sess.run(init)	
+        sess.run(init)
 
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
@@ -546,7 +546,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         assert(len(gpu_list)<=1)
 
         if len(gpu_list) == 0:
-            gpu_list = ['0'] # Default choice is ID = 0           
+            gpu_list = ['0'] # Default choice is ID = 0
 
         # END IF
 
@@ -676,8 +676,8 @@ if __name__=="__main__":
     parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
             help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
 
-    parser.add_argument('--resampleFrames', action='store', type=int, default=16,
-            help = 'Number of frames remaining after resampling within model inference.')
+    # parser.add_argument('--resampleFrames', action='store', type=int, default=16,
+    #         help = 'Number of frames remaining after resampling within model inference.')
 
     # Optimization parameters
 
@@ -759,7 +759,7 @@ if __name__=="__main__":
             help = '(none or random) indicating where to begin selecting video clips assuming clipOffset is none')
 
     parser.add_argument('--clipOffset', action='store', default='none',
-            help = '(none or random) indicating if clips are seleted sequentially or randomly')
+            help = '(none or random) indicating if clips are selected sequentially or randomly')
 
     parser.add_argument('--clipOverlap', action='store', type=int, default=0,
             help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
