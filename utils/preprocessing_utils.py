@@ -45,8 +45,8 @@ _R_MEAN = 123.68
 _G_MEAN = 116.78
 _B_MEAN = 103.94
 
-_RESIZE_SIDE_MIN = 256
-_RESIZE_SIDE_MAX = 512
+RESIZE_SIDE_MIN = 256
+RESIZE_SIDE_MAX = 512
 
 
 def crop(image, offset_height, offset_width, crop_height, crop_width):
@@ -295,4 +295,69 @@ def loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, fram
 
 
 
+def resample_input(video, sample_dims, frame_count, alpha):
+    """Return video sampled at uniform rate
+    Args:
+        :video:       Raw input data
+        :sample_dims: Number of frames to be provided as input to model
+        :frame_count: Total number of frames
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
 
+    sample_dims = tf.cast(sample_dims, tf.float32)
+    indices = tf.range(start=0., limit=sample_dims, delta=1., dtype=tf.float32)
+    r_alpha = alpha * tf.cast(frame_count, tf.float32) / sample_dims
+    indices = tf.multiply(tf.tile([r_alpha], [tf.cast(sample_dims, tf.int32)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output
+
+def resample_model(video, sample_dims, frame_count, alpha):
+    """Return video sampled at uniform rate
+    Args:
+        :video:       Raw input data
+        :sample_dims: Number of frames to be provided as input to model
+        :frame_count: Total number of frames
+        :alpha        relative sampling rate
+    Return:
+        Sampled video
+    """
+
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
+    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
+    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output
+
+
+def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
+    """Return video sampled to a rate chosen sinuloidally based on the current accumulated number of videos.
+       Resampling factors are chosen from a range of 0.2 to 3.0.
+    Args:
+        :video:       Raw input data
+        :sample_dims: Number of frames to be provided as input to model
+        :frame_count: Total number of frames
+        :tracker:     Number of videos that have been loaded in total during training
+    Return:
+        Sampled video
+    """
+    alpha       = 1.6
+    upper_limit = 3.0
+    lower_limit = 0.2
+
+    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
+
+    # Sinusoidal variation with alpha being the DC offset
+    r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
+
+    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
+    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
+
+    indices = tf.cast(indices, tf.int32)
+    output  = tf.gather(video, tf.convert_to_tensor(indices))
+    return output, (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32)))

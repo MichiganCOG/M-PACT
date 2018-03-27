@@ -1,17 +1,9 @@
 " C3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
-
-"""
-Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 use C3D sports1M model by @ hdx173149.
-"""
-
-import sys
-#sys.path.append('utils')
-
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                import *
+from utils.layers_utils          import *
 from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 

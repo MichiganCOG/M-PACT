@@ -1,17 +1,10 @@
 " C3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 
-"""
-Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 use C3D sports1M model by @ hdx173149.
-"""
-
-import sys
-#sys.path.append('utils')
-
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                import *
+from utils.layers_utils          import *
 from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 
@@ -164,7 +157,7 @@ class C3D_RR():
         """
         output, alpha_tensor = preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
         return output, alpha_tensor
-	
+
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels, loss_type):

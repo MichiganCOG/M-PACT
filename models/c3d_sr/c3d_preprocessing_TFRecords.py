@@ -6,85 +6,9 @@ from utils.preprocessing_utils import *
 Sinusoidal Resampling
 '''
 
-_R_MEAN = 123.68
-_G_MEAN = 116.78
-_B_MEAN = 103.94
-
-_RESIZE_SIDE_MIN = 256
-_RESIZE_SIDE_MAX = 512
-_mean_image = np.load('models/c3d/crop_mean.npy')
-
-
-
-def resample_model_sinusoidal(video, sample_dims, frame_count, tracker):
-    """Return video sampled at random rate
-    Args:
-        :video:       Raw input data
-        :frame_count: Total number of frames
-        :sample_dims: Number of frames to be provided as input to model
-        :alpha        relative sampling rate
-    Return:
-        Sampled video
-    """
-    alpha       = 1.6
-    upper_limit = 3.0
-    lower_limit = 0.2
-
-    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
-
-    # Sinusoidal variation with alpha being the DC offset
-    r_alpha = (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32))) * tf.cast(frame_count, tf.float32) / float(sample_dims)
-
-    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
-    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
-
-    indices = tf.cast(indices, tf.int32)
-    output  = tf.gather(video, tf.convert_to_tensor(indices))
-    return output, (alpha + (upper_limit - lower_limit) / 2.0 * tf.sin(tf.cast(tracker,tf.float32)))
-
-
-def resample_model(video, sample_dims, frame_count, alpha):
-    """Return video sampled at uniform rate
-    Args:
-        :video:       Raw input data
-        :frame_count: Total number of frames
-        :sample_dims: Number of frames to be provided as input to model
-        :alpha        relative sampling rate
-    Return:
-        Sampled video
-    """
-
-    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
-    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
-    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
-    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
-    indices = tf.cast(indices, tf.int32)
-    output  = tf.gather(video, tf.convert_to_tensor(indices))
-    return output
-
-def resample_input(video, sample_dims, frame_count, alpha):
-    """Return video sampled at uniform rate
-    Args:
-        :video:       Raw input data
-        :frame_count: Total number of frames
-        :sample_dims: Number of frames to be provided as input to model
-        :alpha        relative sampling rate
-    Return:
-        Sampled video
-    """
-    sample_dims = tf.cast(sample_dims, tf.float32)
-    indices = tf.range(start=0., limit=sample_dims, delta=1., dtype=tf.float32)
-    r_alpha = alpha * tf.cast(frame_count, tf.float32) / sample_dims
-    indices = tf.multiply(tf.tile([r_alpha], [tf.cast(sample_dims, tf.int32)]), indices)
-    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
-    indices = tf.cast(indices, tf.int32)
-    output  = tf.gather(video, tf.convert_to_tensor(indices))
-    return output
-
 
 def preprocess_image(image, output_height, output_width, is_training=False,
-                     resize_side_min=_RESIZE_SIDE_MIN,
-                     resize_side_max=_RESIZE_SIDE_MAX):
+                     resize_side_min=RESIZE_SIDE_MIN):
   """Preprocesses the given image.
   Args:
     image: A `Tensor` representing an image of arbitrary size.
@@ -95,10 +19,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     resize_side_min: The lower bound for the smallest side of the image for
       aspect-preserving resizing. If `is_training` is `False`, then this value
       is used for rescaling.
-    resize_side_max: The upper bound for the smallest side of the image for
-      aspect-preserving resizing. If `is_training` is `False`, this value is
-      ignored. Otherwise, the resize side is sampled from
-        [resize_size_min, resize_size_max].
+
   Returns:
     A preprocessed image.
   """
@@ -126,10 +47,15 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         :size:              Output size of preprocessed frames
         :label:             Label of current sample
         :istraining:        Boolean indicating training or testing phase
-
+        :tracker:           Variable counting the total number of videos that have been loaded during training
+        :cvr:               Constant value to resample video to during testing
+        :input_alpha:       Value to resample video to during testing analysis of speed robustness
+        
     Return:
         Preprocessing input data and labels tensor
     """
+
+    _mean_image = np.load('models/c3d/crop_mean.npy')
 
     input_data_tensor = input_data_tensor[...,::-1]
 

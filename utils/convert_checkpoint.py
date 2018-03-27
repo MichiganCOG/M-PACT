@@ -1,6 +1,5 @@
 import os
 import argparse
-
 import numpy      as np
 import tensorflow as tf
 
@@ -43,12 +42,18 @@ def add_tensor(tensor, keys_list, original_key, reader):
     else:
         try:
             curr_tensor = tensor[keys_list[0]]
-        
+
+        # END TRY
+
+    # END IF
+
 	except:
             curr_tensor = {}
-        
+
+    # END EXCEPT
+
 	tensor[keys_list[0]] = add_tensor(curr_tensor, keys_list[1:], original_key, reader)
-        return tensor
+    return tensor
 
 
 if __name__ == '__main__':
@@ -78,31 +83,11 @@ if __name__ == '__main__':
 			key_list = key.split('/')
 			tensors = add_tensor(tensors, key_list, key, reader)
 
-	np.save(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.npy'), tensors)
+        # END IF
+
+    # END FOR
+
+    np.save(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.npy'), tensors)
 	f = open(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.dat' ), 'w')
-	f.write('lr-0.001')
+	f.write('lr:0.001')
 	f.close()
-
-# python convert_checkpoint.py --model resnet_RIL_interp_median_model_v40 --dataset HMDB51 --expName tfrecords_resnet_rain_interp_median_v40_HMDB51
-
-"""
-Convert c3d
-reader = tf.train.NewCheckpointReader(checkpoint_path)
-vm = reader.get_variable_to_shape_map()
-dd = {}
-for k in vm.keys():
-...     layer = k[10:]
-...     if layer in dd.keys():
-...             if k[9] == 'b':
-...                     dd[layer]['bias:0'] = reader.get_tensor(k)
-...             else:
-...                     dd[layer]['kernel:0'] = reader.get_tensor(k)
-...     else:
-...             dd[layer] = {}
-...             if k[9] == 'b':
-...                     dd[layer]['bias:0'] = reader.get_tensor(k)
-...             else:
-...                     dd[layer]['kernel:0'] = reader.get_tensor(k)
-
-
-"""
