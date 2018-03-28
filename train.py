@@ -286,7 +286,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Load pre-trained/saved model to continue training (or fine-tune)
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name, loaded_checkpoint)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name, loaded_checkpoint, preproc_method)
                 if verbose:
                     print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
@@ -436,9 +436,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir('results')
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, 'checkpoints'))
+        curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
 
         ####################################################################################
 
@@ -498,7 +499,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     if verbose:
                         print "Saving..."
 
-                    save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, global_step.eval(session=sess))
+                    save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, learning_rate, global_step.eval(session=sess))
 
                 # END IF
 
@@ -596,7 +597,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END IF
 
-        save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, gs)
+        save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, learning_rate, gs)
         coord.request_stop()
         coord.join(threads)
 
@@ -609,16 +610,16 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
     # Save tracked parameterization variables as a numpy file
 	if len(total_params) != 0:
 	    total_params = np.array(total_params).flatten()
-            make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
 
-	    if os.path.isfile(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
+	    if os.path.isfile(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
 
-	        loaded_params = np.load(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
+	        loaded_params = np.load(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
 
         # END IF
 
 		total_params = np.concatenate([loaded_params, total_params])
-	    np.save(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
+	    np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
 
     # END IF
 
@@ -660,5 +661,5 @@ if __name__=="__main__":
                 random_init         = args.randomInit)
 
     # END IF
-    
+
     import pdb; pdb.set_trace()

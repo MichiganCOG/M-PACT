@@ -26,24 +26,26 @@ class Metrics():
         :_svm_classify:
     """
 
-    def __init__(self, output_dims, seq_length, logger, method, is_training, model_name, exp_name, dataset, metrics_dir='default', verbose=1, load_svm=False):
+    def __init__(self, output_dims, seq_length, logger, method, is_training, model_name, exp_name, preproc_method, dataset, metrics_dir='default', verbose=1, load_svm=False):
         """
         Args:
-            :output_dims: Output dimensions of the model, used to verify the shape of predictions
-            :logger:      The logger object that will save the testing performance.
-            :method:      The metrics method to be used (svm, svm_train, avg_pooling, last_frame)
-            :is_training: Boolean indicating whether the testlist or trainlist is being used.
-            :model_name:  Name of the model that is being tested
-            :exp_name:    Name of experiment weights that the logs will be saved under.
-            :dataset:     Which dataset is currently being tested.
-            :verbose:     Setting verbose command
-            :load_svm:    Boolean indication whether to load saved svm testlist features or to extract them. Intended for debugging.
+            :output_dims:        Output dimensions of the model, used to verify the shape of predictions
+            :logger:             The logger object that will save the testing performance.
+            :method:             The metrics method to be used (svm, svm_train, avg_pooling, last_frame)
+            :is_training:        Boolean indicating whether the testlist or trainlist is being used.
+            :model_name:         Name of the model that is being tested
+            :exp_name:           Name of experiment weights that the logs will be saved under.
+            :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
+            :dataset:            Which dataset is currently being tested.
+            :verbose:            Setting verbose command
+            :load_svm:           Boolean indication whether to load saved svm testlist features or to extract them. Intended for debugging.
         """
         self.output_dims=output_dims
         self.seq_length=seq_length
         self.verbose=verbose
         self.model_name = model_name
         self.exp_name = exp_name
+        self.preproc_method = preproc_method
         self.dataset = dataset
         self.correct_predictions=0
         self.total_predictions=0
@@ -53,7 +55,7 @@ class Metrics():
         self.step=0
         self.is_training = is_training
         self.file_name_dict = {}
-        self.metrics_dir = metrics_dir
+        self.metrics_dir = metrics_di
 
         if self.is_training:
             self.log_name = 'train'
@@ -63,11 +65,11 @@ class Metrics():
 
         # END IF
 
-        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5')) and (('avg_pooling' in self.method) or ('last_frame' in self.method)):
-            os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
+        if os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5')) and (('avg_pooling' in self.method) or ('last_frame' in self.method)):
+            os.remove(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         if self.method == 'svm':
-            if not os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'_train.hdf5')):
+            if not os.path.isfile(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'_train.hdf5')):
                 print "\nError: Temporary training features are not present to train svm. Please first evaluate this model on the training split of this dataset using metricsMethod svm_train.\n"
                 exit()
 
@@ -75,9 +77,9 @@ class Metrics():
 
         # Debugging, load saved train and test features for an svm without regenerating the features
         if load_svm:
-            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'r')
+            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'r')
         else:
-            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'w')
+            self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'w')
 
         # END IF
 
@@ -278,7 +280,7 @@ class Metrics():
 
         self.save_file.close()
 
-        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         return current_accuracy
 
@@ -347,7 +349,7 @@ class Metrics():
 
         self.save_file.close()
 
-        os.remove(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
 
         return current_accuracy
 
@@ -368,7 +370,7 @@ class Metrics():
         training_labels = []
         training_names = []
 
-        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.exp_name, self.metrics_dir,'tempextract_features.hdf5'), 'r')#+self.method+'_train.hdf5'), 'r')
+        train_hdf5 = h5py.File(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'tempextract_features.hdf5'), 'r')#+self.method+'_train.hdf5'), 'r')
 
         # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
         for vid_name in train_hdf5.keys():

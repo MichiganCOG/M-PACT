@@ -236,7 +236,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Load pre-trained/saved model
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name, loaded_checkpoint)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name, loaded_checkpoint, preproc_method)
                 if verbose:
                     print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
@@ -307,13 +307,15 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         ######################### Logger Setup block ######################################
 
         # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
-        log_name    = ("exp_test_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                               dataset, experiment_name, metrics_method))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
+        log_name    = ("exp_test_%s_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
+                                               dataset, preproc_method, experiment_name, metrics_method))
+                                               
+        curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
 
         ###################################################################################
 
@@ -322,7 +324,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, dataset, metrics_dir, verbose=verbose)
+        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, preproc_method, dataset, metrics_dir, verbose=verbose)
 
         # Variables get randomly initialized into tf graph
         sess.run(init)
