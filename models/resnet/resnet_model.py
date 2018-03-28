@@ -11,17 +11,15 @@ from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
 
 class ResNet():
 
-    def __init__(self, input_dims, k, model_alpha, input_alpha, verbose=True):
+    def __init__(self, input_dims, model_alpha, input_alpha, verbose=True):
         """
         Args:
-            :k:          Temporal window width
             :verbose:    Setting verbose command
             :input_dims: Input dimensions (number of frames)
 
         Return:
             Does not return anything
         """
-        self.k          = k
         self.name       = 'resnet'
         self.verbose    = verbose
         self.input_dims = input_dims
@@ -284,7 +282,7 @@ class ResNet():
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
         return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
-	
+
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:

@@ -5,8 +5,6 @@ import tensorflow as tf
 from tensorflow.python.training import queue_runner
 
 
-
-
 def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose=True):
     """
     Function load dataset, setup queue and read data into queue
@@ -66,6 +64,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     # Track scalar value defined in a models preprocessing function in a class variable called 'store_alpha'
     if hasattr(model, 'store_alpha'):
         model.store_alpha = alpha_tensor
+        model.add_track_variables('Parameterization_Variables', model.store_alpha)
 
     return input_data_tensor, labels_tensor, names_tensor
 
@@ -221,7 +220,7 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_off
         if num_clips > 0:
             frames_needed = clip_length + (clip_length-clip_overlap) * (num_clips-1)
             video = tf.cond(tf.greater(frames_needed, frames-video_start),
-                            lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, video_start, frames, height, width, channel, clip_length+video_start),
+                            lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, frames-video_start, frames, height, width, channel, frames_needed),
                             lambda: video[video_start:,:,:,:])
 
             clip_begin = tf.range(0, frames_needed, delta = clip_length-clip_overlap)[:num_clips]
@@ -235,7 +234,7 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_off
 
             # Need minimum one clip: loop video until at least have clip_length frames
             video = tf.cond(tf.greater(clip_length, frames-video_start),
-                            lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, video_start, frames, height, width, channel, clip_length+video_start),
+                            lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, frames-video_start, frames, height, width, channel, clip_length+video_start),
                             lambda: video[video_start:,:,:,:])
 
             number_of_clips = tf.cond(tf.greater(clip_length, frames-video_start),

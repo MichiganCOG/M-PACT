@@ -13,19 +13,16 @@ from BNInception                              import BNInception
 
 
 class TSN():
-    def __init__(self, input_dims, output_dims, exp_name, num_seg=3, init=False, input_alpha = 1.0, verbose=True):
-        self.name        = 'tsn'
-        self.verbose     = verbose
-        self.input_dims  = input_dims
-        self.output_dims = output_dims
-        self.exp_name    = exp_name
-        self.num_seg     = num_seg
+
+    def __init__(self, **kwargs):
+        """
+        Args:
+            Pass all arguments on to parent class, you may not add additional arguments without modifying abstract_model_class.py and Models.py. Enter any additional initialization functionality here if desired.
+        """
+        super().__init__(**kwargs)
+        self.num_seg     = 3.0
         self.init        = init
         self.dropout     = 0.8
-        self.input_alpha = input_alpha
-
-        if self.verbose:
-            print('TSN initialized')
 
     def _extraction_layer(self, inputs, params, sets, K, L):
         # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates

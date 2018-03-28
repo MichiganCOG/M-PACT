@@ -4,29 +4,27 @@
 """
 Model weights found at https://github.com/hx173149/C3D-tensorflow. The model used was C3D UCF101 TF train - finetuning on UCF101 split1 use C3D sports1M model by @ hdx173149.
 """
-
-import sys
-#sys.path.append('utils')
-
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                import *
-from c3d_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from models.model_abstract       import Abstract_Model_Class
+from utils.layers_utils          import *
+
+from default_preprocessing   import preprocess
+from cvr_preprocessing       import preprocess as preprocess_cvr
+from rr_preprocessing        import preprocess as preprocess_rr
+from sr_preprocessing        import preprocess as preprocess_sr
 
 
-class C3D():
-    def __init__(self, input_alpha=1.0, verbose=True):
+class C3D(Abstract_Model_Class):
+
+    def __init__(self, **kwargs):
         """
         Args:
-            :verbose: Setting verbose command
+            Pass all arguments on to parent class, you may not add additional arguments without modifying abstract_model_class.py and Models.py. Enter any additional initialization functionality here if desired.
         """
-        self.verbose=verbose
-        self.input_alpha = input_alpha
-        self.name = 'c3d'
+        super(C3D, self).__init__(**kwargs)
 
-        if verbose:
-            print "C3D Model Initialized"
 
 
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
@@ -148,20 +146,43 @@ class C3D():
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        return np.load('models/c3d/c3d_Sports1M.npy')
+        return np.load('models/weights/c3d_Sports1M.npy')
         # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
-            :index:       Integer indicating the index of video frame from the text file containing video lists
-            :data:        Data loaded from HDF5 files
-            :labels:      Labels for loaded data
-            :size:        List detailing values of height and width for final frames
-            :is_training: Boolean value indication phase (TRAIN OR TEST)
+            :input_data_tensor:     Data loaded from tfrecords containing either video or clips
+            :frames:                Number of frames in loaded video or clip
+            :height:                Pixel height of loaded video or clip
+            :width:                 Pixel width of loaded video or clip
+            :channel:               Number of channels in video or clip, usually 3 (RGB)
+            :input_dims:            Number of frames used in input
+            :output_dims:           Integer number of classes in current dataset
+            :seq_length:            Length of output sequence
+            :size:                  List detailing values of height and width for final frames
+            :label:                 Label for loaded data
+            :is_training:           Boolean value indication phase (TRAIN OR TEST)
+            :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
+        if self.preproc_method == 'cvr':
+            output, alpha_tensor = preprocess_cvr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha)
+            self.add_track_variables('Parameterization_Variables',tf.Variable(alpha_tensor, trainable=False))
+            return output
+
+        elif self.preproc_method == 'rr':
+            output, alpha_tensor = preprocess_rr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+            return output, alpha_tensor
+
+        elif self.preproc_method == 'sr':
+            output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.model_alpha, self.input_alpha)
+            return output, alpha_tensor
+
+        else:
+            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+
+        # END IF
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels, loss_type):

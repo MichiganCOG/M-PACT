@@ -15,14 +15,13 @@ from tensorflow.python.ops      import variables as vars_
 from tensorflow.python.training import queue_runner_impl
 
 # Custom imports
-from models                 import *
-from utils                  import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir, Metrics
-from Queue                  import Queue
-from logger                 import Logger
-from random                 import shuffle
-from load_dataset_tfrecords import load_dataset
+from models                       import *
+from utils                        import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir, Metrics
+from Queue                        import Queue
+from utils.logger                 import Logger
+from random                       import shuffle
+from utils.load_dataset_tfrecords import load_dataset
 
-# Definition of all arguments needed in functions defined within this file
 
 parser = argparse.ArgumentParser()
 
@@ -46,6 +45,12 @@ parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
 parser.add_argument('--inputAlpha', action='store', type=float, default=1.,
         help = 'Resampling factor for constant value resampling of input video, used mainly for testing models.')
 
+parser.add_argument('--dropoutRate', action='store', type=float, default=0.5,
+        help = 'Value indicating proability of keeping inputs of the model\'s dropout layers.')
+
+parser.add_argument('--freeze', action='store', type=int, default=0,
+        help = 'Freeze weights during training of any layers within the model that have the option set. (default False)')
+
 # Optimization parameters
 
 parser.add_argument('--lr', action='store', type=float, default=0.001,
@@ -58,7 +63,7 @@ parser.add_argument('--lossType', action='store', default='full_loss',
         help = 'String defining loss type associated with chosen model.')
 
 parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
-        help = 'Which model layers to be returned by the models\' inference and logged.')
+        help = 'Which model layers to be returned by the models\' inference during testing.')
 
 parser.add_argument('--optChoice', action='store', default='default',
         help = 'String indicating optimizer choice')
@@ -66,10 +71,10 @@ parser.add_argument('--optChoice', action='store', default='default',
 parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
         help = 'Value of normalized gradient at which to clip.')
 
-parser.add_argument('--lrboundary', nargs='+',type=int, default=[],
+parser.add_argument('--lrboundary', nargs='+',type=int, default=[0],
         help = 'List of boundary epochs at which lr will be updated')
 
-parser.add_argument('--lrvalues', nargs='+',type=float, default=[],
+parser.add_argument('--lrvalues', nargs='+',type=float, default=[1.0],
         help = 'List of lr multiplier values, length of list must equal lrboundary')
 
 # Experiment parameters
@@ -86,7 +91,7 @@ parser.add_argument('--numGpus', action= 'store', type=int, default=1,
 parser.add_argument('--gpuList', nargs='+',type=str, default=[],
         help = 'List of GPU IDs to be used')
 
-parser.add_argument('--train', action= 'store', required=True, type=int,
+parser.add_argument('--train', action= 'store', type=int, default=1,
         help = 'Binary value to indicate training or evaluation instance')
 
 parser.add_argument('--load', action='store', type=int, default=0,
@@ -143,57 +148,46 @@ parser.add_argument('--metricsDir', action='store', type=str, default='default',
 parser.add_argument('--metricsMethod', action='store', default='avg_pooling',
         help = 'Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)')
 
+parser.add_argument('--preprocMethod', action='store', default='default',
+        help = 'Which preprocessing method to use (default, cvr, rr, sr are options for existing models)')
+
+parser.add_argument('--randomInit', action='store', type=int, default=0,
+        help = 'Randomly initialize model weights, not loading from any files (deafult False)')
+
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
 
 
 args = parser.parse_args()
 
-print "Setup of current experiments"
-print "\n############################"
-print args
-print "############################ \n"
+if args.verbose:
+    print "Setup of current experiments"
+    print "\n############################"
+    print args
+    print "############################ \n"
 
-# Associating relevant model
+# END IF
+
 model_name = args.model
 
-model = Models(model_name = model_name, inputAlpha = args.inputAlpha, modelAlpha = args.modelAlpha, clipLength = args.clipLength, numVids = args.numVids, numEpochs = args.nEpochs, batchSize = args.batchSize, numClips = args.numClips, numGpus = args.numGpus, train = args.train, expName = args.expName, outputDims = args.outputDims, inputDims = args.inputDims).assign_model()
+model = models_import.create_model_object(modelName = model_name,
+                                   inputAlpha = args.inputAlpha,
+                                   modelAlpha = args.modelAlpha,
+                                   clipLength = args.clipLength,
+                                   numVids = args.numVids,
+                                   numEpochs = args.nEpochs,
+                                   batchSize = args.batchSize,
+                                   numClips = args.numClips,
+                                   numGpus = args.numGpus,
+                                   train = args.train,
+                                   expName = args.expName,
+                                   outputDims = args.outputDims,
+                                   inputDims = args.inputDims,
+                                   preprocMethod = args.preprocMethod,
+                                   dropoutRate = args.dropoutRate,
+                                   freeze = args.freeze,
+                                   verbose = args.verbose)
 
-
-if args.train:
-    train(model               = model,
-          input_dims          = args.inputDims,
-          output_dims         = args.outputDims,
-          seq_length          = args.seqLength,
-          size                = [args.size, args.size],
-          num_gpus            = args.numGpus,
-          dataset             = args.dataset,
-          experiment_name     = args.expName,
-          load_model          = args.load,
-          num_vids            = args.numVids,
-          n_epochs            = args.nEpochs,
-          split               = args.split,
-          base_data_path      = args.baseDataPath,
-          f_name              = args.fName,
-          learning_rate_init  = args.lr,
-          wd                  = args.wd,
-          save_freq           = args.saveFreq,
-          return_layer        = args.returnLayer,
-          clip_length         = args.clipLength,
-          video_offset        = args.videoOffset,
-          clip_offset         = args.clipOffset,
-          num_clips           = args.numClips,
-          clip_overlap        = args.clipOverlap,
-          batch_size          = args.batchSize,
-          loss_type           = args.lossType,
-          metrics_dir         = args.metricsDir,
-          loaded_checkpoint   = args.loadedCheckpoint,
-          verbose             = args.verbose,
-          opt_choice          = args.optChoice,
-          gpu_list            = args.gpuList,
-          grad_clip_value     = args.gradClipValue,
-          lr_boundaries       = args.lrboundary,
-          lr_values           = args.lrvalues)
 
 
 def _average_gradients(tower_grads):
@@ -239,7 +233,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, lr_boundaries, lr_values):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, lr_boundaries, lr_values, preproc_method, random_init):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -260,7 +254,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :learning_rate_init: Initializer for learning rate
         :wd:                 Weight decay
         :save_freq:          Frequency, in epochs, with which to save
-        :return_layer:       Layers to be tracked during training
         :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
         :video_offset:       String indicating where to begin selecting video clips (provided clipOffset is None)
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
@@ -276,24 +269,13 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :grad_clip_value:    Float value at which to clip normalized gradients
         :lr_boundaries:      List of epoch boundaries at which lr will be updated
         :lr_values:          List of lr multipliers to learning_rate_init at boundaries mentioned in lr_boundaries
-
+        :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
+        :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
     Returns:
         Does not return anything
     """
 
     with tf.name_scope("my_scope") as scope:
-
-        # Ensure that the default return layer is logits
-        if len(return_layer) == 0:
-            return_layer = ['logits']
-
-        # END IF
-
-        # Ensure first layer requested in return sequence is "logits" always
-        if return_layer[0] != 'logits':
-            return_layer.insert(0, 'logits')
-
-        # END IF
 
         # Initializers for checkpoint and global step variable
         ckpt    = None
@@ -304,7 +286,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Load pre-trained/saved model to continue training (or fine-tune)
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name, loaded_checkpoint)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, dataset, experiment_name, loaded_checkpoint, preproc_method)
                 if verbose:
                     print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
@@ -337,12 +319,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Variables get randomly initialized into tf graph
         sess.run(init)
 
-        model_params_array = []
-        for rl in range(len(return_layer)-1):
-            model_params_array.append([])
-
-        # END FOR
-
         tower_losses       = []
         tower_grads        = []
         tower_slogits      = []
@@ -354,8 +330,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         if ((batch_size == 1) and (num_clips==1)):
             sess.run(tf.assign_add(video_step, -2))
+
         else:
             sess.run(tf.assign_add(video_step, -1))
+
+        # END IF
 
         # Define optimizer (Current selection is only momentum optimizer)
         if opt_choice == 'gd':
@@ -398,15 +377,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                  output_dims,
                                                  seq_length,
                                                  scope,
-                                                 return_layer = return_layer,
+                                                 return_layer = ['logits'],
                                                  weight_decay = wd)
 
                         logits          = tf.cast(returned_layers[0], tf.float32)
-
-                        for rl in range(len(returned_layers[1:])):
-                            model_params_array[rl].append(returned_layers[1:][rl])
-
-                        # END FOR
 
                         # Calculating Softmax for probability outcomes : Can be modified, make function internal to model
                         slogits = tf.nn.softmax(logits)
@@ -462,9 +436,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         make_dir('results')
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name, 'checkpoints'))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
+        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, 'checkpoints'))
+        curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
 
         ####################################################################################
 
@@ -475,9 +450,18 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Variables get randomly initialized into tf graph
         sess.run(init)
 
-        # Model variables initialized from previous saved models
-        initialize_from_dict(sess, ckpt, model.name)
+        # Check that weights were loaded or random initializations are requested
+        if ((ckpt == None) or (random_init)):
+            print "Caution: Model weights are not being loaded, using random initialization."
+
+        else:
+            # Model variables initialized from previous saved models
+            initialize_from_dict(sess, ckpt, model.name)
+
+        # END IF
+
         del ckpt
+
 
         # Initialize tracking variables
         previous_vid_name = ""
@@ -491,7 +475,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         losses       = []
         total_pred   = []
         save_data    = []
-	total_params = []
+        total_params = []
 
         l_r           = learning_rate_init
         learning_rate = l_r
@@ -515,7 +499,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     if verbose:
                         print "Saving..."
 
-                    save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, global_step.eval(session=sess))
+                    save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, learning_rate, global_step.eval(session=sess))
 
                 # END IF
 
@@ -527,10 +511,10 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             time_pre_train = time.time()
 
             ######################################### Running TF training session block ##################################
-            _, loss_train, predictions, gs, labels, params, vid_names, idt = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, vid_names, idt, track_vars = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
-                                                                       labels_tensor, model_params_array,
-                                                                       names_tensor, input_data_tensor])
+                                                                       labels_tensor, names_tensor,
+                                                                       input_data_tensor, model.get_track_variables()])
 
             ################################################################################################################
 
@@ -545,8 +529,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             # Transpose the extracted layers such that the mean is taken across the gpus and over any matrix with more than 1 dimension
             params_array = []
-            for rl in range(len(return_layer[1:])):
-                curr_params = np.array(params[rl])
+            for key in track_vars.keys():
+                curr_params = np.array(track_vars[key])
                 if len(curr_params.shape) > 1:
                     indices = np.arange(len(curr_params.shape)) + 1
                     indices[-1] = 0
@@ -579,7 +563,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             # END FOR
 
-            ##########################################################################
+            ###################### Add variables to be tracked to logger #############
 
             time_post_train = time.time()
             tot_train_time += time_post_train - time_pre_train
@@ -590,14 +574,13 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             # END IF
 
-
             curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
             for layer in range(len(params_array)):
                 for p in range(len(params_array[layer])):
-                    curr_logger.add_scalar_value('tracked_training_variables/'+str(return_layer[1:][layer]+'_'+str(p)), float(params_array[layer][p]), step=gs)
+                    curr_logger.add_scalar_value('tracked_training_variables/'+str(track_vars.keys()[layer]+'_'+str(p)), float(params_array[layer][p]), step=gs)
 
                 # END FOR
 
@@ -614,7 +597,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END IF
 
-        save_checkpoint(sess, model.name, dataset, experiment_name, learning_rate, gs)
+        save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, learning_rate, gs)
         coord.request_stop()
         coord.join(threads)
 
@@ -622,16 +605,61 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             print "Tot train time: ", tot_train_time
             print "Tot time:       ", time.time()-time_init
 
-	if len(total_params) != 0:
-	    total_params = np.array(total_params).flatten()
-            make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
-	    if os.path.isfile(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
-	        loaded_params = np.load(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
-		total_params = np.concatenate([loaded_params, total_params])
-	    np.save(os.path.join('results', model.name, dataset, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
-
     # END WITH
 
+    # Save tracked parameterization variables as a numpy file
+	if len(total_params) != 0:
+	    total_params = np.array(total_params).flatten()
+            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
+
+	    if os.path.isfile(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
+
+	        loaded_params = np.load(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
+
+        # END IF
+
+		total_params = np.concatenate([loaded_params, total_params])
+	    np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
+
+    # END IF
 
 if __name__=="__main__":
+    if args.train:
+        train(  model               = model,
+                input_dims          = args.inputDims,
+                output_dims         = args.outputDims,
+                seq_length          = args.seqLength,
+                size                = [args.size, args.size],
+                num_gpus            = args.numGpus,
+                dataset             = args.dataset,
+                experiment_name     = args.expName,
+                load_model          = args.load,
+                num_vids            = args.numVids,
+                n_epochs            = args.nEpochs,
+                split               = args.split,
+                base_data_path      = args.baseDataPath,
+                f_name              = args.fName,
+                learning_rate_init  = args.lr,
+                wd                  = args.wd,
+                save_freq           = args.saveFreq,
+                clip_length         = args.clipLength,
+                video_offset        = args.videoOffset,
+                clip_offset         = args.clipOffset,
+                num_clips           = args.numClips,
+                clip_overlap        = args.clipOverlap,
+                batch_size          = args.batchSize,
+                loss_type           = args.lossType,
+                metrics_dir         = args.metricsDir,
+                loaded_checkpoint   = args.loadedCheckpoint,
+                verbose             = args.verbose,
+                opt_choice          = args.optChoice,
+                gpu_list            = args.gpuList,
+                grad_clip_value     = args.gradClipValue,
+                lr_boundaries       = args.lrboundary,
+                lr_values           = args.lrvalues,
+                preproc_method      = args.preprocMethod,
+                random_init         = args.randomInit)
+
+    # END IF
+
     import pdb; pdb.set_trace()
