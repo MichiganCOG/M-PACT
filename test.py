@@ -425,7 +425,7 @@ if __name__=="__main__":
                 verbose           = args.verbose,
                 gpu_list          = args.gpuList,
                 preproc_method    = args.preprocMethod,
-                random_init       = args.random_init)
+                random_init       = args.randomInit)
 
     # END IF
 

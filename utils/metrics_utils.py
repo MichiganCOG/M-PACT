@@ -55,7 +55,7 @@ class Metrics():
         self.step=0
         self.is_training = is_training
         self.file_name_dict = {}
-        self.metrics_dir = metrics_di
+        self.metrics_dir = metrics_dir
 
         if self.is_training:
             self.log_name = 'train'
