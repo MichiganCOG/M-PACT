@@ -18,9 +18,9 @@ from tensorflow.python.training import queue_runner_impl
 from models                       import *
 from utils                        import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir, Metrics
 from Queue                        import Queue
-from logger                 import Logger
+from utils.logger                 import Logger
 from random                       import shuffle
-from load_dataset_tfrecords import load_dataset
+from utils.load_dataset_tfrecords import load_dataset
 
 
 parser = argparse.ArgumentParser()
@@ -170,7 +170,7 @@ if args.verbose:
 
 model_name = args.model
 
-model = Models.create_model_object(modelName = model_name,
+model = import_models.create_model_object(modelName = model_name,
                                    inputAlpha = args.inputAlpha,
                                    modelAlpha = args.modelAlpha,
                                    clipLength = args.clipLength,

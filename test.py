@@ -170,7 +170,7 @@ if args.verbose:
 
 model_name = args.model
 
-model = Models.create_model_object(modelName = model_name,
+model = import_models.create_model_object(modelName = model_name,
                                    inputAlpha = args.inputAlpha,
                                    modelAlpha = args.modelAlpha,
                                    clipLength = args.clipLength,
@@ -309,7 +309,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
         log_name    = ("exp_test_%s_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
                                                dataset, preproc_method, experiment_name, metrics_method))
-                                               
+
         curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
         make_dir(os.path.join('results',model.name))
         make_dir(os.path.join('results',model.name, dataset))
