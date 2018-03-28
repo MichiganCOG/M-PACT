@@ -54,7 +54,7 @@ class I3D_RR():
         layers[layer_numbers[0]] = conv3d_layer(input_tensor = input_layer, filter_dims = kernel_size, name = name + '/conv_3d', stride_dims = stride, non_linear_fn = None, use_bias=use_bias) 
 
         if use_batch_norm:
-            layers[layer_numbers[1]] = tf.layers.batch_normalization(layers[layer_numbers[0]], training = is_training, name = name + '/batch_norm')  
+            layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]], training = is_training, name = name + '/batch_norm')  
 
             if activation_fn is not None:
                 layers[layer_numbers[2]] = activation_fn(layers[layer_numbers[1]])
@@ -109,13 +109,13 @@ class I3D_RR():
 
                 layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=False))
 
-                layers['4'] = tf.nn.max_pool3d(layers['3'], ksize=[1,1,3,3,1], strides=[1,1,2,2,1], padding='SAME', name='MaxPool3d_2a_3x3')
+                layers['4'] = max_pool3d_layer(layers['3'], ksize=[1,1,3,3,1], strides=[1,1,2,2,1], padding='SAME', name='MaxPool3d_2a_3x3')
 
                 layers.update(self._unit_3d(layer_numbers=['5','6','7'], input_layer=layers['4'], kernel_size=[1,1,1,64], name='Conv3d_2b_1x1', is_training=False))
 
                 layers.update(self._unit_3d(layer_numbers=['8','9','10'], input_layer=layers['7'], kernel_size=[3,3,3,192], name='Conv3d_2c_3x3', is_training=False))
 
-                layers['11_inp'] = tf.nn.max_pool3d(layers['10'], ksize=[1,1,3,3,1], strides=[1,1,2,2,1], padding='SAME', name='MaxPool3d_3a_3x3')
+                layers['11_inp'] = max_pool3d_layer(layers['10'], ksize=[1,1,3,3,1], strides=[1,1,2,2,1], padding='SAME', name='MaxPool3d_3a_3x3')
 
                 #### Mixed_3b ####
 
@@ -140,7 +140,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['25'] = tf.nn.max_pool3d(layers['11_inp'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['25'] = max_pool3d_layer(layers['11_inp'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['26','27','28'], input_layer=layers['25'], kernel_size=[1,1,1,32], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -175,7 +175,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['45'] = tf.nn.max_pool3d(layers['29'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['45'] = max_pool3d_layer(layers['29'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['46','47','48'], input_layer=layers['45'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -187,7 +187,7 @@ class I3D_RR():
 
                 #### END OF MIXED_3c ####
 
-                layers['50'] = tf.nn.max_pool3d(layers['49'], ksize=[1,3,3,3,1], strides=[1,2,2,2,1], padding='SAME', name='MaxPool3d_4a_3x3')
+                layers['50'] = max_pool3d_layer(layers['49'], ksize=[1,3,3,3,1], strides=[1,2,2,2,1], padding='SAME', name='MaxPool3d_4a_3x3')
 
                 #### Mixed_4b ####
 
@@ -212,7 +212,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['66'] = tf.nn.max_pool3d(layers['50'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['66'] = max_pool3d_layer(layers['50'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['67','68','69'], input_layer=layers['66'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -247,7 +247,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['86'] = tf.nn.max_pool3d(layers['70'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['86'] = max_pool3d_layer(layers['70'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['87','88','89'], input_layer=layers['86'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -282,7 +282,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['106'] = tf.nn.max_pool3d(layers['90'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['106'] = max_pool3d_layer(layers['90'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['107','108','109'], input_layer=layers['106'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -317,7 +317,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['126'] = tf.nn.max_pool3d(layers['110'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['126'] = max_pool3d_layer(layers['110'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['127','128','129'], input_layer=layers['126'], kernel_size=[1,1,1,64], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -352,7 +352,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['146'] = tf.nn.max_pool3d(layers['130'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['146'] = max_pool3d_layer(layers['130'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['147','148','149'], input_layer=layers['146'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -364,7 +364,7 @@ class I3D_RR():
 
                 #### END OF MIXED_4f ####
 
-                layers['151'] = tf.nn.max_pool3d(layers['150'], ksize=[1,2,2,2,1], strides=[1,2,2,2,1], padding='SAME', name='MaxPool3d_5a_2x2')
+                layers['151'] = max_pool3d_layer(layers['150'], ksize=[1,2,2,2,1], strides=[1,2,2,2,1], padding='SAME', name='MaxPool3d_5a_2x2')
 
                 #### Mixed_5b ####
 
@@ -389,7 +389,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['167'] = tf.nn.max_pool3d(layers['151'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['167'] = max_pool3d_layer(layers['151'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['168','169','170'], input_layer=layers['167'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -424,7 +424,7 @@ class I3D_RR():
                     # END WITH
 
                     with tf.variable_scope('Branch_3'):
-                        layers['187'] = tf.nn.max_pool3d(layers['171'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
+                        layers['187'] = max_pool3d_layer(layers['171'], ksize=[1,3,3,3,1], strides=[1,1,1,1,1], padding='SAME', name='MaxPool3d_0a_3x3')
 
                         layers.update(self._unit_3d(layer_numbers=['188','189','190'], input_layer=layers['187'], kernel_size=[1,1,1,128], name='Conv3d_0b_1x1', is_training=False))
                                     
@@ -436,9 +436,9 @@ class I3D_RR():
 
                 #### END OF MIXED_5c ####
 
-                layers['192'] = tf.nn.avg_pool3d(layers['191'], ksize=[1,2,7,7,1], strides=[1,1,1,1,1], padding='VALID')
+                layers['192'] = avg_pool3d_layer(layers['191'], ksize=[1,2,7,7,1], strides=[1,1,1,1,1], padding='VALID')
                 
-                layers['193'] = tf.layers.dropout(layers['192'], dropout_rate, training=is_training)
+                layers['193'] = dropout(layers['192'], rate=dropout_rate, training=is_training)
 
                 layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False))
                 

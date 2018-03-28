@@ -8,15 +8,12 @@ import numpy      as np
 
 from utils.preprocessing_utils import *
 
-#slim = tf.contrib.slim
-
 _R_MEAN = 123.68
 _G_MEAN = 116.78
 _B_MEAN = 103.94
 
 _RESIZE_SIDE_MIN = 256
 _RESIZE_SIDE_MAX = 512
-
 
 def preprocess_for_train(image,
                          output_height,
@@ -42,9 +39,11 @@ def preprocess_for_train(image,
 
   image = aspect_preserving_resize(image, resize_side_min)
   image = central_crop([image], output_height, output_width)[0]
+
   image.set_shape([output_height, output_width, 3])
+
   image = tf.to_float(image)
-  #image = tf.image.random_flip_left_right(image)
+
   return mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
@@ -60,8 +59,11 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   """
   image = aspect_preserving_resize(image, resize_side)
   image = central_crop([image], output_height, output_width)[0]
+
   image.set_shape([output_height, output_width, 3])
+
   image = tf.to_float(image)
+
   return mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
 
 
@@ -93,50 +95,6 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     return preprocess_for_eval(image, output_height, output_width,
                                resize_side_min)
 
-
-
-
-def resample_input(video, frame_count, sample_dims, alpha):
-    """Return video sampled at uniform rate
-    Args:
-        :video:       Raw input data
-        :frame_count: Total number of frames
-        :sample_dims: Number of frames to be provided as input to model
-        :alpha        relative sampling rate
-    Return:
-        Sampled video
-    """
-
-    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
-    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
-    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
-    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
-    indices = tf.cast(indices, tf.int32)
-    output  = tf.gather(video, tf.convert_to_tensor(indices))
-
-    return output
-
-def resample_model(video, frame_count, sample_dims, alpha=1.0):
-    """Return video sampled at desired rate (model based)
-    Args:
-        :video:       Raw input data
-        :frame_count: Total number of frames
-        :sample_dims: Number of frames to be provided as input to model
-        :alpha        relative sampling rate
-    Return:
-        Sampled video
-    """
-
-    #sample_dims = tf.cast(sample_dims, tf.float32)
-    indices = tf.range(start=0., limit=float(sample_dims), delta=1., dtype=tf.float32)
-    r_alpha = alpha * tf.cast(frame_count, tf.float32) / float(sample_dims)
-    indices = tf.multiply(tf.tile([r_alpha], [int(sample_dims)]), indices)
-    indices = tf.clip_by_value(indices, 0., tf.cast(frame_count-1, tf.float32))
-    indices = tf.cast(indices, tf.int32)
-
-    output = tf.gather(video, tf.convert_to_tensor(indices))
-    return output
-
 def preprocess(input_data_tensor, frames, height, width, channel,  input_dims, output_dims, seq_length, size, label, cvr, input_alpha, istraining):
 	"""
 	Preprocessing function corresponding to the chosen model
@@ -157,10 +115,10 @@ def preprocess(input_data_tensor, frames, height, width, channel,  input_dims, o
 	Return:
 	Preprocessing input data and labels tensor
 	"""
+
+        # Fixed temporal footprint assuming 25fps input
 	footprint = 250
 	sample_dims = input_dims
-
-	# END IF
 
 	# Selecting a random, seeded temporal offset
 	temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-1, shape=np.asarray([1]))[0]
@@ -176,6 +134,7 @@ def preprocess(input_data_tensor, frames, height, width, channel,  input_dims, o
 	# Resample input to desired rate (resampling as a model requirement)
 	input_data_tensor = resample_model(input_data_tensor, footprint, sample_dims, cvr)
 
+        # Preprocess data
 	input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 	input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining), input_data_tensor)
 

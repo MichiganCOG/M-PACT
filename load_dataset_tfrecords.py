@@ -47,13 +47,8 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
 
     tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
-    if istraining:
-        thread_count = 1
-
-    else:
-        thread_count = 1
-
-    # END IF
+    # Number of threads to be used
+    thread_count = 1
 
     # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
     clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[],[]])
@@ -117,40 +112,49 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     if 'HMDB51' in dataset:
         input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
 
+    # END IF
+
     # If clip_length == -1 then the entire video is to be used as a single clip
     if clip_length <= 0:
         clips = [input_data_tensor]
         clips = tf.to_int32(clips)  # Usually occurs within _extract_clips
+
     else:
-    #    tf.cond(tf.greater(tf.convert_to_tensor(clip_length), frames),lambda:_error_loading_video(),lambda: 1) # Verify that there are not fewer frames than the requested clip_length
         clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, video_offset, clip_overlap, height, width, channel)
+    
+    # END IF
 
-        # tf.Assert(tf.greater(frames, clip_length), [tf.constant("Video ")+name+tf.constant(" contained fewer frames than the specified clip length... Exiting")])
+    """ Reference of shapes:
+        clips shape: [num_clips, clip_length or frames, height, width, channels]
+        model.preprocess_tfrecords input shape: [clip_length or frames, height, width, channels]
+    """
 
-
-    # clips shape - [num_clips, clip_length or frames, height, width, channels]
-    # model.preprocess_tfrecords input shape - [clip_length or frames, height, width, channels]
     # Call preprocessing function related to model chosen that preprocesses each clip as an individual video
     if hasattr(model, 'store_alpha'):
-        clips_tensor = tf.map_fn(lambda clip:
-            model.preprocess_tfrecords(clip[0], tf.shape(clip[0])[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
+        clips_tensor = tf.map_fn(lambda clip: model.preprocess_tfrecords(clip[0], tf.shape(clip[0])[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
             (clips, np.array([clips.get_shape()[0].value]*clips.get_shape()[0].value)), dtype=(tf.float32, tf.float32))
 
-        #model.store_alpha = clips_tensor[1]
-        alpha_tensor = clips_tensor[1]#model.store_alpha
+        alpha_tensor = clips_tensor[1]
         clips_tensor = clips_tensor[0]
+
     else:
-        clips_tensor = tf.map_fn(lambda clip:
-            model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
+        clips_tensor = tf.map_fn(lambda clip: model.preprocess_tfrecords(clip, tf.shape(clip)[0], height, width,channel, input_dims, output_dims, seq_length, size, label, istraining, video_step),
             clips, dtype=tf.float32)
+
         alpha_tensor = np.array([1.0]*clips.get_shape()[0].value)
 
-    num_clips = tf.shape(clips_tensor)[0]
-    video_step = tf.assign_add(video_step, 1)
-    labels_tensor = tf.tile( [label], [seq_length])
-    names_tensor = tf.tile( [name], [num_clips])
+    # END IF
+
+    num_clips         = tf.shape(clips_tensor)[0]
+    video_step        = tf.assign_add(video_step, 1)
+    labels_tensor     = tf.tile( [label], [seq_length])
+    names_tensor      = tf.tile( [name], [num_clips])
     video_step_tensor = tf.tile([video_step], [num_clips])
-    # clips_tensor shape - [num_clips, input_dims, size[0], size[1], channels]
+
+    """ Reference of shape:
+        clips_tensor shape: [num_clips, input_dims, size[0], size[1], channels]
+    """
+
     return [clips_tensor, tf.tile([labels_tensor], [num_clips,1]), names_tensor, video_step_tensor, alpha_tensor]
 
 

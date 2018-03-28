@@ -250,6 +250,34 @@ def avg_pool_layer(input_tensor,
     return pool_out
 
 
+def avg_pool3d_layer(input_tensor,
+                     filter_dims,
+                     stride_dims,
+                     name,
+                     padding='SAME'):
+    """
+    Args:
+        :input_tensor: Input tensor to the average pooling layer
+        :filter_dims:  A list detailing the height and width for filters in this layer
+        :stride_dims:  A list detailing the height and width of the stride between filters
+        :name:         Scope name to be provided for current max pooling layer
+        :padding:      Padding type definition (SAME or VALID)
+
+    Return:
+        :pool_out:     Output of average pooling layer
+    """
+
+    # Ensure parameters match required shapes
+    assert(len(filter_dims) == 5)  # filter height and width
+    assert(len(stride_dims) == 5)  # stride height and width
+
+    filter_h, filter_w = filter_dims
+    stride_h, stride_w = stride_dims
+    with tf.variable_scope(name) as scope:
+        # Define the max pool flow graph and return output
+        pool_out = tf.nn.avg_pool(input_tensor, ksize=[1, filter_h, filter_w, 1],
+                               strides=[1, stride_h, stride_w, 1], padding=padding, name=scope.name)
+    return pool_out
 
 
 def fully_connected_layer(input_tensor,
