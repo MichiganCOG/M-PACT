@@ -7,7 +7,7 @@ Model weights found at https://github.com/hx173149/C3D-tensorflow. The model use
 import tensorflow as tf
 import numpy      as np
 
-from models.abstract_model_class import Abstract_Model_Class
+from models.model_abstract       import Abstract_Model_Class
 from utils.layers_utils          import *
 
 from default_preprocessing   import preprocess

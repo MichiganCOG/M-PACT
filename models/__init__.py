@@ -1,1 +1,1 @@
-from import_models import create_model_object
+from models_import import create_model_object

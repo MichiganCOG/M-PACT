@@ -34,7 +34,7 @@ def gen_model_file(model):
     Arguments:
         :model: Name of the model to create a model file for
     """
-    template = open('models/template_model.py','r')
+    template = open('models/model_template.py','r')
     contents = template.read()
     template.close()
 
@@ -52,7 +52,7 @@ def gen_preprocessing_file(model):
     Arguments:
         :model: Name of the model to create a preprocessing file for
     """
-    template = open('models/template_preprocessing.py','r')
+    template = open('models/model_preprocessing_template.py','r')
     contents = template.read()
     template.close()
 

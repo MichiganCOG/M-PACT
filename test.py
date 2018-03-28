@@ -170,7 +170,7 @@ if args.verbose:
 
 model_name = args.model
 
-model = import_models.create_model_object(modelName = model_name,
+model = models_import.create_model_object(modelName = model_name,
                                    inputAlpha = args.inputAlpha,
                                    modelAlpha = args.modelAlpha,
                                    clipLength = args.clipLength,
