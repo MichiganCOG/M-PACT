@@ -3,7 +3,15 @@ import argparse
 import numpy      as np
 import tensorflow as tf
 
+# Definition of arguments required for all function in the file
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--model', action = 'store')
+parser.add_argument('--dataset', action = 'store')
+parser.add_argument('--expName', action = 'store')
+
+args = parser.parse_args()
 
 def checkpoint_filename(model, dataset, exp_name):
     """
@@ -17,10 +25,13 @@ def checkpoint_filename(model, dataset, exp_name):
         String reflecting checkpoint filename
     """
     checkpoints_file = os.path.join('results', model, dataset, exp_name, 'checkpoints', 'checkpoint')
-    f = open(checkpoints_file, 'r')
+
+    f        = open(checkpoints_file, 'r')
     filename = f.readline()
     f.close()
+
     filename = filename.split(' ')[1].split('\"')[1]
+
     return filename
 
 
@@ -53,41 +64,36 @@ def add_tensor(tensor, keys_list, original_key, reader):
     # END EXCEPT
 
 	tensor[keys_list[0]] = add_tensor(curr_tensor, keys_list[1:], original_key, reader)
+
     return tensor
 
 
 if __name__ == '__main__':
 
-	parser = argparse.ArgumentParser()
 
-	parser.add_argument('--model', action = 'store')
-	parser.add_argument('--dataset', action = 'store')
-	parser.add_argument('--expName', action = 'store')
-
-	args = parser.parse_args()
-
-	model = args.model
-	dataset = args.dataset
-	expName = args.expName
-
-	checkpoint_name = checkpoint_filename(model, dataset, expName)
-
-	checkpoint_path = os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name)
-
-	reader = tf.train.NewCheckpointReader(checkpoint_path)
-	v_map = reader.get_variable_to_shape_map()
-	tensors = {}
-
-	for key in v_map.keys():
-		if "Momentum" not in key:
-			key_list = key.split('/')
-			tensors = add_tensor(tensors, key_list, key, reader)
-
+    model   = args.model
+    dataset = args.dataset
+    expName = args.expName
+    
+    checkpoint_name = checkpoint_filename(model, dataset, expName)
+    
+    checkpoint_path = os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name)
+    
+    reader  = tf.train.NewCheckpointReader(checkpoint_path)
+    v_map   = reader.get_variable_to_shape_map()
+    tensors = {}
+    
+    for key in v_map.keys():
+    	if "Momentum" not in key:
+    	    key_list = key.split('/')
+    	    tensors  = add_tensor(tensors, key_list, key, reader)
+    
         # END IF
 
     # END FOR
 
     np.save(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.npy'), tensors)
-	f = open(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.dat' ), 'w')
-	f.write('lr:0.001')
-	f.close()
+
+    f = open(os.path.join('results', model, dataset, expName, 'checkpoints', checkpoint_name + '.dat' ), 'w')
+    f.write('lr:0.001')
+    f.close()
