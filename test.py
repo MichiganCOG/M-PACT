@@ -18,9 +18,9 @@ from tensorflow.python.training import queue_runner_impl
 from models                       import *
 from utils                        import initialize_from_dict, save_checkpoint, load_checkpoint, make_dir, Metrics
 from Queue                        import Queue
-from logger                 import Logger
+from utils.logger                 import Logger
 from random                       import shuffle
-from load_dataset_tfrecords import load_dataset
+from utils.load_dataset_tfrecords import load_dataset
 
 
 parser = argparse.ArgumentParser()
@@ -187,37 +187,6 @@ model = Models.create_model_object(modelName = model_name,
                                    dropoutRate = args.dropoutRate,
                                    freeze = args.freeze,
                                    verbose = args.verbose)
-
-if not args.train:
-    test(   model             = model,
-            input_dims        = args.inputDims,
-            output_dims       = args.outputDims,
-            seq_length        = args.seqLength,
-            size              = [args.size, args.size],
-            dataset           = args.dataset,
-            loaded_dataset    = args.loadedDataset,
-            experiment_name   = args.expName,
-            num_vids          = args.numVids,
-            split             = args.split,
-            base_data_path    = args.baseDataPath,
-            f_name            = args.fName,
-            load_model        = args.load,
-            return_layer      = args.returnLayer,
-            clip_length       = args.clipLength,
-            video_offset      = args.videoOffset,
-            clip_offset       = args.clipOffset,
-            num_clips         = args.numClips,
-            clip_overlap      = args.clipOverlap,
-            metrics_method    = args.metricsMethod,
-            batch_size        = args.batchSize,
-            metrics_dir       = args.metricsDir,
-            loaded_checkpoint = args.loadedCheckpoint,
-            verbose           = args.verbose,
-            gpu_list          = args.gpuList,
-            preproc_method    = args.preprocMethod,
-            random_init       = args.random_init)
-
-# END IF
 
 
 def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init):
@@ -427,4 +396,35 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
 
 if __name__=="__main__":
+    if not args.train:
+        test(   model             = model,
+                input_dims        = args.inputDims,
+                output_dims       = args.outputDims,
+                seq_length        = args.seqLength,
+                size              = [args.size, args.size],
+                dataset           = args.dataset,
+                loaded_dataset    = args.loadedDataset,
+                experiment_name   = args.expName,
+                num_vids          = args.numVids,
+                split             = args.split,
+                base_data_path    = args.baseDataPath,
+                f_name            = args.fName,
+                load_model        = args.load,
+                return_layer      = args.returnLayer,
+                clip_length       = args.clipLength,
+                video_offset      = args.videoOffset,
+                clip_offset       = args.clipOffset,
+                num_clips         = args.numClips,
+                clip_overlap      = args.clipOverlap,
+                metrics_method    = args.metricsMethod,
+                batch_size        = args.batchSize,
+                metrics_dir       = args.metricsDir,
+                loaded_checkpoint = args.loadedCheckpoint,
+                verbose           = args.verbose,
+                gpu_list          = args.gpuList,
+                preproc_method    = args.preprocMethod,
+                random_init       = args.random_init)
+
+    # END IF
+
     import pdb; pdb.set_trace()

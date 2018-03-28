@@ -188,44 +188,6 @@ model = Models.create_model_object(modelName = model_name,
                                    freeze = args.freeze,
                                    verbose = args.verbose)
 
-if args.train:
-    train(  model               = model,
-            input_dims          = args.inputDims,
-            output_dims         = args.outputDims,
-            seq_length          = args.seqLength,
-            size                = [args.size, args.size],
-            num_gpus            = args.numGpus,
-            dataset             = args.dataset,
-            experiment_name     = args.expName,
-            load_model          = args.load,
-            num_vids            = args.numVids,
-            n_epochs            = args.nEpochs,
-            split               = args.split,
-            base_data_path      = args.baseDataPath,
-            f_name              = args.fName,
-            learning_rate_init  = args.lr,
-            wd                  = args.wd,
-            save_freq           = args.saveFreq,
-            clip_length         = args.clipLength,
-            video_offset        = args.videoOffset,
-            clip_offset         = args.clipOffset,
-            num_clips           = args.numClips,
-            clip_overlap        = args.clipOverlap,
-            batch_size          = args.batchSize,
-            loss_type           = args.lossType,
-            metrics_dir         = args.metricsDir,
-            loaded_checkpoint   = args.loadedCheckpoint,
-            verbose             = args.verbose,
-            opt_choice          = args.optChoice,
-            gpu_list            = args.gpuList,
-            grad_clip_value     = args.gradClipValue,
-            lr_boundaries       = args.lrboundary,
-            lr_values           = args.lrvalues,
-            preproc_method      = args.preprocMethod,
-            random_init         = args.randomInit)
-
-# END IF
-
 
 
 def _average_gradients(tower_grads):
@@ -660,213 +622,43 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
     # END IF
 
-
-
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init):
-    """
-    Function used to test the performance and analyse a chosen model
-    Args:
-        :model:              tf-activity-recognition framework model object
-        :input_dims:         Number of frames used in input
-        :output_dims:        Integer number of classes in current dataset
-        :seq_length:         Length of output sequence expected from LSTM
-        :size:               List detailing height and width of frame
-        :dataset:            Name of dataset being loaded
-        :loaded_dataset:     Name of dataset which was used to train the current model
-        :experiment_name:    Name of current experiment
-        :num_vids:           Number of videos to be used for training
-        :split:              Split of dataset being used
-        :base_data_path:     Full path to root directory containing datasets
-        :f_name:             Specific video directory within a chosen split of a dataset
-        :load_model:         Boolean variable indicating whether to load from a checkpoint or not
-        :return_layer:       Layer to return from the model, used to extract features
-        :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
-        :video_offset:       String indicating where to begin selecting video clips (provided clipOffset is None)
-        :clip_offset:        "none" or "random" indicating where to begin selecting video clips
-        :num_clips:          Number of clips to break video into
-        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
-        :metrics_method:     Which method to use to calculate accuracy metrics. ("default" or "svm")
-        :batch_size:         Number of clips to load into the model each step.
-        :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
-        :loaded_checkpoint:  Specify the exact checkpoint of saved model to be loaded for further training/testing
-        :verbose:            Boolean to indicate if all print statement should be procesed or not
-        :gpu_list:           List of GPU IDs to be used
-        :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
-        :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
-
-    Returns:
-        Does not return anything
-    """
-
-    with tf.name_scope("my_scope") as scope:
-
-        # Initializers for checkpoint and global step variable
-        ckpt    = None
-        gs_init = 0
-
-        ################################### Checkpoint loading block #######################################################
-
-        # Load pre-trained/saved model
-        if load_model:
-            try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name, loaded_checkpoint)
-                if verbose:
-                    print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
-
-            except:
-                if verbose:
-                    print "Failed loading checkpoint requested. Please check."
-                exit()
-
-            # END TRY
-
-        else:
-            ckpt = model.load_default_weights()
-
-        # END IF
-
-        ######################################################################################################################
-
-        # Initialize model variables
-        istraining       = False
-        global_step      = tf.Variable(gs_init, name='global_step', trainable=False)
-        number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
-        video_step       = tf.Variable(1.0, name='video_step', trainable=False)
-
-	# TF session setup
-        config  = tf.ConfigProto(allow_soft_placement=True)
-        sess    = tf.Session(config=config)
-        init    = tf.global_variables_initializer()
-
-        # Variables get randomly initialized into tf graph
-        sess.run(init)
-
-        data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
-
-        # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
-
-        ######### GPU list check block ####################
-
-        assert(len(gpu_list)<=1)
-
-        if len(gpu_list) == 0:
-            gpu_list = ['0'] # Default choice is ID = 0
-
-        # END IF
-
-        ###################################################
-
-        ################################################## Setup TF graph block ######################################################
-
-        # Model Inference
-        with tf.device('/gpu:'+gpu_list[0]):
-            logits = model.inference(input_data_tensor[0:batch_size,:,:,:,:],
-                                     istraining,
-                                     input_dims,
-                                     output_dims,
-                                     seq_length,
-                                     scope,
-                                     return_layer = return_layer)[0]
-
-            # Logits
-            softmax = tf.nn.softmax(logits)
-
-        # END WITH
-
-        ############################################################################################################################################
-
-
-        ######################### Logger Setup block ######################################
-
-        # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
-        log_name    = ("exp_test_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                               dataset, experiment_name, metrics_method))
-        curr_logger = Logger(os.path.join('logs',model.name,dataset, metrics_dir, log_name))
-        make_dir(os.path.join('results',model.name))
-        make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name))
-        make_dir(os.path.join('results',model.name, dataset, experiment_name, metrics_dir))
-
-        ###################################################################################
-
-        # TF session setup
-        #sess    = tf.Session()
-        init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
-        coord   = tf.train.Coordinator()
-        threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, dataset, metrics_dir, verbose=verbose)
-
-        # Variables get randomly initialized into tf graph
-        sess.run(init)
-
-        # Check that weights were loaded or random initializations are requested
-        if ((ckpt == None) or (random_init)):
-            print "Caution: Model weights are not being loaded, using random initialization."
-
-        else:
-            # Model variables initialized from previous saved models
-            initialize_from_dict(sess, ckpt, model.name)
-
-        # END IF
-
-        del ckpt
-
-        acc               = 0
-        count             = 0
-        videos_loaded     = 0
-        previous_vid_name = ''
-        total_pred        = []
-
-        if verbose:
-            print "Begin Testing"
-
-        # END IF
-
-        ########################################## Testing loop block ################################################################
-
-        while videos_loaded <= num_vids:
-            output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
-
-                # END IF
-
-            for batch_idx in range(len(names)):
-                vid_name = names[batch_idx]
-                if vid_name != previous_vid_name:
-                    previous_vid_name = vid_name
-                    videos_loaded += 1
-                    if verbose:
-                        print "Number of videos loaded: ", videos_loaded
-
-
-                # Extract remaining clips from currently loaded video, once it finishes exit while loop
-                if videos_loaded > num_vids:
-                    break
-
-                count += 1
-                metrics.log_prediction(labels[batch_idx][0], output_predictions[batch_idx], vid_name, count)
-
-            # END IF
-
-        # END WHILE
-
-        #########################################################################################################################################################
-
-    # END WITH
-
-    coord.request_stop()
-    coord.join(threads)
-
-    total_accuracy = metrics.total_classification()
-    total_pred = metrics.get_predictions_array()
-
-    if verbose:
-        print "Total accuracy : ", total_accuracy
-        print total_pred
-
-    # Save results in numpy format
-    np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
-
-
 if __name__=="__main__":
+    if args.train:
+        train(  model               = model,
+                input_dims          = args.inputDims,
+                output_dims         = args.outputDims,
+                seq_length          = args.seqLength,
+                size                = [args.size, args.size],
+                num_gpus            = args.numGpus,
+                dataset             = args.dataset,
+                experiment_name     = args.expName,
+                load_model          = args.load,
+                num_vids            = args.numVids,
+                n_epochs            = args.nEpochs,
+                split               = args.split,
+                base_data_path      = args.baseDataPath,
+                f_name              = args.fName,
+                learning_rate_init  = args.lr,
+                wd                  = args.wd,
+                save_freq           = args.saveFreq,
+                clip_length         = args.clipLength,
+                video_offset        = args.videoOffset,
+                clip_offset         = args.clipOffset,
+                num_clips           = args.numClips,
+                clip_overlap        = args.clipOverlap,
+                batch_size          = args.batchSize,
+                loss_type           = args.lossType,
+                metrics_dir         = args.metricsDir,
+                loaded_checkpoint   = args.loadedCheckpoint,
+                verbose             = args.verbose,
+                opt_choice          = args.optChoice,
+                gpu_list            = args.gpuList,
+                grad_clip_value     = args.gradClipValue,
+                lr_boundaries       = args.lrboundary,
+                lr_values           = args.lrvalues,
+                preproc_method      = args.preprocMethod,
+                random_init         = args.randomInit)
+
+    # END IF
+    
     import pdb; pdb.set_trace()
