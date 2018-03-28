@@ -16,9 +16,10 @@ def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
     """
     Function to checkpoint file (both ckpt text file, numpy and dat file)
     Args:
-        :model:           String indicating selected model
-        :dataset:         String indicating selected dataset
-        :experiment_name: Name of experiment folder
+        :model:                 String indicating selected model
+        :dataset:               String indicating selected dataset
+        :experiment_name:       Name of experiment folder
+        :loaded_checkpoint:     Number of the checkpoint to be loaded, -1 loads the most recent checkpoint
 
     Return:
         numpy containing model parameters, global step and learning rate saved values.
@@ -229,6 +230,7 @@ def _assign_tensors(sess, curr_dict, tensor_name):
     except:
         if 'Momentum' not in tensor_name:
             print "Notice: Tensor " + tensor_name + " could not be assigned properly. The tensors' default initializer will be used if possible. Verify the shape and name of the tensor."
+
         #END IF
 
     # END TRY

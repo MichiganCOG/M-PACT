@@ -1,6 +1,5 @@
 " C3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
-
 import tensorflow as tf
 import numpy      as np
 
@@ -17,7 +16,7 @@ class C3D_SR():
         self.verbose=verbose
         self.model_alpha = model_alpha
         self.input_alpha = input_alpha
-	    self.store_alpha = True
+        self.store_alpha = True
         self.name = 'c3d_sr'
 
         if verbose:

@@ -1,6 +1,5 @@
 " C3D MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
-
 import tensorflow as tf
 import numpy      as np
 
