@@ -2,7 +2,7 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_name', action='store', required=True,
+parser.add_argument('--modelName', action='store', required=True,
         help = 'Name of the model to be created, capitalization is recommended.')
 
 args = parser.parse_args()
@@ -62,13 +62,8 @@ def gen_preprocessing_file(model):
 
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name', action='store', required=True,
-            help = 'Name of the model to be created, capitalization is recommended.')
 
-    args = parser.parse_args()
-
-    model_name = args.model_name
+    model_name = args.modelName
     model_low = model_name.lower()
 
 
