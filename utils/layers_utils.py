@@ -205,11 +205,16 @@ def max_pool3d_layer(input_tensor,
     """
 
     # Ensure parameters match required shapes
-    assert(len(filter_dims) == 5)  # filter depth height and width
-    assert(len(stride_dims) == 5)  # stride depth height and width
+    assert((len(filter_dims) == 5) or (len(filter_dims) == 3))  # filter depth height and width
+    assert((len(stride_dims) == 5) or (len(stride_dims) == 3))  # stride depth height and width
 
-    _, filter_d, filter_h, filter_w, _ = filter_dims
-    _, stride_d, stride_h, stride_w, _ = stride_dims
+    if len(filter_dims) == 5:
+    	_, filter_d, filter_h, filter_w, _ = filter_dims
+	_, stride_d, stride_h, stride_w, _ = stride_dims
+
+    else:
+    	filter_d, filter_h, filter_w = filter_dims
+	stride_d, stride_h, stride_w = stride_dims
 
     with tf.variable_scope(name) as scope:
         # Define the max pool flow graph and return output
@@ -369,7 +374,7 @@ def batch_normalization(input_tensor, training, name):
     Return:
         Batch normalized input tensor
     """
-    return tf.layers.batch_normalization(input_tensor, training, name)
+    return tf.layers.batch_normalization(input_tensor, training=training, name=name)
 
 
 def pad(input_tensor,

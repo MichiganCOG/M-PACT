@@ -328,6 +328,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Setup tensors for models
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
 
+        ############### TO DO: FIX THIS ASAP ########################
         if ((batch_size == 1) and (num_clips==1)):
             sess.run(tf.assign_add(video_step, -2))
 
@@ -335,6 +336,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             sess.run(tf.assign_add(video_step, -1))
 
         # END IF
+        ############################################################
 
         # Define optimizer (Current selection is only momentum optimizer)
         if opt_choice == 'gd':
@@ -491,7 +493,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # Loop epoch number of time over the training set
         while videos_loaded < n_epochs*num_vids:
             # Variable to update during epoch intervals
-            if (epoch_count+1)*num_vids + 1 <= videos_loaded < (epoch_count+1)*num_vids + num_gpus*batch_size + 1:
+            if (epoch_count+1)*num_vids <= videos_loaded < (epoch_count+1)*num_vids + num_gpus*batch_size:
                 batch_count = 0
                 epoch_acc   = 0
 
