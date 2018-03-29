@@ -71,8 +71,8 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
 def preprocess_image(image, output_height, output_width, is_training=False,
                      resize_side_min=_RESIZE_SIDE_MIN,
                      resize_side_max=_RESIZE_SIDE_MAX):
-  """Preprocesses the given image.
-  Args:
+    """Preprocesses the given image.
+    Args:
     image: A `Tensor` representing an image of arbitrary size.
     output_height: The height of the image after preprocessing.
     output_width: The width of the image after preprocessing.
@@ -85,9 +85,9 @@ def preprocess_image(image, output_height, output_width, is_training=False,
       aspect-preserving resizing. If `is_training` is `False`, this value is
       ignored. Otherwise, the resize side is sampled from
         [resize_size_min, resize_size_max].
-  Returns:
+    Returns:
     A preprocessed image.
-  """
+    """
     if is_training:
         return preprocess_for_train(image, output_height, output_width,
                                 resize_side_min, resize_side_max)
@@ -113,37 +113,37 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     :size:              Output size of preprocessed frames
     :label:             Label of current sample
     :istraining:        Boolean indicating training or testing phase
-    
+
     Return:
     Preprocessing input data and labels tensor
     """
-    
+
     # Fixed temporal footprint assuming 25 fps input
     footprint = 250
     sample_dims = input_dims
-    
+
     # Selecting a random, seeded temporal offset
     temporal_offset = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames-1, shape=np.asarray([1]))[0]
-    
+
     # Loop video video if it is shorter than footprint
     input_data_tensor = loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint)
     input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
     input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
-    
+
     if istraining:
         random_alpha = tf.random_uniform(dtype=tf.float32, minval=0.2, maxval=3, shape=np.asarray([1]))[0]
         # Reduce footprint to sample_dims in size by random sampling rate
         input_data_tensor = resample_model(input_data_tensor, footprint, sample_dims, random_alpha)
-    
+
     else:
         # Reduce footprint to sample_dims in size by uniform sampling rate
         input_data_tensor = resample_input(input_data_tensor, footprint, sample_dims, input_alpha)
         random_alpha = 1.0
-    
+
     # END IF
-    
+
     # Preprocess data
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
-    
+
     return input_data_tensor, random_alpha
