@@ -52,7 +52,7 @@ def gen_preprocessing_file(model):
     Arguments:
         :model: Name of the model to create a preprocessing file for
     """
-    template = open('models/model_preprocessing_template.py','r')
+    template = open('models/models_preprocessing_template.py','r')
     contents = template.read()
     template.close()
 

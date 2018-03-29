@@ -3,29 +3,22 @@ import os
 import numpy      as np
 import tensorflow as tf
 
-
-def make_dir(path):
-    """ Create a directory if there isn't one already. """
-    try:
-        os.mkdir(path)
-    except OSError:
-        pass
-
-
-def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
+def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint, preproc_method):
     """
     Function to checkpoint file (both ckpt text file, numpy and dat file)
     Args:
-        :model:           String indicating selected model
-        :dataset:         String indicating selected dataset
-        :experiment_name: Name of experiment folder
+        :model:                 String indicating selected model
+        :dataset:               String indicating selected dataset
+        :experiment_name:       Name of experiment folder
+        :loaded_checkpoint:     Number of the checkpoint to be loaded, -1 loads the most recent checkpoint
+        :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
 
     Return:
         numpy containing model parameters, global step and learning rate saved values.
     """
     if loaded_checkpoint == -1:
         try:
-            checkpoints_file = os.path.join('results', model, dataset, experiment_name, 'checkpoints', 'checkpoint')
+            checkpoints_file = os.path.join('results', model, dataset, preproc_method, experiment_name, 'checkpoints', 'checkpoint')
             f = open(checkpoints_file, 'r')
             filename = f.readline()
             f.close()
@@ -42,7 +35,7 @@ def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
 
     try:
         gs_init = int(filename.split('-')[1])
-        ckpt = np.load(os.path.join('results', model, dataset,  experiment_name, 'checkpoints',filename+'.npy'))
+        ckpt = np.load(os.path.join('results', model, dataset, preproc_method, experiment_name, 'checkpoints',filename+'.npy'))
 
     except:
         print "Failed to load saved checkpoint numpy file: ", filename
@@ -51,7 +44,7 @@ def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
     # END TRY
 
     try:
-        data_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints', filename+'.dat'), 'r')
+        data_file = open(os.path.join('results', model, dataset, preproc_method, experiment_name, 'checkpoints', filename+'.dat'), 'r')
         data_str = data_file.readlines()
         for data in data_str:
             if ':' in data:
@@ -77,7 +70,7 @@ def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint):
 
     # END TRY
 
-def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
+def save_checkpoint(sess, model, dataset, experiment_name, preproc_method, lr, gs):
     """
     Function to save numpy checkpoint file
     Args:
@@ -85,6 +78,7 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
         :model:           String indicating selected model
         :dataset:         String indicating selected dataset
         :experiment_name: Name of experiment folder
+        :preproc_method:  The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
         :lr:              Learning rate
         :gs:              Current global step
 
@@ -94,11 +88,11 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
 
     filename = 'checkpoint-'+str(gs)
 
-    c_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints','checkpoint'), 'w')
+    c_file = open(os.path.join('results', model, dataset, preproc_method, experiment_name, 'checkpoints','checkpoint'), 'w')
     c_file.write('model_checkpoint_path: "'+filename+'"')
     c_file.close()
 
-    data_file = open(os.path.join('results', model, dataset, experiment_name, 'checkpoints', filename+'.dat'), 'w')
+    data_file = open(os.path.join('results', model, dataset, preproc_method, experiment_name, 'checkpoints', filename+'.dat'), 'w')
     data_file.write('lr:'+str(lr)+'\n')
     data_file.close()
 
@@ -110,7 +104,7 @@ def save_checkpoint(sess, model, dataset, experiment_name, lr, gs):
 
     # END FOR
 
-    np.save(os.path.join('results', model, dataset,  experiment_name, 'checkpoints',filename+'.npy'), data_dict)
+    np.save(os.path.join('results', model, dataset, preproc_method, experiment_name, 'checkpoints',filename+'.npy'), data_dict)
 
 
 def _add_tensor(data_dict, keys_list, data):
@@ -190,9 +184,6 @@ def _assign_tensors_tsn(sess, curr_dict, tensor_name):
     # END TRY
 
 
-
-
-
 def _assign_tensors(sess, curr_dict, tensor_name):
     """
     Function recursively assigns model parameters their values from a given dictionary
@@ -229,6 +220,7 @@ def _assign_tensors(sess, curr_dict, tensor_name):
     except:
         if 'Momentum' not in tensor_name:
             print "Notice: Tensor " + tensor_name + " could not be assigned properly. The tensors' default initializer will be used if possible. Verify the shape and name of the tensor."
+
         #END IF
 
     # END TRY

@@ -32,7 +32,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
 
 
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, tracker, cvr=1.0, input_alpha=1.0):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, tracker, input_alpha=1.0):
     """
     Preprocessing function corresponding to the chosen model
     Args:
@@ -48,7 +48,6 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         :label:             Label of current sample
         :istraining:        Boolean indicating training or testing phase
         :tracker:           Variable counting the total number of videos that have been loaded during training
-        :cvr:               Constant value to resample video to during testing
         :input_alpha:       Value to resample video to during testing analysis of speed robustness
         
     Return:
@@ -70,8 +69,8 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     if istraining:
         input_data_tensor, alpha_tensor = resample_model_sinusoidal(input_data_tensor, input_dims, frames, tracker)
     else:
-        input_data_tensor = resample_model(input_data_tensor, input_dims, frames, cvr)
-        alpha_tensor      = tf.convert_to_tensor(cvr)
+        input_data_tensor = resample_model(input_data_tensor, input_dims, frames, 1.0)
+        alpha_tensor      = tf.convert_to_tensor(1.0)
 
     # END IF
 
