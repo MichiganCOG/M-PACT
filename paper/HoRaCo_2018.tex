@@ -45,11 +45,36 @@
 \section{Overview of \acro}
 \label{sec:overview}
 
+\begin{figure}[b!]
+\centering
+\includegraphics[width=0.8\textwidth]{images/overview.pdf}
+\caption{Illustration of the two main components of \acro}
+\label{fig:overview}
+\end{figure}
+
+\acro~comprises of two main components, 1) the data input block, and 2) the execution block, as shown in Fig.~\ref{fig:overview}. 
+The pipeline contained within the data input block can be divided into three simple stages,
+\begin{enumerate}
+\item Read video data from disk
+\item Extract the desired number of clips from a given video
+\item Preprocess the frames of clips using a selected model's preprocessing strategy.
+\end{enumerate}
+The execution block houses all of the code required to setup, train, test as well as log the outputs of a chosen model.
+This includes defining the layers that comprise the model, training the model up to a predetermined number of epochs, saving parameter values of a model are regular intervals and finally testing the performance of the trained model over a variety of recognition metrics.
+The following sections provide an in depth discussion of the setup and structure of various components of the platform.
+
 \section{Input Pipeline}
 \label{sec:ippipeline}
 
 \section{Execution Block}
 \label{sec:execblock}
+
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.8\columnwidth]{images/exec_block.pdf}
+\caption{Training and Testing functions are the two major phases within the execution block. Model definitions and checkpoint-based functions are part of both training and testing functions while metrics are calculated after models are tested.}
+\label{fig:exec_block}
+\end{figure}
 
 \subsection{Model Description}
 \label{sec:modeldesc}
