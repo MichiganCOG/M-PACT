@@ -19,7 +19,7 @@ class MODELNAME(Abstract_Model_Class):
         super(MODELNAME, self).__init__(**kwargs)
 
 
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, batch_size, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
             :inputs:       Input to model of shape [Frames x Height x Width x Channels]
@@ -31,6 +31,7 @@ class MODELNAME(Abstract_Model_Class):
             :dropout_rate: Value indicating proability of keep inputs
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
+            :batch_size:   Number of videos or clips to process at a time
 
         Return:
             :layers[return_layer]: The requested layer's output tensor
@@ -67,6 +68,10 @@ class MODELNAME(Abstract_Model_Class):
             ########################################################################################
 
         # END WITH
+
+        layers['logits'] = # TODO Every model must return a layer named 'logits'
+
+        layers['logits'] = tf.reshape(layers['logits'], [batch_size, seq_length, output_dims])
 
         return [layers[x] for x in return_layer]
 
