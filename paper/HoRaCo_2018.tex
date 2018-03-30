@@ -68,6 +68,9 @@ The following sections provide an in depth discussion of the setup and structure
 
 \section{Execution Block}
 \label{sec:execblock}
+Training and testing form the two main tenants of the execution block. 
+Fig.~\ref{fig:exec_block} illustrates this partition along with the largest submodules present within each part.
+Details regarding the flow of data and processes between various submodules and the entire execution block are provided below.
 
 \begin{figure}[t!]
 \centering
@@ -76,13 +79,19 @@ The following sections provide an in depth discussion of the setup and structure
 \label{fig:exec_block}
 \end{figure}
 
-\subsection{Model Description}
+\subsection{Training: Flowchart of processes}
+\label{sec:training}
+
+\subsection{Model Description Submodule}
 \label{sec:modeldesc}
 
-\subsection{Checkpoint}
+\subsection{Checkpoint Submodule}
 \label{sec:checkpoint}
 
-\subsection{Metrics}
+\subsection{Testing: Flowchart of processes}
+\label{sec:testing}
+
+\subsection{Metrics Submodule}
 \label{sec:metrics}
 
 \clearpage

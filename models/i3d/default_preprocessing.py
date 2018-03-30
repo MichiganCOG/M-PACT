@@ -29,12 +29,13 @@ def preprocess_for_train(image,
     A preprocessed image.
   """
   image = aspect_preserving_resize(image, resize_side_min)
-  image = central_crop([image], output_height, output_width)[0]
+  image = random_crop([image], output_height, output_width)[0]
 
   image.set_shape([output_height, output_width, 3])
 
+  image = tf.image.random_flip_left_right(image)
   image = tf.to_float(image)
-  image = image * 2./255. - 1.
+  image = (image/255.) * 2. - 1.
 
   return image
 
@@ -54,7 +55,7 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   image.set_shape([output_height, output_width, 3])
 
   image = tf.to_float(image)
-  image = image * 2./255. - 1.
+  image = (image/255.) * 2. - 1.
 
   return image
 
