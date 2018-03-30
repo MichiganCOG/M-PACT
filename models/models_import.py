@@ -13,9 +13,11 @@ def create_model_object(**kwargs):
     Returns:
     :model:  model object initialized based off of the given model name
     """
+
     model_files = glob.glob('models/*/*_model.py')
-    all_list = list()
-    model_name = kwargs['modelName']
+    all_list    = list()
+    model_name  = kwargs['modelName']
+
     for mf in model_files:
         module_name = mf[:-3]
         module_name = module_name.replace('/','.')

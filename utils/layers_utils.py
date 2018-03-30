@@ -205,11 +205,16 @@ def max_pool3d_layer(input_tensor,
     """
 
     # Ensure parameters match required shapes
-    assert(len(filter_dims) == 3)  # filter depth height and width
-    assert(len(stride_dims) == 3)  # stride depth height and width
+    assert((len(filter_dims) == 5) or (len(filter_dims) == 3))  # filter depth height and width
+    assert((len(stride_dims) == 5) or (len(stride_dims) == 3))  # stride depth height and width
 
-    filter_d, filter_h, filter_w = filter_dims
-    stride_d, stride_h, stride_w = stride_dims
+    if len(filter_dims) == 5:
+    	_, filter_d, filter_h, filter_w, _ = filter_dims
+	_, stride_d, stride_h, stride_w, _ = stride_dims
+
+    else:
+    	filter_d, filter_h, filter_w = filter_dims
+	stride_d, stride_h, stride_w = stride_dims
 
     with tf.variable_scope(name) as scope:
         # Define the max pool flow graph and return output
@@ -271,12 +276,12 @@ def avg_pool3d_layer(input_tensor,
     assert(len(filter_dims) == 5)  # filter height and width
     assert(len(stride_dims) == 5)  # stride height and width
 
-    filter_h, filter_w = filter_dims
-    stride_h, stride_w = stride_dims
+    _, filter_d, filter_h, filter_w, _ = filter_dims
+    _, stride_d, stride_h, stride_w, _ = stride_dims
     with tf.variable_scope(name) as scope:
         # Define the max pool flow graph and return output
-        pool_out = tf.nn.avg_pool(input_tensor, ksize=[1, filter_h, filter_w, 1],
-                               strides=[1, stride_h, stride_w, 1], padding=padding, name=scope.name)
+        pool_out = tf.nn.avg_pool3d(input_tensor, ksize=[1, filter_d, filter_h, filter_w, 1],
+                               strides=[1, stride_d, stride_h, stride_w, 1], padding=padding, name=scope.name)
     return pool_out
 
 
@@ -356,7 +361,7 @@ def dropout(input_tensor, training, rate):
     Return:
         Dropout applied to input tensorReshaped Tensor
     """
-    return tf.dropout(input_tensor, training=training, rate=rate)
+    return tf.layers.dropout(input_tensor, training=training, rate=rate)
 
 
 def batch_normalization(input_tensor, training, name):
@@ -369,7 +374,7 @@ def batch_normalization(input_tensor, training, name):
     Return:
         Batch normalized input tensor
     """
-    return tf.layers.batch_normalization(input_tensor, training, name)
+    return tf.layers.batch_normalization(input_tensor, training=training, name=name)
 
 
 def pad(input_tensor,

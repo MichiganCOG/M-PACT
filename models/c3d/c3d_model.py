@@ -7,7 +7,7 @@ Model weights found at https://github.com/hx173149/C3D-tensorflow. The model use
 import tensorflow as tf
 import numpy      as np
 
-from models.model_abstract       import Abstract_Model_Class
+from models.models_abstract      import Abstract_Model_Class
 from utils.layers_utils          import *
 
 from default_preprocessing   import preprocess
@@ -176,7 +176,7 @@ class C3D(Abstract_Model_Class):
             return output, alpha_tensor
 
         elif self.preproc_method == 'sr':
-            output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.model_alpha, self.input_alpha)
+            output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.input_alpha)
             return output, alpha_tensor
 
         else:
