@@ -10,10 +10,10 @@
 \usepackage{xcolor}
 \usepackage[width=122mm,left=12mm,paperwidth=146mm,height=193mm,top=12mm,paperheight=217mm]{geometry}
 \usepackage{multirow}
-
+\usepackage{algorithm}
+\usepackage[]{algpseudocode}
 \newcommand{\jason}[1]{\textcolor{orange}{\textbf{JASON: #1}}}
 \newcommand{\madan}[1]{\textcolor{red}{#1}}
-
 
 \begin{document}
 % \renewcommand\thelinenumber{\color[rgb]{0.2,0.5,0.8}\normalfont\sffamily\scriptsize\arabic{linenumber}\color[rgb]{0,0,0}}
@@ -32,6 +32,11 @@
 \author{Eric Hofesmann, Madan Ravi Ganesh \and Jason J. Corso}
 \institute{University of Michigan}
 \newcommand{\acro}{TARP}
+\newcommand{\model}{\textit{Model submodule}}
+\newcommand{\checkpoint}{\textit{Checkpoint ubmodule}}
+\newcommand{\metrics}{\textit{Metrics submodule}}
+\newcommand{\data}{\textbf{Data Input Block}}
+\newcommand{\exec}{\textbf{Execution Block}}
 
 \maketitle
 
@@ -79,8 +84,63 @@ Details regarding the flow of data and processes between various submodules and 
 \label{fig:exec_block}
 \end{figure}
 
-\subsection{Training: Flowchart of processes}
+\subsection{Training: Algorithmic flow of processes}
 \label{sec:training}
+Training, within the context of the execution block, follows the process flow outlined in Alg.~\ref{}.
+The beginning of every training experiment is aligned with a chosen model. 
+Here, basic model parameters such as input/output data dimensions, batch normalization, dropout rate, and etc. are passed into the \model~in order to select and setup a desired model according to well defined prerequisites.
+
+Once the model has been setup, the next step is to ensure that the parameter weights for the chosen model are retrieved. 
+If the model has been pre-trained using \acro and the user desires to further fine-tune the model, then the model parameter's weights from the latest checkpoint will be restored.
+By default, the standard pre-trained weights, such as Kinetics~\cite{} for I3D~\cite{}, Sports1M~\cite{} for C3D~\cite{}, ImageNet~\cite{} for ResNet50~\cite{} and TSN~\cite{} are loaded into the model.
+Alternatively, a random initialization option, for users to train from scratch is also provided. \\
+Note: To ensure that there is a backup when a specified checkpoint is unavailable, the random intialization option is used, with the system providing a warning to the user about the setup used in training.
+
+After the preparation of the model is complete, data tensors are retrieved from the \data.
+The main data retuned from \data~are the video frames, their corresponding labels and video names.
+With the availability of the model and data, the next stage is creating a copy of the model on the selected number of GPUs within a compute node.
+\acro~only supports the extension of a model within a compute node of a cluster. 
+Currently, it cannot be distrbute a model across mutiple nodes or split a model across multiple GPUs within a node.
+
+Within each GPU, the inference function of \model~is used to generate a copy of the layer definitions. 
+Here, the variable names are re-used to ensure that the same copy of weights are associated throughout all the GPUs.
+From each of the model copies, we retrieve a desired layer's output. 
+Given that the most common approach to training a network is through the use of logits returned from the final layer, we use the variable logits associated with the last layer to obtain a loss value.
+Gradient computation based on the loss calculated is also performed.
+Finally, the loss and gradients across all the model copies are accumulated into the loss\_array and gradients\_array respectively.
+The contribution of each model copy is weights equally and the final gradient used to update the weights of the model is obtained by taking the average of value stored in the gradients\_array.
+The is the final stage in the definition of the tensorflow graph required for training.
+
+\begin{algorithmic}[H]
+\Procedure{Training}{}
+\State \textbf{Model\_definition}.setup(model\_params)
+\State \textbf{Checkpoint}.load\_param\_weights(default or specific file)
+\State Data, Labels = \textbf{DIB}.load\_data(expt\_params)
+\\
+\For{each GPU within given node}
+\State Model.inference(Data, model\_params)
+\State tower\_loss = Model.loss(Labels, returned\_logits)
+\State tower\_gradients = gradients(tower\_loss)
+\State loss\_array.store(tower\_loss)
+\State gradients\_array.store(tower\_gradients)
+\EndFor
+\\
+\State grad = average\_gradients(gradients\_array)
+\State train\_op = apply\_gradients(grad)
+\\
+\While{no\_videos\_loaded \textless~(total\_epochs $\times$ videos\_in\_dataset)}
+\State Checkpoint.save() @ regular intervals
+\State sess.run(train\_op)
+\State update(no\_videos\_loaded)
+\EndWhile
+\EndProcedure
+\end{algorithmic}
+
+After the tensorflow graph for training has been defined, the next step is to execute the graph. 
+Usually, models are trained for a typical number of epochs, iterations over the entire dataset.
+Within each epoch, based on a set frequency of iterations, we save the model parameter's weights using the save function within \checkpoint.
+The main operation that gets executed within each iteration is the train\_op.
+It is important to note that during the setup of th experiment, \acro~does not offsr adaptive learning rate control. Instead, two alternative arguments are used to specify fixed epoch boundaries at which the learning rate can decay and the scaling factor by which it does.
 
 \subsection{Model Description Submodule}
 \label{sec:modeldesc}
@@ -93,6 +153,9 @@ Details regarding the flow of data and processes between various submodules and 
 
 \subsection{Metrics Submodule}
 \label{sec:metrics}
+
+\section{Benchmarks}
+\label{sec:benchmarks}
 
 \clearpage
 
