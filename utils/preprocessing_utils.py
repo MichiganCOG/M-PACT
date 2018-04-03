@@ -162,7 +162,7 @@ def random_crop(image_list, crop_height, crop_width):
   offset_width = tf.random_uniform(
       [], maxval=max_offset_width, dtype=tf.int32)
 
-  return [_crop(image, offset_height, offset_width,
+  return [crop(image, offset_height, offset_width,
                 crop_height, crop_width) for image in image_list]
 
 

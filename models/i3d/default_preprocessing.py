@@ -29,12 +29,13 @@ def preprocess_for_train(image,
     A preprocessed image.
   """
   image = aspect_preserving_resize(image, resize_side_min)
-  image = central_crop([image], output_height, output_width)[0]
+  image = random_crop([image], output_height, output_width)[0]
 
   image.set_shape([output_height, output_width, 3])
 
+  image = tf.image.random_flip_left_right(image)
   image = tf.to_float(image)
-  image = image * 2./255. - 1.
+  image = (image/255.) * 2. - 1.
 
   return image
 
@@ -54,7 +55,7 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
   image.set_shape([output_height, output_width, 3])
 
   image = tf.to_float(image)
-  image = image * 2./255. - 1.
+  image = (image/255.) * 2. - 1.
 
   return image
 
@@ -120,19 +121,16 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # END IF
 
     # Ensure that sufficient frames exist in input to extract 250 frames (assuming a 5 sec temporal footprint)
-    temporal_offset   = tf.cond(tf.greater(frames, 250), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - 250 + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
+    temporal_offset   = tf.cond(tf.greater(frames, footprint), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - footprint + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
 
-    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, 250), 
-                                lambda: loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, 250),
-                                lambda: input_data_tensor[temporal_offset:temporal_offset + 250, :, :, :])
+    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, footprint), 
+                                lambda: loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint),
+                                lambda: input_data_tensor[temporal_offset:temporal_offset + footprint, :, :, :])
 
     # Remove excess frames after looping to reduce to footprint size
-    input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([250, height, width, channel]))
-    input_data_tensor = tf.reshape(input_data_tensor, tf.stack([250, height, width, channel]))
+    input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
+    input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
-
-    # Resample input to desired rate (input fluctuation only, not related to model)
-    input_data_tensor = resample_input(input_data_tensor, footprint, 250, input_alpha)
 
     # Preprocess data
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)

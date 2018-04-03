@@ -617,13 +617,13 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 	    if os.path.isfile(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
 
 	        loaded_params = np.load(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
-
-        # END IF
-
 		total_params = np.concatenate([loaded_params, total_params])
+
+            # END IF
+
 	    np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
 
-    # END IF
+        # END IF
 
 if __name__=="__main__":
     if args.train:
