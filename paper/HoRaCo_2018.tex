@@ -57,7 +57,7 @@
 \label{fig:overview}
 \end{figure}
 
-\acro~comprises of two main components, 1) the data input block, and 2) the execution block, as shown in Fig.~\ref{fig:overview}. 
+\acro~is comprised of two main components, 1) the data input block, and 2) the execution block, as shown in Fig.~\ref{fig:overview}. 
 The pipeline contained within the data input block can be divided into three simple stages,
 \begin{enumerate}
 \item Read video data from disk
@@ -70,6 +70,33 @@ The following sections provide an in depth discussion of the setup and structure
 
 \section{Input Pipeline}
 \label{sec:ippipeline}
+Included in the input pipeline are all of the steps required to pass a video into a model in the proper format.
+The three stages of the input pipeline are detailed below.
+
+\subsection{Read video data}
+When a training or testing instance is run on a model, the first step is to setup the tensorflow graph.
+The first node in this graph is the tensorflow tfrecords file reader. 
+Video data, stored as tfrecords, are read into the system in a FIFO queue.
+
+
+\subsection{Extract clips}
+Certain models, for example C3D~\ref{}, require their inputs to be in the form of multiple clips extracted from a single video.
+To allow for the loading of multiple clips for each loaded video, another FIFO queue is added to the pipeline to store individual clips.
+Fig.~\ref{fig:extract_clips} details the data flow from the tfrecords video data queue, through the clip extraction algorithm, and into the clips queue.
+
+
+\begin{figure}[b!]
+\centering
+\includegraphics[width=0.8\columnwidth]{images/extract_clips.pdf}
+\caption{The input pipeline allows for videos to be broken into clips according to defined specifications.
+Whenever a video has been completely processed and used for training or testing, a new video is loaded from the queue.
+The video is then passed through our clip extraction algorithm which enqueues the clips individually into a secondary queue.
+Clips are then dequeued from the clips queue according to the number of GPUs being used and the required clip batch size.}
+\label{fig:extract_clips}
+\end{figure}
+
+
+\subsection{Preprocess clips}
 
 \section{Execution Block}
 \label{sec:execblock}
@@ -90,8 +117,8 @@ Training, within the context of the execution block, follows the process flow ou
 The beginning of every training experiment is aligned with a chosen model. 
 Here, basic model parameters such as input/output data dimensions, batch normalization, dropout rate, and etc. are passed into the \model~in order to select and setup a desired model according to well defined prerequisites.
 
-Once the model has been setup, the next step is to ensure that the parameter weights for the chosen model are retrieved. 
-If the model has been pre-trained using \acro and the user desires to further fine-tune the model, then the model parameter's weights from the latest checkpoint will be restored.
+Once the model has been set up, the next step is to ensure that the parameter weights for the chosen model are retrieved. 
+If the model has been pre-trained using \acro~and the user desires to further fine-tune the model, then the model parameter's weights from the latest checkpoint will be restored.
 By default, the standard pre-trained weights, such as Kinetics~\cite{} for I3D~\cite{}, Sports1M~\cite{} for C3D~\cite{}, ImageNet~\cite{} for ResNet50~\cite{} and TSN~\cite{} are loaded into the model.
 Alternatively, a random initialization option, for users to train from scratch is also provided. \\
 Note: To ensure that there is a backup when a specified checkpoint is unavailable, the random intialization option is used, with the system providing a warning to the user about the setup used in training.
