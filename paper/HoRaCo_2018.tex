@@ -97,6 +97,14 @@ Clips are then dequeued from the clips queue according to the number of GPUs bei
 
 
 \subsection{Preprocess clips}
+Activity recognition employ a number of various preprocessing methods on a frame or clip-based level.
+These can include frame-wise cropping, flipping, and resizing, or clip-wise temporal offsets, resampling, and looping.
+In order to incorporate these methods as desired per model, we create one or multiple preprocessing files for each model.
+The desired preprocessing file for a model can be defined within the model and then called from the inputs call 
+
+\acro~includes implementations of all of these options which can easily be added to a model's preprocessing file.
+
+
 
 \section{Execution Block}
 \label{sec:execblock}
