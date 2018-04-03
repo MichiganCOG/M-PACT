@@ -110,7 +110,7 @@ module load numpy cuda cudnn gflags tensorflow/1.2.1 opencv/2.4.13/16.04
 cd /z/home/erichof/Madan_TFRecords/tf-activity-recognition-framework/
 echo "Train C3D: HMDB51"
 
-python train_test_TFRecords_multigpu_model.py \
+python test.py \
 --model c3d \
 --numGpus 1 \
 --dataset HMDB51 \
@@ -121,7 +121,7 @@ python train_test_TFRecords_multigpu_model.py \
 --outputDims 51 \
 --seqLength 1 \
 --size 112  \
---expName c3d_tf_HMDB51 \
+--expName c3d_HMDB51 \
 --numClips 1 \
 --clipLength 16 \
 --clipOffset random \
