@@ -127,5 +127,7 @@ python train.py \
 --lr 0.01 \
 --nEpochs 33 \
 --baseDataPath /z/dat \
---saveFreq 1
+--saveFreq 1 \
+--dropoutRate 1.0 \
+--gradClipValue 100.0
 echo "end"

@@ -29,7 +29,8 @@ def preprocess_for_train(image,
     A preprocessed image.
   """
   image = aspect_preserving_resize(image, resize_side_min)
-  image = random_crop([image], output_height, output_width)[0]
+  #image = random_crop([image], output_height, output_width)[0]
+  image = tf.random_crop(image, size=[output_height, output_width, 3])
 
   image.set_shape([output_height, output_width, 3])
 
@@ -112,11 +113,18 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     """
 
     # Setup different temporal footprints for training and testing phase
-    footprint = input_dims
+    if istraining:
+        footprint   = input_dims
+        sample_dims = input_dims 
+
+    else:
+        footprint   = 250
+        sample_dims = 79
     #Training: input_dims == 64
     #Testing:  input_dims == 79
 
     # END IF
+    
 
     # Ensure that sufficient frames exist in input to extract 250 frames (assuming a 5 sec temporal footprint)
     temporal_offset   = tf.cond(tf.greater(frames, footprint), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - footprint + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
@@ -128,6 +136,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # Remove excess frames after looping to reduce to footprint size
     input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))
     input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
+    input_data_tensor = resample_input(input_data_tensor, sample_dims, footprint, 1.0)
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 
     # Preprocess data

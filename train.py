@@ -230,7 +230,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, lr_boundaries, lr_values, preproc_method, random_init, shuffle_seed):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed):
     """
     Training function used to train or fine-tune a chosen model
     Args:
