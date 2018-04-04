@@ -112,11 +112,9 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     """
 
     # Setup different temporal footprints for training and testing phase
-    if istraining:
-        footprint = 64
-
-    else:
-        footprint = 250
+    footprint = input_dims
+    #Training: input_dims == 64
+    #Testing:  input_dims == 79
 
     # END IF
 

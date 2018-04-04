@@ -5,58 +5,22 @@ import os
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils             import *
-from tensorflow.contrib.rnn         import static_rnn
-from resnet_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
+from models.models_abstract import Abstract_Model_Class
+from utils.layers_utils     import *
 
-class ResNet():
+from default_preprocessing import preprocess
+from cvr_preprocessing     import preprocess as preprocess_cvr
+from rr_preprocessing      import preprocess as preprocess_rr
+from sr_preprocessing      import preprocess as preprocess_sr
 
-    def __init__(self, input_dims, model_alpha, input_alpha, verbose=True):
+class ResNet(Abstract_Model_Class):
+
+    def __init__(self, **kwargs):
         """
         Args:
-            :verbose:    Setting verbose command
-            :input_dims: Input dimensions (number of frames)
-
-        Return:
-            Does not return anything
+            Pass all arguments on to parent class, you may not add additional arguments without modifying abstract_model_class.py     and Models.py. Enter any additional initialization functionality here if desired.
         """
-        self.name       = 'resnet'
-        self.verbose    = verbose
-        self.input_dims = input_dims
-	self.model_alpha= model_alpha
-	self.input_alpha= input_alpha
-
-        print "ResNet50 + LSTM initialized"
-
-    def _LSTM(self, inputs, seq_length, feat_size, cell_size=1024):
-        """
-        Args:
-            :inputs:       List of length input_dims where each element is of shape [batch_size x feat_size]
-            :seq_length:   Length of output sequence
-            :feat_size:    Size of input to LSTM
-            :cell_size:    Size of internal cell (output of LSTM)
-
-        Return:
-            :lstn_outputs:  Output list of length seq_length where each element is of shape [batch_size x cell_size]
-        """
-
-        # Unstack input tensor to match shape:
-        # list of n_time_steps items, each item of size (batch_size x featSize)
-        inputs = tf.reshape(inputs, [-1,1,feat_size])
-        inputs = tf.unstack(inputs, seq_length, axis=0)
-
-        # LSTM cell definition
-        lstm_cell            = tf.contrib.rnn.BasicLSTMCell(cell_size)
-        lstm_outputs, states = static_rnn(lstm_cell, inputs, dtype=tf.float32)
-
-        # Condense output shape from:
-        # list of n_time_steps itmes, each item of size (batch_size x cell_size)
-        # To:
-        # Tensor: [(n_time_steps x 1), cell_size] (Specific to our case)
-        lstm_outputs = tf.stack(lstm_outputs)
-        lstm_outputs = tf.reshape(lstm_outputs,[-1,cell_size])
-
-        return lstm_outputs
+        super(ResNet, self).__init__(**kwargs)
 
     def _conv_block(self, n_filters, kernel_size, name, layer_numbers, input_layer, is_training, strides=2, weight_decay=0.0):
         """
@@ -191,7 +155,7 @@ class ResNet():
         ############################################################################
 
         if self.verbose:
-            print('Generating ResNet_Preprocessing network layers')
+            print('Generating ResNet network layers')
 
         # END IF
 
@@ -266,14 +230,13 @@ class ResNet():
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
 
-            layers['125'] = self._LSTM(layers['124'], seq_length, feat_size=2048, cell_size=512)
+            layers['125'] = lstm(layers['124'], seq_length, feat_size=2048, cell_size=512)
 
             layers['126'] = dropout(layers['125'], training=is_training, rate=dropout_rate)
 
-            layers['logits'] = [fully_connected_layer(input_tensor=layers['126'],
-                                                     out_dim=output_dims, non_linear_fn=None,
-                                                     name='logits', weight_decay=weight_decay)]
-            # END WITH
+            layers['logits'] = tf.expand_dims(fully_connected_layer(input_tensor=layers['126'], out_dim=output_dims, non_linear_fn=None, name='logits', weight_decay=weight_decay), 0)
+
+        # END WITH
 
         return [layers[x] for x in return_layer]
 
@@ -281,21 +244,42 @@ class ResNet():
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        return np.load('models/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.npy')
+        return np.load('models/weights/resnet50_rgb_imagenet.npy')
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
-            :index:       Integer indicating the index of video frame from the text file containing video lists
-            :data:        Data loaded from HDF5 files
-            :labels:      Labels for loaded data
-            :size:        List detailing values of height and width for final frames
-            :is_training: Boolean value indication phase (TRAIN OR TEST)
+            :input_data_tensor:     Data loaded from tfrecords containing either video or clips
+            :frames:                Number of frames in loaded video or clip
+            :height:                Pixel height of loaded video or clip
+            :width:                 Pixel width of loaded video or clip
+            :channel:               Number of channels in video or clip, usually 3 (RGB)
+            :input_dims:            Number of frames used in input
+            :output_dims:           Integer number of classes in current dataset
+            :seq_length:            Length of output sequence
+            :size:                  List detailing values of height and width for final frames
+            :label:                 Label for loaded data
+            :is_training:           Boolean value indication phase (TRAIN OR TEST)
+            :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
 
         Return:
             Pointer to preprocessing function of current model
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining)
+        if self.preproc_method == 'cvr':
+            output, alpha_tensor = preprocess_cvr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining)
+            self.add_track_variables('Parameterization_Variables',tf.Variable(alpha_tensor, trainable=False))
+	    return output
+
+        elif self.preproc_method == 'rr':
+            output, alpha_tensor = preprocess_rr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining)
+	    return output, aplha_tensor
+
+        elif self.preproc_method == 'sr':
+            output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining, video_step)
+	    return output, alpha_tensor 
+
+        else:
+            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining)
 
     """ Function to return loss calculated on half the outputs of a given network """
     def half_loss(self, logits, labels):
@@ -324,7 +308,6 @@ class ResNet():
         Return:
             Cross entropy loss value
         """
-
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
@@ -348,15 +331,3 @@ class ResNet():
             return self.half_loss(logits, labels)
 
         # END IF
-
-
-#if __name__=="__main__":
-#
-#    import os
-#    x = tf.placeholder(tf.float32, shape=(None, 224,224,3))
-#    y = tf.placeholder(tf.int32, [None])
-#    path = os.path.join('/z/home/madantrg/RILCode/Code_TF_ND/ExperimentBaseline','resnet50_weights_tf_dim_ordering_tf_kernels.h5')
-#    data_dict = h5py.File(path,'r')
-#
-#    network = _gen_resnet50_baseline1_network(x, True, data_dict, 35, 51)
-#    import pdb; pdb.set_trace()

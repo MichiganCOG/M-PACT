@@ -1,8 +1,9 @@
 """ FILE TO SUPPORT LAYER DEFINITIONS IN TENSORFLOW. ANY AND ALL LAYER DEFINITIONS USED TO MAKE NETWORKS MUST BE DERIVED FROM THIS DOCUMENT """
 
-import tensorflow as tf
-import numpy as np
+from tensorflow.contrib.rnn import static_rnn
 
+import tensorflow as tf
+import numpy      as np
 
 def conv_layer(input_tensor,
                filter_dims,
@@ -398,3 +399,33 @@ def pad(input_tensor,
 
     elif len(input_tensor.shape) == 5:
         return tf.pad(input_tensor, [[0,0],[0,0],[padding, padding],[padding, padding],[0,0]], "CONSTANT")
+
+def lstm(inputs, seq_length, feat_size, cell_size=1024):
+    """
+    Args:
+        :inputs:       List of length input_dims where each element is of shape [batch_size x feat_size]
+        :seq_length:   Length of output sequence
+        :feat_size:    Size of input to LSTM
+        :cell_size:    Size of internal cell (output of LSTM)
+
+    Return:
+        :lstm_outputs:  Output list of length seq_length where each element is of shape [batch_size x cell_size]
+    """
+
+    # Unstack input tensor to match shape:
+    # list of n_time_steps items, each item of size (batch_size x featSize)
+    inputs = tf.reshape(inputs, [-1,1,feat_size])
+    inputs = tf.unstack(inputs, seq_length, axis=0)
+
+    # LSTM cell definition
+    lstm_cell            = tf.contrib.rnn.BasicLSTMCell(cell_size)
+    lstm_outputs, states = static_rnn(lstm_cell, inputs, dtype=tf.float32)
+
+    # Condense output shape from:
+    # list of n_time_steps itmes, each item of size (batch_size x cell_size)
+    # To:
+    # Tensor: [(n_time_steps x 1), cell_size] (Specific to our case)
+    lstm_outputs = tf.stack(lstm_outputs)
+    lstm_outputs = tf.reshape(lstm_outputs,[-1,cell_size])
+
+    return lstm_outputs

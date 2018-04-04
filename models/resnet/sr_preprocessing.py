@@ -35,8 +35,7 @@ def preprocess_for_train(image,
   Returns:
     A preprocessed image.
   """
-  resize_side = tf.random_uniform(
-      [], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
+  resize_side = tf.random_uniform([], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
 
   image = aspect_preserving_resize(image, resize_side_min)
   image = central_crop([image], output_height, output_width)[0]
@@ -96,7 +95,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     return preprocess_for_eval(image, output_height, output_width,
                                resize_side_min)
 
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label,cvr, input_alpha, istraining):
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, input_alpha, istraining):
 	"""
 	Preprocessing function corresponding to the chosen model
 	Args:
