@@ -120,7 +120,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
 
     else:
         clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, video_offset, clip_overlap, height, width, channel)
-    
+
     # END IF
 
     """ Reference of shapes:
@@ -322,3 +322,67 @@ def _error_loading_video():
     """
     print "If an error occurs: The video loaded contains fewer frames than the specified clip length."
     return 0
+
+
+
+def load_dataset_without_preprocessing(base_data_path, dataset, istraining, vid_name, verbose=True):
+    """
+    Function load dataset, setup queue and read data into queue without preprocessing the video
+    Args:
+        :base_data_path:     Full path to root directory containing datasets
+        :dataset:            Video dataset to load
+        :istraining:         Boolean variable indicating training/testing phase
+        :vid_name:           Name of video to load if desired
+
+    Return:
+        Input data tensor, label tensor and name of loaded data (video/image)
+    """
+    # Get a list of tfrecords file names from which to pull videos
+    filenames           = []
+    number_of_tfrecords = 0
+
+    for f in os.listdir(base_data_path):
+        filenames.append(os.path.join(base_data_path,f))
+        number_of_tfrecords += 1
+
+    # END FOR
+
+    if verbose:
+        print "Number of records available: ", number_of_tfrecords
+
+    if vid_name == "default":
+
+        # Create Queue which will read in videos num_gpus at a time (Queue seeded for repeatability of experiments)
+        tfrecord_file_queue = tf.train.string_input_producer(filenames, shuffle=istraining, name='file_q', seed=0)
+
+    else:
+        # Create Queue which will read in videos num_gpus at a time (Queue seeded for repeatability of experiments)
+        tfrecord_file_queue = tf.train.string_input_producer([os.path.join(base_data_path, f)], shuffle=istraining, name='file_q', seed=0)
+
+
+    tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
+
+    # Number of threads to be used
+    thread_count = 1
+
+    # Dequeue video data from queue and convert it from TFRecord format (int64 or bytes)
+    features = _read_tfrecords(tfrecord_file_queue)
+    frames   = tf.cast(features['Frames'], tf.int32)
+    height   = tf.cast(features['Height'], tf.int32)
+    width    = tf.cast(features['Width'], tf.int32)
+    channel  = tf.cast(features['Channels'], tf.int32)
+    label    = tf.cast(features['Label'], tf.int32)
+
+    name     = features['Name']
+
+    # Shape [frames, height, width, channels]
+    input_data_tensor = tf.reshape(tf.decode_raw(features['Data'], tf.uint8), tf.stack([frames,height,width,channel]))
+
+    # BGR to RGB
+    input_data_tensor = input_data_tensor[...,::-1]
+
+    # Reduction in fps to 25 for HMDB51 dataset
+    if 'HMDB51' in dataset:
+        input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
+
+    return input_data_tensor, label, name

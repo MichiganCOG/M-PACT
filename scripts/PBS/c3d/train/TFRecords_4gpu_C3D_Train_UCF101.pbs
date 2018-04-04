@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=1:ppn=10:gpus=4    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=lgn7:ppn=10:gpus=4    # nodes requested: Processor per node: gpus requested
 #PBS -M erichof@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
