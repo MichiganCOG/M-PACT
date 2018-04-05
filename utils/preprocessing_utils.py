@@ -244,6 +244,25 @@ def smallest_size_at_least(height, width, smallest_side):
   return new_height, new_width
 
 
+def resize(image, new_height, new_width):
+  """Resize images
+  Args:
+    :image:         A 3-D image `Tensor`.
+    :new_height:    Height of the image after resize
+    :new_width:     Width of the image after resize
+
+  Returns:
+    :resized_image: A 3-D tensor containing the resized image.
+  """
+
+  image = tf.expand_dims(image, 0)
+  resized_image = tf.image.resize_bilinear(image, [new_height, new_width],
+                                           align_corners=True)
+  resized_image = tf.squeeze(resized_image)
+  resized_image.set_shape([None, None, 3])
+  return resized_image
+
+
 def aspect_preserving_resize(image, smallest_side):
   """Resize images preserving the original aspect ratio.
   Args:

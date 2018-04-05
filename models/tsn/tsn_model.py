@@ -1,147 +1,211 @@
-import h5py
-import os
-import time
-import sys
-sys.path.append('../..')
+" TSN MODEL IMPLEMENTATION FOR USE WITH TENSORFLOW "
 
 import tensorflow as tf
 import numpy      as np
 
-from utils.layers_utils                       import *
-from tsn_preprocessing_TFRecords              import preprocess as preprocess_tfrecords
-from BNInception                              import BNInception
+from models.abstract_model_class import Abstract_Model_Class
+from utils.layers_utils          import *
+
+from default_preprocessing       import preprocess
 
 
-class TSN():
+class TSN(Abstract_Model_Class):
 
     def __init__(self, **kwargs):
         """
         Args:
             Pass all arguments on to parent class, you may not add additional arguments without modifying abstract_model_class.py and Models.py. Enter any additional initialization functionality here if desired.
         """
-        super().__init__(**kwargs)
-        self.num_seg     = 3.0
-        self.init        = init
-        self.dropout     = 0.8
+        super(TSN, self).__init__(**kwargs)
 
-    def _extraction_layer(self, inputs, params, sets, K, L):
-        # Parameter definitions are taken as mean ($\psi(\cdot)$) of input estimates
-        sample_alpha_tick = tf.exp(-tf.nn.relu(params[0]))
 
-        # Extract shape of input signal
-        frames, shp_h, shp_w, channel = inputs.get_shape().as_list()
+    def _inception_block_with_pool(self, inputs, filter_list, pool_type='avg', scope='', weight_decay=0.0):
+        layers = {}
 
-        # Generate indices for output
-        output_idx = tf.range(start=1., limit=float(L)+1., delta=1., dtype=tf.float32)
+        layers[scope+'_1'] = conv_layer(input_tensor=inputs, filter_dims=[1,1,filter_list[0]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/1x1')
+        layers[scope+'_1_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_1'], name=scope+'/1x1_bn'))
 
-        output_idx = tf.slice(output_idx, [0],[L])
+        layers[scope+'_2_reduce'] = conv_layer(input_tensor=inputs, filter_dims=[1,1,filter_list[1]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/3x3_reduce')
+        layers[scope+'_2_reduce_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_2_reduce'], name=scope+'/3x3_reduce_bn'))
+        layers[scope+'_2'] = conv_layer(input_tensor=layers[scope+'_2_reduce_bn'], filter_dims=[3,3,filter_list[2]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/3x3')
+        layers[scope+'_2_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_2'], name=scope+'/3x3_bn'))
 
-        # Sampling parameter scaling to match inputs temporal dimension
-        alpha_tick = sample_alpha_tick * tf.cast(K * sets, tf.float32) / (float(L))
+        layers[scope+'_double_reduce'] = conv_layer(input_tensor=inputs, filter_dims=[1,1,filter_list[3]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/double_3x3_reduce')
+        layers[scope+'_double_reduce_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_double_reduce'], name=scope+'/double_3x3_reduce_bn'))
+        layers[scope+'_double_1'] = conv_layer(input_tensor=layers[scope+'_double_reduce_bn'], filter_dims=[3,3,filter_list[4]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/double_3x3_1')
+        layers[scope+'_double_1_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_double_1'], name=scope+'/double_3x3_1_bn'))
+        layers[scope+'_double_2'] = conv_layer(input_tensor=layers[scope+'_double_1_bn'], filter_dims=[3,3,filter_list[5]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/double_3x3_2')
+        layers[scope+'_double_2_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_double_2'], name=scope+'/double_3x3_2_bn'))
 
-        # Include sampling parameter to correct output indices
-        output_idx = tf.multiply(tf.tile([alpha_tick], [L]), output_idx)
+        if pool_type=='avg':
+            layers[scope+'_pool'] = avg_pool_layer(input_tensor=pad(inputs, 1), filter_dims=[3,3], stride_dims=[1,1], padding='VALID', name=scope+'/pool')
 
-        # Clip output index values to >= 1 and <=N (valid cases only)
-        output_idx = tf.clip_by_value(output_idx, 1., tf.cast(sets*K, tf.float32))
+        else:
+            layers[scope+'_pool'] = max_pool_layer(input_tensor=pad(inputs, 1), filter_dims=[3,3], stride_dims=[1,1], padding='VALID', name=scope+'/pool')
 
-        # Create x0 and x1 float
-        x0 = tf.clip_by_value(tf.floor(output_idx), 1., tf.cast(sets*K, tf.float32)-1.)
-        x1 = tf.clip_by_value(tf.floor(output_idx+1.), 2., tf.cast(sets*K, tf.float32))
+        # END IF
 
-        # Deltas :
-        d1 = (output_idx - x0)
-        d2 = (x1 - x0)
-        d1 = tf.reshape(tf.tile(d1, [224*224*3]), [L,224,224,3])
-        d2 = tf.reshape(tf.tile(d2, [224*224*3]), [L,224,224,3])
+        layers[scope+'_pool_proj'] = conv_layer(input_tensor=layers[scope+'_pool'], filter_dims=[1,1,filter_list[6]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/pool_proj')
+        layers[scope+'_pool_proj_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_pool_proj'], name=scope+'/pool_proj_bn'))
+        layers[scope+'_output'] = tf.concat([layers[scope+'_1_bn'] + layers[scope+'_2_bn'] + layers[scope+'_double_bn'] + layers[scope+'_pool_proj_bn']], axis=3, name=scope+'/output')
 
-        # Create x0 and x1 indices
-        output_idx_0 = tf.cast(tf.floor(output_idx), 'int32')
-        output_idx_1 = tf.cast(tf.ceil(output_idx), 'int32')
-        output_idx   = tf.cast(output_idx, 'int32')
+        return layers
 
-        # Create y0 and y1 outputs
-        output_0 = tf.gather(inputs, output_idx_0-1)
-        output_1 = tf.gather(inputs, output_idx_1-1)
-        output   = tf.gather(inputs, output_idx-1)
+    def _inception_block_no_pool(self, inputs, filter_list, scope='', weight_decay=0.0):
+        layers = {}
 
-        d3     = output_1 - output_0
+        layers[scope+'_1_reduce'] = conv_layer(input_tensor=inputs, filter_dims=[1,1,filter_list[1]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/3x3_reduce')
+        layers[scope+'_1_reduce_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_1_reduce'], name=scope+'/3x3_reduce_bn'))
+        layers[scope+'_1'] = conv_layer(input_tensor=layers[scope+'_1_reduce_bn'], filter_dims=[3,3,filter_list[2]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/3x3')
+        layers[scope+'_1_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_1'], name=scope+'/3x3_bn'))
 
-        output = tf.add_n([(d1/d2)*d3, output_0])
+        layers[scope+'_double_reduce'] = conv_layer(input_tensor=inputs, filter_dims=[1,1,filter_list[3]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/double_3x3_reduce')
+        layers[scope+'_double_reduce_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_double_reduce'], name=scope+'/double_3x3_reduce_bn'))
+        layers[scope+'_double_1'] = conv_layer(input_tensor=layers[scope+'_double_reduce_bn'], filter_dims=[3,3,filter_list[4]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/double_3x3_1')
+        layers[scope+'_double_1_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_double_1'], name=scope+'/double_3x3_1_bn'))
+        layers[scope+'_double_2'] = conv_layer(input_tensor=layers[scope+'_double_1_bn'], filter_dims=[3,3,filter_list[5]], stride_dims=[1,1], non_linear_fn=None, padding='VALID', weight_decay=weight_decay, name=scope+'/double_3x3_2')
+        layers[scope+'_double_2_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers[scope+'_double_2'], name=scope+'/double_3x3_2_bn'))
 
-        output = tf.reshape(output, (L, shp_h, shp_w, channel), name='RIlayeroutput')
+        layers[scope+'_pool'] = max_pool_layer(input_tensor=pad(inputs, 1), filter_dims=[3,3], stride_dims=[2,2], padding='SAME', name=scope+'/pool')
 
-        return output
+        layers[scope+'_output'] = tf.concat([layers[scope+'_1_bn'] + layers[scope+'_double_bn'] + layers[scope+'_pool']], axis=3, name=scope+'/output')
 
-    def loss(self, logits, labels, loss_type):
-        labels_dim_list = labels.get_shape().as_list()
-        if len(labels_dim_list) > 1:
-            labels = tf.reshape(labels, [labels_dim_list[0]*labels_dim_list[1]])
+        return layers
 
-        labels = tf.cast(labels, tf.int32)
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, batch_size, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
+        """
+        Args:
+            :inputs:       Input to model of shape [Frames x Height x Width x Channels]
+            :is_training:  Boolean variable indicating phase (TRAIN OR TEST)
+            :input_dims:   Length of input sequence
+            :output_dims:  Integer indicating total number of classes in final prediction
+            :seq_length:   Length of output sequence from LSTM
+            :scope:        Scope name for current model instance
+            :dropout_rate: Value indicating proability of keep inputs
+            :return_layer: String matching name of a layer in current model
+            :weight_decay: Double value of weight decay
+            :batch_size:   Number of videos or clips to process at a time
 
-        input_dim_list = logits.get_shape().as_list()
-        if len(input_dim_list) > 2:
-            new_dim_list = [input_dim_list[0]*input_dim_list[1]]
-            new_dim_list.extend(input_dim_list[2:])
-            logits = tf.reshape(logits, new_dim_list)
+        Return:
+            :layers[return_layer]: The requested layer's output tensor
+        """
 
-        total_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels[:logits.shape[0].value], logits=logits)
+        ############################################################################
+        #                       Add TSN Network Layers HERE                  #
+        ############################################################################
 
-        return total_loss
-
-    def load_default_weights(self):
-        weights = None
-        weight_file_name = ''
-        if 'init' in self.exp_name:
-            self.init = True
-            weight_file_name = 'models/tsn/bn_inception_rgb_init.npy'
-        elif self.output_dims == 51:
-            weight_file_name = 'models/tsn/tsn_pretrained_HMDB51_reordered.npy'
-        elif self.output_dims == 101:
-            weight_file_name = 'models/tsn/tsn_pretrained_UCF101_reordered.npy'
-        elif self.verbose:
-            print('Cannot find the weight file')
-
-        if os.path.isfile(weight_file_name):
-            weights = np.load(weight_file_name)
-
-        return weights
-
-    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_seg, self.input_dims, self.input_alpha)
-
-    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.8, return_layer=['logits'], weight_decay=0.0005):
         if self.verbose:
-            print('Generating TSN network')
+            print('Generating TSN network layers')
 
-        input_dim_list = inputs.get_shape().as_list()
-        if len(input_dim_list) > 4:
-            new_dim_list = [input_dim_list[0]*input_dim_list[1]]
-            new_dim_list.extend(input_dim_list[2:])
-            inputs = tf.reshape(inputs, new_dim_list)
+        # END IF
 
-        print('inference input: ', inputs)
-
-        with tf.name_scope(scope, 'tsn', [inputs]):
+        with tf.name_scope(scope, 'TSN', [inputs]):
             layers = {}
-            #layers['Parameterization_Variables'] = [tf.get_variable('alpha',shape=[], dtype=tf.float32, initializer=tf.constant_initializer(0.25))]
-            #layers['RIlayer'] = self._extraction_layer(inputs=inputs, params=layers['Parameterization_Variables'], sets=input_dims, L=30, K=1)
-            layers['base'] = BNInception(inputs,
-                                     dropout_rate=dropout_rate,
-                                     num_classes=output_dims,
-                                     is_training=is_training,
-                                     is_init=self.init,
-                                     weight_decay=weight_decay,
-                                     scope=scope)
-            #layers['logits'] = tf.reduce_mean(tf.reshape(layers['base'], [self.num_seg, new_dim_list[0]/self.num_seg, layers['base'].shape[-1].value]), 0)
-            layers['logits'] = tf.reduce_mean(tf.reshape(layers['base'], [new_dim_list[0]/self.num_seg, self.num_seg, layers['base'].shape[-1].value]), 1)
 
-        if len(input_dim_list) > 4:
-                output_dim_list = layers['logits'].get_shape().as_list()
-                new_dim_list = [input_dim_list[0], output_dim_list[0]/input_dim_list[0]]
-                new_dim_list.extend(output_dim_list[1:])
-                layers['logits'] = tf.expand_dims(layers['logits'], 0)
-                layers['logits'] = tf.reshape(layers['logits'], new_dim_list)
+            layers['conv1'] = conv_layer(input_tensor=inputs, filter_dims=[7,7,64], stride_dims=[2,2], non_linear_fn=None, name='conv1/7x7_s2', weight_decay=weight_decay)
+
+            layers['conv1_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers['conv1'], name='conv1/7x7_s2_bn'))
+
+            layers['pool1'] = max_pool_layer(input_tensor=layers['conv1_bn'], filter_dims=[3,3], stride_dims=[2,2], name='pool1/3x3_s2')
+
+
+            layers['conv2_reduce'] = conv_layer(input_tensor=layers['pool1'], filter_dims=[1,1,64], stride_dims=[1,1], non_linear_fn=None, name='conv2/3x3_reduce', weight_decay=weight_decay)
+
+            layers['conv2_reduce_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers['conv2_reduce'], name='conv2/3x3_reduce_bn'))
+
+            layers['conv2'] = conv_layer(input_tensor=layers['conv2_reduce_bn'], filter_dims=[3,3,64], stride_dims=[1,1], non_linear_fn=None, name='conv2/3x3', weight_decay=weight_decay)
+
+            layers['conv2_bn'] = tf.nn.relu(batch_normalization(input_tensor=layers['conv2'], name='conv2/3x3_bn'))
+
+            layers['pool2'] = max_pool_layer(input_tensor=layers['conv2_bn'], filter_dims=[3,3], stride_dims=[2,2], name='pool2/3x3_s2')
+
+
+
+
+            ########################################################################################
+            #        TODO: Add any desired layers from layers_utils to this layers dictionary      #
+            #                                                                                      #
+            #       EX: layers['conv1'] = conv3d_layer(input_tensor=inputs,                        #
+            #           filter_dims=[dim1, dim2, dim3, dim4],                                      #
+            #           name=NAME,                                                                 #
+            #           weight_decay = wd)                                                         #
+            ########################################################################################
+
+
+            ########################################################################################
+            #       TODO: Final Layer must be 'logits'                                             #
+            #                                                                                      #
+            #  EX:  layers['logits'] = [fully_connected_layer(input_tensor=layers['previous'],     #
+            #                                         out_dim=output_dims, non_linear_fn=None,     #
+            #                                         name='out', weight_decay=weight_decay)]      #
+            ########################################################################################
+
+            layers['logits'] = # TODO Every model must return a layer named 'logits'
+
+            layers['logits'] = tf.reshape(layers['logits'], [batch_size, seq_length, output_dims])
+
+        # END WITH
 
         return [layers[x] for x in return_layer]
+
+
+
+
+#    def load_default_weights(self):
+#        """
+#        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+#        """
+#
+#        ############################################################################
+#        # TODO: Add default model weights to models/weights/ and import them here  #
+#        #                          ( OPTIONAL )                                    #
+#        #                                                                          #
+#        # EX: return np.load('models/weights/model_weights.npy')                   #
+#        #                                                                          #
+#        ############################################################################
+
+
+
+
+    def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
+        """
+        Args:
+            :input_data_tensor:     Data loaded from tfrecords containing either video or clips
+            :frames:                Number of frames in loaded video or clip
+            :height:                Pixel height of loaded video or clip
+            :width:                 Pixel width of loaded video or clip
+            :channel:               Number of channels in video or clip, usually 3 (RGB)
+            :input_dims:            Number of frames used in input
+            :output_dims:           Integer number of classes in current dataset
+            :seq_length:            Length of output sequence
+            :size:                  List detailing values of height and width for final frames
+            :label:                 Label for loaded data
+            :is_training:           Boolean value indication phase (TRAIN OR TEST)
+            :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
+        """
+
+        ####################################################
+        # TODO: Add more preprcessing arguments if desired #
+        ####################################################
+
+        return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.input_alpha)
+
+
+
+   """ Function to return loss calculated on given network """
+   def loss(self, logits, labels, loss_type):
+       """
+       Args:
+           :logits:     Unscaled logits returned from final layer in model
+           :labels:     True labels corresponding to loaded data
+           :loss_type:  Allow for multiple losses that can be selected at run time. Implemented through if statements
+       """
+
+       ####################################################################################
+       #  TODO: ADD CUSTOM LOSS HERE, DEFAULT IS CROSS ENTROPY LOSS                       #
+       #                                                                                  #
+       #   EX: labels = tf.cast(labels, tf.int64)                                         #
+       #       cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, #
+       #                                                            logits=logits)        #
+       #        return cross_entropy_loss                                                 #
+       ####################################################################################

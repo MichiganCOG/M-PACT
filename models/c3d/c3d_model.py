@@ -14,7 +14,7 @@ from default_preprocessing   import preprocess
 from cvr_preprocessing       import preprocess as preprocess_cvr
 from rr_preprocessing        import preprocess as preprocess_rr
 from sr_preprocessing        import preprocess as preprocess_sr
-
+from original_author_preprocessing import preprocess as preprocess_original
 
 class C3D(Abstract_Model_Class):
 
@@ -128,13 +128,13 @@ class C3D(Abstract_Model_Class):
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,
                                                      name='d1', weight_decay=weight_decay)
 
-            layers['dropout1'] = tf.layers.dropout(layers['dense1'], training=is_training, rate=dropout_rate)
+            layers['dropout1'] = dropout(layers['dense1'], training=is_training, rate=dropout_rate)
 
             layers['dense2'] = fully_connected_layer(input_tensor=layers['dropout1'],
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,
                                                      name='d2', weight_decay=weight_decay)
 
-            layers['dropout2'] = tf.layers.dropout(layers['dense2'], training=is_training, rate=dropout_rate)
+            layers['dropout2'] = dropout(layers['dense2'], training=is_training, rate=dropout_rate)
 
             layers['logits'] = tf.expand_dims(fully_connected_layer(input_tensor=layers['dropout2'],
                                                      out_dim=output_dims, non_linear_fn=None,
@@ -178,6 +178,9 @@ class C3D(Abstract_Model_Class):
         elif self.preproc_method == 'sr':
             output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.input_alpha)
             return output, alpha_tensor
+
+        elif self.preproc_method == 'original':
+            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
         else:
             return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
