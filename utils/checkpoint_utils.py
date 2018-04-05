@@ -49,6 +49,7 @@ def load_checkpoint(model, dataset, experiment_name, loaded_checkpoint, preproc_
         for data in data_str:
             if ':' in data:
                 data_name, data_value = data.split(':')
+
             else:
                 data_name = data[:2]
                 data_value = data[3:]

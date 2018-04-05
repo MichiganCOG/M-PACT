@@ -71,12 +71,6 @@ parser.add_argument('--optChoice', action='store', default='default',
 parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
         help = 'Value of normalized gradient at which to clip.')
 
-parser.add_argument('--lrboundary', nargs='+',type=int, default=[0],
-        help = 'List of boundary epochs at which lr will be updated')
-
-parser.add_argument('--lrvalues', nargs='+',type=float, default=[1.0],
-        help = 'List of lr multiplier values, length of list must equal lrboundary')
-
 # Experiment parameters
 
 parser.add_argument('--dataset', action= 'store', required=True,
@@ -153,6 +147,9 @@ parser.add_argument('--preprocMethod', action='store', default='default',
 
 parser.add_argument('--randomInit', action='store', type=int, default=0,
         help = 'Randomly initialize model weights, not loading from any files (deafult False)')
+
+parser.add_argument('--shuffleSeed', action='store', type=int, default=0,
+        help = 'Seed integer for random shuffle of files in load_dataset function')
 
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
@@ -233,7 +230,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, lr_boundaries, lr_values, preproc_method, random_init):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -326,7 +323,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, shuffle_seed, verbose)
 
         ############### TO DO: FIX THIS ASAP ########################
         if ((batch_size == 1) and (num_clips==1)):
@@ -338,6 +335,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         # END IF
         ############################################################
 
+
+        learning_rate = tf.Variable(learning_rate_init, name='learning_rate', trainable=False)
+
         # Define optimizer (Current selection is only momentum optimizer)
         if opt_choice == 'gd':
             optimizer = lambda lr: tf.train.GradientDescentOptimizer(lr)
@@ -346,10 +346,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
 
         # END IF
-
-        lr_boundaries = [int(float(num_vids)/float(num_gpus*batch_size)*i) for i in lr_boundaries]
-        lr_values     = [learning_rate_init*i for i in lr_values]
-
 
 
         """ Multi-GPU setup: 1) Associate gpu device to specific model replica
@@ -387,8 +383,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                         # Calculating Softmax for probability outcomes : Can be modified, make function internal to model
                         slogits = tf.nn.softmax(logits)
 
-                        lr = tf.train.piecewise_constant(global_step, lr_boundaries, lr_values, name='learning_rate')
-
                     # END WITH
 
                     reuse_variables = True
@@ -400,7 +394,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     """
 
                     total_loss = model.loss(logits, labels_tensor[gpu_idx*batch_size:gpu_idx*batch_size+batch_size, :], loss_type)
-                    opt        = optimizer(lr)
+                    opt        = optimizer(learning_rate)
                     gradients  = opt.compute_gradients(total_loss, vars_.trainable_variables())
 
                     tower_losses.append(total_loss)
@@ -473,20 +467,22 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         epoch_count       = 0
         tot_load_time     = 0.0
         tot_train_time    = 0.0
+        last_loss         = None
 
-        losses       = []
-        total_pred   = []
-        save_data    = []
-        total_params = []
 
-        l_r           = learning_rate_init
-        learning_rate = l_r
+        losses         = []
+        total_pred     = []
+        save_data      = []
+        total_params   = []
+        losses_tracker = []
+
 
         # Timing test setup
         time_init = time.time()
 
         batch_count = 0
         epoch_acc   = 0
+        l_r         = learning_rate_init
 
         ########################################## Training loop block ################################################################
 
@@ -501,7 +497,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     if verbose:
                         print "Saving..."
 
-                    save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, learning_rate, global_step.eval(session=sess))
+                    save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, l_r, global_step.eval(session=sess))
 
                 # END IF
 
@@ -513,11 +509,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             time_pre_train = time.time()
 
             ######################################### Running TF training session block ##################################
-            _, loss_train, predictions, gs, labels, vid_names, idt, track_vars = sess.run([train_op, tower_losses,
+            _, loss_train, predictions, gs, labels, vid_names, l_r, track_vars = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, names_tensor,
-                                                                       input_data_tensor, model.get_track_variables()])
-
+                                                                       learning_rate, model.get_track_variables()])
+            
             ################################################################################################################
 
             if verbose:
@@ -528,6 +524,31 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     videos_loaded += 1
                     previous_vid_name = name
                 tot_count += 1
+
+            ######## Adaptive Learning Rate Control Block ############################
+
+            losses_tracker.append(np.mean(loss_train))
+
+            if videos_loaded % 10 == 0 and videos_loaded > 0:
+                if last_loss is None:
+                    last_loss = sum(losses_tracker)/10
+
+                else:   
+                    difference_loss = last_loss - sum(losses_tracker)/10
+                    last_loss = sum(losses_tracker)/10
+                    
+                    if abs(difference_loss) < 0.001:
+                        learning_rate/=10
+            
+                    # END IF
+
+                # END IF
+                if len(losses_tracker) == 10:
+                    losses_tracker = []
+
+            # END IF
+
+            ###########################################################################
 
             # Transpose the extracted layers such that the mean is taken across the gpus and over any matrix with more than 1 dimension
             params_array = []
@@ -580,6 +601,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
             curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
+
             for layer in range(len(params_array)):
                 for p in range(len(params_array[layer])):
                     curr_logger.add_scalar_value('tracked_training_variables/'+str(track_vars.keys()[layer]+'_'+str(p)), float(params_array[layer][p]), step=gs)
@@ -590,6 +612,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 	    total_params.append(params_array)
 
+            curr_logger.add_scalar_value('tracked_training_variables/learning_rate', l_r, step=gs)
+
         # END WHILE
 
         #########################################################################################################################################################
@@ -599,7 +623,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # END IF
 
-        save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, learning_rate, gs)
+        save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, l_r, gs)
         coord.request_stop()
         coord.join(threads)
 
@@ -657,11 +681,9 @@ if __name__=="__main__":
                 opt_choice          = args.optChoice,
                 gpu_list            = args.gpuList,
                 grad_clip_value     = args.gradClipValue,
-                lr_boundaries       = args.lrboundary,
-                lr_values           = args.lrvalues,
                 preproc_method      = args.preprocMethod,
-                random_init         = args.randomInit)
+                random_init         = args.randomInit,
+                shuffle_seed        = args.shuffleSeed)
 
     # END IF
 
-    import pdb; pdb.set_trace()
