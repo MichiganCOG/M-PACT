@@ -5,6 +5,7 @@ import argparse
 import tensorflow      as tf
 import numpy           as np
 import multiprocessing as mp
+import matplotlib.pyplot as plt
 
 # Tensorflow ops imports
 from tensorflow.python.ops      import clip_ops

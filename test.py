@@ -154,8 +154,8 @@ parser.add_argument('--preprocMethod', action='store', default='default',
 parser.add_argument('--randomInit', action='store', type=int, default=0,
         help = 'Randomly initialize model weights, not loading from any files (deafult False)')
 
-parser.add_argument('--shuffleSeed', action='store', type=int, default=0,
-        help = 'Seed integer for random shuffle of files in load_dataset function')
+parser.add_argument('--avgClips', action='store', type=int, default=0,
+        help = 'Boolean indicating whether to average predictions across clips')
 
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
@@ -192,7 +192,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    verbose = args.verbose)
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, shuffle_seed):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -223,6 +223,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :gpu_list:           List of GPU IDs to be used
         :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
         :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
+        :avg_clips:          Boolean indicating whether to average predictions across clips
 
     Returns:
         Does not return anything
@@ -360,7 +361,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         while videos_loaded <= num_vids:
             output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
 
-                # END IF
+            if avg_clips:
+                output_predictions = np.array([np.mean(output_predictions, 0)])
+                names = names[:1]
 
             for batch_idx in range(len(names)):
                 vid_name = names[batch_idx]
@@ -429,7 +432,7 @@ if __name__=="__main__":
                 gpu_list          = args.gpuList,
                 preproc_method    = args.preprocMethod,
                 random_init       = args.randomInit,
-                shuffle_seed        = args.shuffleSeed)
+                avg_clips         = args.avgClips)
 
     # END IF
 

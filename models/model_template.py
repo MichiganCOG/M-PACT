@@ -67,11 +67,11 @@ class MODELNAME(Abstract_Model_Class):
             #                                         name='out', weight_decay=weight_decay)]      #
             ########################################################################################
 
+            layers['logits'] = # TODO Every model must return a layer named 'logits'
+
+            layers['logits'] = tf.reshape(layers['logits'], [batch_size, seq_length, output_dims])
+
         # END WITH
-
-        layers['logits'] = # TODO Every model must return a layer named 'logits'
-
-        layers['logits'] = tf.reshape(layers['logits'], [batch_size, seq_length, output_dims])
 
         return [layers[x] for x in return_layer]
 
