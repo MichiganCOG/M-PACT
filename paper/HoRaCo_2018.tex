@@ -5,6 +5,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb} % define this before the line numbering.
 \usepackage{ruler}
+\usepackage[dvipsnames]{xcolor}
 \usepackage{subcaption}
 \captionsetup{compatibility=false}
 \usepackage{xcolor}
@@ -33,7 +34,7 @@
 \institute{University of Michigan}
 \newcommand{\acro}{TARP}
 \newcommand{\model}{\textit{Model submodule}}
-\newcommand{\checkpoint}{\textit{Checkpoint ubmodule}}
+\newcommand{\checkpoint}{\textit{Checkpoint submodule}}
 \newcommand{\metrics}{\textit{Metrics submodule}}
 \newcommand{\data}{\textbf{Data Input Block}}
 \newcommand{\exec}{\textbf{Execution Block}}
@@ -151,13 +152,13 @@ The is the final stage in the definition of the tensorflow graph required for tr
 
 \begin{algorithmic}[H]
 \Procedure{Training}{}
-\State \textbf{Model\_definition}.setup(model\_params)
-\State \textbf{Checkpoint}.load\_param\_weights(default or specific file)
-\State Data, Labels = \textbf{DIB}.load\_data(expt\_params)
+\State \textbf{Model\_definition}.\textcolor{red}{setup}(model\_params)
+\State \textbf{Checkpoint}.\textcolor{red}{load\_param\_weights}(default or specific file)
+\State Data, Labels = \textbf{DIB}.\textcolor{red}{load\_data}(expt\_params)
 \\
 \For{each GPU within given node}
-\State Model.inference(Data, model\_params)
-\State tower\_loss = Model.loss(Labels, returned\_logits)
+\State \textbf{Model\_definition}.\textcolor{red}{inference}(Data, model\_params)
+\State tower\_loss = \textbf{Model\_definition}.\textcolor{red}{loss}(Labels, returned\_logits)
 \State tower\_gradients = gradients(tower\_loss)
 \State loss\_array.store(tower\_loss)
 \State gradients\_array.store(tower\_gradients)
@@ -167,7 +168,7 @@ The is the final stage in the definition of the tensorflow graph required for tr
 \State train\_op = apply\_gradients(grad)
 \\
 \While{no\_videos\_loaded \textless~(total\_epochs $\times$ videos\_in\_dataset)}
-\State Checkpoint.save() @ regular intervals
+\State \textbf{Checkpoint}.\textcolor{red}{save}() @ regular intervals
 \State sess.run(train\_op)
 \State update(no\_videos\_loaded)
 \EndWhile
@@ -183,16 +184,35 @@ It is important to note that during the setup of th experiment, \acro~does not o
 \subsection{Model Description Submodule}
 \label{sec:modeldesc}
 
-Every model used in this framework requires a specific model description.
-This submodule is designed such that a new model can be easily added to the framework by following a simple set of standards which allow it to be incorporated with the remaining input and execution blocks.
+The class definition of a model within \acro~can be divided into four main components as shown in Fig.~\ref{}. 
+The first step to incorporating a model in \acro~is to define the network architecture within an \textcolor{red}{inference} function.
+The layers used must strictly be called from within the set of definitions provided within the \textcolor{blue}{layer\_utils} file.
+This ensures that layer definitions are not specific to any network and become available to all models defined within \acro.
+Further, it is essential that the inference function returns the outcome of any and all desired layers from within the defined network.
+Any accompanying functions to help quickly and/or recursively define a network can be added outisde of the inference function.
+
+Once the network has been defined, the next step is to setup the network's desired preprocessing formulation.
+Concrete definitions of each preprocessing step can be included in a separate file.
+We provide a standard list of preprocessing functions within the \textcolor{blue}{preprocessing\_utils} file that can be used to construct the entire preprocessing pipeline.
+The expected output from a preprocessing function is the preprocessed input data.
+Multiple preprocessing pipelines can be included within the same model with the use of the simple \textit{if-else} construct to quickly expand a model's abilities. 
+Within the model definition file, it is sufficient to import and call a preprocessing method defined in the adjacent file.
+
+In \acro, we attach the definition of any loss to a model to avoid cluttering and increasing the complexity of the main training file.
+Thus, a basic loss function needs to be defined within a models class, with the expected return being logits.
+However, the basic loss function can altenratively be used to call different loss functions by using the internally defined \texttt{\textcolor{ForestGreen}{loss\_type}} keyword.
+
+The final and optional component of any model definition within \acro~is the definition of \textcolor{red}{load\_default\_weights} function.
+This function is defined to ensure that a predetermined set of weights can be loaded onto the network defined.
+The explicit rules required to define the layer names and ensure their respective weights can be assigned are provided in Section~\ref{sec:checkpoint}.
+The final values returned by this function are the parameter weights loaded from an external file. 
+
+In order to quickly define and integrate any model into \acro's pipeline, we provide a template file named \textcolor{blue}{models\_abstract.py} which provides the outline for the user to quickly fill out the inference, preprocessing, loss and load weights functions.
+A separate file named \textcolor{blue}{models\_preprocessing\_template.py} provides a template for defining the preprocessing pipeline.
+
+Note: 1) Any model defined must be placed within the models folder under a directory with the same name as that of the model,
+2) No explicit model class attributes can be added to a specific model. Instead, they must be added to the model\_abstract.py file and made available to any and all model definitions within \acro.
 The models that come standard with \acro~include the state-of-the-art activity recognition architectures I3D~\cite{}, C3D~\cite{}, ResNet50~\cite{}, and TSN~\cite{}.
-
-
-Functions of this model description submodule include defining the exact layers that compose the model, which preprocessing module to call, the loss formulation, and the default weights to load.
-All of these attributes of the model submodule are required to be implemented with a specific parameter and return value structure.
-To ease the implementation of all of these requirements, an automated model template generator has been added to \acro.
-
-
 
 \subsection{Checkpoint Submodule}
 \label{sec:checkpoint}
