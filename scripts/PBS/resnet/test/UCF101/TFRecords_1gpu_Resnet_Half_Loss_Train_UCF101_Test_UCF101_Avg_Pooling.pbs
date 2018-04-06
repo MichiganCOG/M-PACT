@@ -124,6 +124,7 @@ python test.py \
 --numVids 3783 \
 --split 1 \
 --baseDataPath /z/dat \
---fName testlist
+--fName testlist \
+--shuffleSeed 1
 
 echo "end"

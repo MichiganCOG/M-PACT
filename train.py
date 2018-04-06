@@ -611,7 +611,6 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             # END FOR
 
 	    total_params.append(params_array)
-
             curr_logger.add_scalar_value('tracked_training_variables/learning_rate', l_r, step=gs)
 
         # END WHILE
