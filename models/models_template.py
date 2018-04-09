@@ -3,8 +3,19 @@
 import tensorflow as tf
 import numpy      as np
 
-from models.abstract_model_class import Abstract_Model_Class
-from utils.layers_utils          import *
+# Try imports assuming regular framework structure
+try:
+    from models.models_abstract      import Abstract_Model_Class
+    from utils.layers_utils          import *
+
+# Try imports assuming call is coming from models/current_model/current_model.py
+except:
+    import sys
+    sys.path.append('../../')
+    from models.models_abstract import Abstract_Model_Class
+    from utils.layers_utils     import *
+
+# END TRY
 
 from default_preprocessing       import preprocess
 
@@ -14,7 +25,7 @@ class MODELNAME(Abstract_Model_Class):
     def __init__(self, **kwargs):
         """
         Args:
-            Pass all arguments on to parent class, you may not add additional arguments without modifying abstract_model_class.py and Models.py. Enter any additional initialization functionality here if desired.
+            Pass all arguments on to parent class, you may not add additional arguments without modifying abstract_model_class.py, Models.py, train.py, and test.py. Enter any additional initialization functionality here if desired.
         """
         super(MODELNAME, self).__init__(**kwargs)
 
@@ -22,7 +33,7 @@ class MODELNAME(Abstract_Model_Class):
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, batch_size, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
-            :inputs:       Input to model of shape [Frames x Height x Width x Channels]
+            :inputs:       Input to model of shape [BatchSize x Frames x Height x Width x Channels]
             :is_training:  Boolean variable indicating phase (TRAIN OR TEST)
             :input_dims:   Length of input sequence
             :output_dims:  Integer indicating total number of classes in final prediction
@@ -78,18 +89,18 @@ class MODELNAME(Abstract_Model_Class):
 
 
 
-#    def load_default_weights(self):
-#        """
-#        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
-#        """
-#
-#        ############################################################################
-#        # TODO: Add default model weights to models/weights/ and import them here  #
-#        #                          ( OPTIONAL )                                    #
-#        #                                                                          #
-#        # EX: return np.load('models/weights/model_weights.npy')                   #
-#        #                                                                          #
-#        ############################################################################
+    # def load_default_weights(self):
+    #     """
+    #     return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+    #     """
+    #
+    #     ############################################################################
+    #     # TODO: Add default model weights to models/weights/ and import them here  #
+    #     #                          ( OPTIONAL )                                    #
+    #     #                                                                          #
+    #     # EX: return np.load('models/weights/model_weights.npy')                   #
+    #     #                                                                          #
+    #     ############################################################################
 
 
 
@@ -119,20 +130,20 @@ class MODELNAME(Abstract_Model_Class):
 
 
 
-   """ Function to return loss calculated on given network """
-   def loss(self, logits, labels, loss_type):
-       """
-       Args:
+    """ Function to return loss calculated on given network """
+    def loss(self, logits, labels, loss_type):
+        """
+        Args:
            :logits:     Unscaled logits returned from final layer in model
            :labels:     True labels corresponding to loaded data
            :loss_type:  Allow for multiple losses that can be selected at run time. Implemented through if statements
-       """
+        """
 
-       ####################################################################################
-       #  TODO: ADD CUSTOM LOSS HERE, DEFAULT IS CROSS ENTROPY LOSS                       #
-       #                                                                                  #
-       #   EX: labels = tf.cast(labels, tf.int64)                                         #
-       #       cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, #
-       #                                                            logits=logits)        #
-       #        return cross_entropy_loss                                                 #
-       ####################################################################################
+        ####################################################################################
+        #  TODO: ADD CUSTOM LOSS HERE, DEFAULT IS CROSS ENTROPY LOSS                       #
+        #                                                                                  #
+        #   EX: labels = tf.cast(labels, tf.int64)                                         #
+        #       cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, #
+        #                                                            logits=logits)        #
+        #        return cross_entropy_loss                                                 #
+        ####################################################################################

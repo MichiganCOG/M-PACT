@@ -323,6 +323,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         data_path = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setup tensors for models
+        # input_data_tensor - [batchSize, inputDims, height, width, channels]
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, shuffle_seed, verbose)
 
         ############### TO DO: FIX THIS ASAP ########################
@@ -513,7 +514,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, names_tensor,
                                                                        learning_rate, model.get_track_variables()])
-            
+
             ################################################################################################################
 
             if verbose:
@@ -533,13 +534,13 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 if last_loss is None:
                     last_loss = sum(losses_tracker)/10
 
-                else:   
+                else:
                     difference_loss = last_loss - sum(losses_tracker)/10
                     last_loss = sum(losses_tracker)/10
-                    
+
                     if abs(difference_loss) < 0.001:
                         learning_rate/=10
-            
+
                     # END IF
 
                 # END IF
@@ -612,7 +613,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
 	    total_params.append(params_array)
 
-            curr_logger.add_scalar_value('tracked_training_variables/learning_rate', l_r, step=gs)
+            curr_logger.add_scalar_value('tracked_training_variables/learning_rate', float(l_r), step=gs)
 
         # END WHILE
 
@@ -686,4 +687,3 @@ if __name__=="__main__":
                 shuffle_seed        = args.shuffleSeed)
 
     # END IF
-

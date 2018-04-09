@@ -365,7 +365,7 @@ def dropout(input_tensor, training, rate):
     return tf.layers.dropout(input_tensor, training=training, rate=rate)
 
 
-def batch_normalization(input_tensor, training, name):
+def batch_normalization(input_tensor, training, name, trainable=True):
     """
     Args:
         :input_tensor:  Input tensor to be reshaped
@@ -375,7 +375,7 @@ def batch_normalization(input_tensor, training, name):
     Return:
         Batch normalized input tensor
     """
-    return tf.layers.batch_normalization(input_tensor, training=training, name=name)
+    return tf.layers.batch_normalization(input_tensor, training=training, name=name, trainable=trainable)
 
 
 def pad(input_tensor,

@@ -39,14 +39,66 @@ www.robots.ox.ac.uk/~vgg/research/very_deep/
 import tensorflow as tf
 import numpy      as np
 
-#slim = tf.contrib.slim
-
+# Imagenet mean rgb values
+# Used for normalization in models pretrained on imagenet
 _R_MEAN = 123.68
 _G_MEAN = 116.78
 _B_MEAN = 103.94
 
 RESIZE_SIDE_MIN = 256
 RESIZE_SIDE_MAX = 512
+
+
+def random_flip_left_right_clip(clip):
+    """Flips the entire clip horizontally with a 50% liklihood.
+    Args:
+    clip: a tensorflow variable clip of shape [frames, height, width, channels]
+    Returns:
+          a clip of the same shape as the input, possibly flipped.
+    """
+    to_flip = tf.random_uniform(dtype=tf.float32, minval=0, maxval=1, shape=np.asarray([1]))[0]
+    clip = tf.map_fn(lambda img: tf.cond(tf.greater_equal(to_flip, 0.5),
+                                    lambda: tf.image.flip_left_right(img),
+                                    lambda:tf.to_float(img)),
+                                    clip)
+    return clip
+
+def crop_clip(clip, offset_height, offset_width, crop_height, crop_width):
+    """Crops the given clip height and width using the provided offsets and sizes.
+    Args:
+    clip: a tensorflow variable clip of shape [frames, height, width, channels].
+    offset_height: a scalar tensor indicating the height offset.
+    offset_width: a scalar tensor indicating the width offset.
+    crop_height: the height of the cropped image.
+    crop_width: the width of the cropped image.
+    Returns:
+    the cropped clip.
+    """
+    clip = tf.map_fn(lambda img: crop(img, offset_height, offset_width, crop_height, crop_width), clip)
+    original_shape = tf.shape(clip)
+    cropped_shape = tf.stack([original_shape[0], crop_height, crop_width, original_shape[3]])
+    return tf.reshape(clip, cropped_shape)
+
+
+def random_crop_clip(clip, crop_height, crop_width):
+    """Crops the given clip height and width to the provided sizes using random offsets.
+    Args:
+    clip: a tensorflow variable clip of shape [frames, height, width, channels].
+    offset_height: a scalar tensor indicating the height offset.
+    offset_width: a scalar tensor indicating the width offset.
+    crop_height: the height of the cropped image.
+    crop_width: the width of the cropped image.
+    Returns:
+    the cropped clip.
+    """
+    original_shape = tf.shape(clip)
+    
+    offset_height = tf.random_uniform([], 0, tf.cast(original_shape[1] - crop_height, tf.float32))
+    offset_width = tf.random_uniform([], 0, tf.cast(original_shape[2] - crop_width, tf.float32))
+
+    clip = tf.map_fn(lambda img: crop(img, offset_height, offset_width, crop_height, crop_width), clip)
+    cropped_shape = tf.stack([original_shape[0], crop_height, crop_width, original_shape[3]])
+    return tf.reshape(clip, cropped_shape)
 
 
 def crop(image, offset_height, offset_width, crop_height, crop_width):
@@ -164,6 +216,45 @@ def random_crop(image_list, crop_height, crop_width):
 
   return [crop(image, offset_height, offset_width,
                 crop_height, crop_width) for image in image_list]
+
+def oversample(images, crop_dims):
+    """
+    This code is taken from:
+    https://github.com/LisaAnne/lisa-caffe-public/blob/lstm_video_deploy/python/caffe/io.py
+    Crop images into the four corners, center, and their mirrored versions.
+    In order to oversample within a tf.map_fn loop, first repeat each frame since
+    tf.map_fn requires indentical dimensions for input and output
+    EX from TSN default_preprocessing: output_data_tensor = tf.pad(tf.expand_dims(output_data_tensor, axis=1), [[0,0],[0,9],[0,0],[0,0],[0,0]])
+    Args:
+        :images:    Iterable [10*N x H x W x C] ndarray where N is a single frame repeated 10x
+        :crop_dims: List detailing final height and width of cropped frames.
+
+    Return:
+        :crops:     (10*N x H x W x C) ndarray of crops for number of inputs N.
+    """
+
+    image = tf.gather(images, 0)
+    crop_h = crop_dims[0]
+    crop_w = crop_dims[1]
+    offset_h = tf.subtract(image.shape[0].value, crop_h)
+    offset_w = tf.subtract(image.shape[1].value, crop_w)
+
+    crops = []
+
+    h_offsets = [0, offset_h]
+    w_offsets = [0, offset_w]
+
+    for h in h_offsets:
+        for w in w_offsets:
+            crops.append(crop(image, h, w, crop_h, crop_w))
+
+    crops.append(central_crop([image], crop_h, crop_w)[0])
+
+    # Mirror the crops
+    for i in range(len(crops)):
+        crops.append(tf.image.flip_left_right(crops[i]))
+
+    return tf.convert_to_tensor(crops)
 
 
 def central_crop(image_list, crop_height, crop_width):

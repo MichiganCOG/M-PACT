@@ -34,7 +34,7 @@ def gen_model_file(model):
     Arguments:
         :model: Name of the model to create a model file for
     """
-    template = open('models/model_template.py','r')
+    template = open('models/models_template.py','r')
     contents = template.read()
     template.close()
 

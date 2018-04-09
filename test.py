@@ -275,6 +275,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
+        # input_data_tensor - [batchSize, inputDims, height, width, channels]
         input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, verbose)
 
         ######### GPU list check block ####################
@@ -299,6 +300,12 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                                      seq_length,
                                      scope,
                                      return_layer = return_layer)[0]
+
+            # Logits shape: [batchSize, seqLength, outputDims] if not, reshape
+            logits_shape = logits.get_shape().as_list()
+            if logits_shape[0] != batch_size or logits_shape[1] != seq_length or logits_shape[2] != output_dims:
+                logits = tf.reshape(logits, [batch_size, seq_length, output_dims])
+
 
             # Logits
             softmax = tf.nn.softmax(logits)

@@ -137,54 +137,6 @@ def _add_tensor(data_dict, keys_list, data):
         # END IF
 
 
-
-
-def _assign_tensors_tsn(sess, curr_dict, tensor_name):
-    """
-    Function recursively assigns model parameters their values from a given dictionary
-    Args:
-        :sess:        Tensorflow session instance
-        :curr_dict:   Dictionary containing model parameter values
-        :tensor_name: String indicating name of tensor to be assigned values
-
-    Return:
-       Does not return anything
-    """
-    try:
-        if type(curr_dict) == type({}):
-            for key in curr_dict.keys():
-                _assign_tensors_tsn(sess, curr_dict[key], tensor_name+'/'+key)
-
-            # END FOR
-
-        else:
-            if ':' not in tensor_name:
-                tensor_name = tensor_name + ':0'
-
-            # END IF
-
-            #if 'weights' in tensor_name:
-            #    tensor_name = tensor_name.replace('weights', 'kernel')
-            if 'kernel' in tensor_name:
-                tensor_name = tensor_name.replace('kernel', 'weights')
-            if ('biases' not in tensor_name) and 'bias' in tensor_name:
-                tensor_name = tensor_name.replace('bias', 'biases')
-
-            # END IF
-
-            sess.run(tf.assign(tf.get_default_graph().get_tensor_by_name(tensor_name), curr_dict))
-            print tensor_name
-
-        # END IF
-
-    except:
-        if 'Momentum' not in tensor_name:
-            print "Notice: Tensor " + tensor_name + " could not be assigned properly. The tensors' default initializer will be used if possible. Verify the shape and name of the tensor."
-        #END IF
-
-    # END TRY
-
-
 def _assign_tensors(sess, curr_dict, tensor_name):
     """
     Function recursively assigns model parameters their values from a given dictionary
@@ -241,12 +193,8 @@ def initialize_from_dict(sess, data_dict, model_name):
     print 'Initializing model weights...'
     try:
         data_dict = data_dict.tolist()
-        if 'tsn' in model_name:
-            for key in data_dict.keys():
-                _assign_tensors_tsn(sess, data_dict[key], key)
-        else:
-            for key in data_dict.keys():
-                _assign_tensors(sess, data_dict[key], key)
+        for key in data_dict.keys():
+            _assign_tensors(sess, data_dict[key], key)
 
         # END FOR
 
