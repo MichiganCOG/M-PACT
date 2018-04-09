@@ -128,6 +128,6 @@ python train.py \
 --nEpochs 33 \
 --baseDataPath /z/dat \
 --saveFreq 1 \
---dropoutRate 1.0 \
+--dropoutRate 0.0 \
 --gradClipValue 100.0
 echo "end"

@@ -334,6 +334,32 @@ def smallest_size_at_least(height, width, smallest_side):
   new_width = tf.to_int32(width * scale)
   return new_height, new_width
 
+def largest_size_at_least(height, width, largest_side):
+  """Computes new shape with the largest side equal to `largest_side`.
+  Computes new shape with the smallest side equal to `largest_side` while
+  preserving the original aspect ratio.
+  Args:
+    height: an int32 scalar tensor indicating the current height.
+    width: an int32 scalar tensor indicating the current width.
+    largest_side: A python integer or scalar `Tensor` indicating the size of
+      the largest side after resize.
+  Returns:
+    new_height: an int32 scalar tensor indicating the new height.
+    new_width: and int32 scalar tensor indicating the new width.
+  """
+  largest_side = tf.convert_to_tensor(largest_side, dtype=tf.int32)
+
+  height = tf.to_float(height)
+  width  = tf.to_float(width)
+  largest_side = tf.to_float(largest_side)
+
+  scale = tf.cond(tf.less(height, width),
+                  lambda: largest_side / width,
+                  lambda: largest_side / height)
+  new_height = tf.to_int32(height * scale)
+  new_width = tf.to_int32(width * scale)
+
+  return new_height, new_width
 
 def resize(image, new_height, new_width):
   """Resize images
@@ -376,6 +402,29 @@ def aspect_preserving_resize(image, smallest_side):
   resized_image.set_shape([None, None, 3])
   return resized_image
 
+def aspect_preserving_resize_largest(image, largest_side):
+  """Resize images preserving the original aspect ratio.
+  Args:
+    image: A 3-D image `Tensor`.
+    largest_side: A python integer or scalar `Tensor` indicating the size of
+      the largest side after resize.
+  Returns:
+    resized_image: A 3-D tensor containing the resized image.
+  """
+  largest_side = tf.convert_to_tensor(largest_side, dtype=tf.int32)
+
+  shape  = tf.shape(image)
+  height = shape[0]
+  width  = shape[1]
+
+  new_height, new_width = largest_size_at_least(height, width, largest_side)
+  image = tf.expand_dims(image, 0)
+  resized_image = tf.image.resize_bilinear(image, [new_height, new_width],
+                                           align_corners=True)
+  resized_image = tf.squeeze(resized_image)
+  resized_image.set_shape([None, None, 3])
+
+  return resized_image
 
 def loop_video_with_offset(offset_tensor, input_data_tensor, offset_frames, frames, height, width, channel, footprint):
     """

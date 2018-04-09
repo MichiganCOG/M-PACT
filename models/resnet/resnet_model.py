@@ -8,10 +8,11 @@ import numpy      as np
 from models.models_abstract import Abstract_Model_Class
 from utils.layers_utils     import *
 
-from default_preprocessing import preprocess
-from cvr_preprocessing     import preprocess as preprocess_cvr
-from rr_preprocessing      import preprocess as preprocess_rr
-from sr_preprocessing      import preprocess as preprocess_sr
+from default_preprocessing       import preprocess
+from default_video_preprocessing import preprocess as preprocess_video
+from cvr_preprocessing           import preprocess as preprocess_cvr
+from rr_preprocessing            import preprocess as preprocess_rr
+from sr_preprocessing            import preprocess as preprocess_sr
 
 class ResNet(Abstract_Model_Class):
 
@@ -277,6 +278,9 @@ class ResNet(Abstract_Model_Class):
         elif self.preproc_method == 'sr':
             output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining, video_step)
 	    return output, alpha_tensor 
+
+        elif self.preproc_method == 'video':
+            return preprocess_video(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining)
 
         else:
             return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining)

@@ -15,6 +15,7 @@ _RESIZE_SIDE_MAX = 340
 def preprocess_for_train(image,
                          output_height,
                          output_width,
+                         to_flip, 
                          resize_side_min=_RESIZE_SIDE_MIN,
                          resize_side_max=_RESIZE_SIDE_MAX):
   """Preprocesses the given image for training.
@@ -39,7 +40,7 @@ def preprocess_for_train(image,
 
   image.set_shape([output_height, output_width, 3])
 
-  image = tf.image.random_flip_left_right(image)
+  image = tf.cond(tf.greater_equal(to_flip, 0.5), lambda: tf.image.flip_left_right(image), lambda:tf.to_float(image))
   image = tf.to_float(image)
 
   return mean_image_subtraction(image, [_R_MEAN, _G_MEAN, _B_MEAN])
@@ -66,7 +67,7 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
 
 
 
-def preprocess_image(image, output_height, output_width, is_training=False,
+def preprocess_image(image, output_height, output_width, to_flip, is_training=False,
                      resize_side_min=_RESIZE_SIDE_MIN,
                      resize_side_max=_RESIZE_SIDE_MAX):
   """Preprocesses the given image.
@@ -87,7 +88,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     A preprocessed image.
   """
   if is_training:
-    return preprocess_for_train(image, output_height, output_width,
+    return preprocess_for_train(image, output_height, output_width, to_flip,
                                 resize_side_min, resize_side_max)
   else:
     return preprocess_for_eval(image, output_height, output_width,
@@ -135,9 +136,12 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
     input_data_tensor = resample_input(input_data_tensor, sample_dims, footprint, 1.0)
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
+    
+    # Randomly flip entire video or not
+    to_flip = tf.random_uniform(dtype=tf.float32, minval=0, maxval=1, shape=np.asarray([1]))[0]
 
     # Preprocess data
-    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
+    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN, to_flip=to_flip), input_data_tensor)
 
     if istraining:
         padding_zeros     = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
