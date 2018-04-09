@@ -275,7 +275,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         data_path   = os.path.join(base_data_path, 'tfrecords_'+dataset, 'Split'+str(split), f_name)
 
         # Setting up tensors for models
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, shuffle_seed, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, 0, verbose)
 
         ######### GPU list check block ####################
 
