@@ -128,7 +128,7 @@ python train.py \
 --lr 0.001 \
 --nEpochs 30 \
 --saveFreq 1 \
---dropoutRate 0.0 \
+--dropoutRate 0.5 \
 --lossType half_loss
 
 

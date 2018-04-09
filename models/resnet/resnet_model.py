@@ -231,11 +231,13 @@ class ResNet(Abstract_Model_Class):
 
             layers['124'] = tf.reduce_mean(layers['123'], reduction_indices=[1,2], name='avg_pool')
 
-            layers['125'] = lstm(layers['124'], seq_length, feat_size=2048, cell_size=512)
+            layers['125'] = dropout(layers['124'], training=is_training, rate=0.9)
 
-            layers['126'] = dropout(layers['125'], training=is_training, rate=dropout_rate)
+            layers['126'] = lstm(layers['125'], seq_length, feat_size=2048, cell_size=512)
 
-            layers['logits'] = tf.expand_dims(fully_connected_layer(input_tensor=layers['126'], out_dim=output_dims, non_linear_fn=None, name='logits', weight_decay=weight_decay), 0)
+            layers['127'] = dropout(layers['126'], training=is_training, rate=dropout_rate)
+
+            layers['logits'] = tf.expand_dims(fully_connected_layer(input_tensor=layers['127'], out_dim=output_dims, non_linear_fn=None, name='logits', weight_decay=weight_decay), 0)
 
         # END WITH
 
