@@ -14,11 +14,11 @@ def preprocess_for_train(image, output_height, output_width, resize_height, resi
   Returns:
     A preprocessed image.
   """
-  image = resize(image, resize_height, resize_width)
   image = random_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
   image = tf.image.random_flip_left_right(image)
+  image = tf.image.rot90(image, 1)
   return image
 
 
@@ -33,10 +33,10 @@ def preprocess_for_eval(image, output_height, output_width, resize_height, resiz
   Returns:
     A preprocessed image.
   """
-  image = resize(image, resize_height, resize_width)
   image = central_crop([image], output_height, output_width)[0]
   image.set_shape([output_height, output_width, 3])
   image = tf.to_float(image)
+  image = tf.image.rot90(image, 1)
   return image
 
 
@@ -85,7 +85,9 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         Preprocessing input data and labels tensor
     """
 
-    _mean_image = np.load('models/c3d/crop_mean.npy')
+    _mean_image = np.load('models/weights/sport1m_train16_128_mean.npy')[0]
+    _mean_image = _mean_image.transpose(1,2,3,0)
+
 
     # Convert to BGR as used by the original authors
     input_data_tensor = input_data_tensor[...,::-1]
@@ -96,8 +98,11 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     input_data_tensor = resample_input(input_data_tensor, frames, frames, input_alpha)
 
-    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], 128, 171, is_training=istraining), input_data_tensor)
+    input_data_tensor = tf.map_fn(lambda img: resize(img, 128, 171), input_data_tensor)
 
     input_data_tensor = input_data_tensor - _mean_image[...,::-1].tolist()
+
+    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], 128, 171, is_training=istraining), input_data_tensor)
+
 
     return input_data_tensor
