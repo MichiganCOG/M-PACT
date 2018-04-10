@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn7:ppn=24:gpus=4    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=1:ppn=24:gpus=4    # nodes requested: Processor per node: gpus requested
 #PBS -M madantrg@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -124,13 +124,13 @@ python train.py \
 --expName resnet_half_loss_HMDB51 \
 --numVids 3570 \
 --split 1 \
---wd 0.0 \
+--wd 0.005 \
 --lr 0.001 \
 --nEpochs 30 \
 --saveFreq 1 \
 --dropoutRate 0.5 \
 --lossType half_loss \
---preprocMethod default_video
+--preprocMethod video
 
 
 echo "end"

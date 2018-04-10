@@ -124,7 +124,7 @@ python test.py \
 --numVids 3783 \
 --split 1 \
 --baseDataPath /z/dat \
---preprocMethod default_video \
+--preprocMethod video \
 --metricsMethod last_frame \
 --fName testlist
 
