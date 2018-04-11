@@ -124,9 +124,9 @@ python train.py \
 --expName resnet_half_loss_UCF101 \
 --numVids 9537 \
 --split 1 \
---wd 0.005 \
+--wd 0.0 \
 --lr 0.001 \
---nEpochs 10 \
+--nEpochs 11 \
 --saveFreq 1 \
 --lossType half_loss \
 --dropoutRate 0.5
