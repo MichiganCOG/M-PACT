@@ -49,7 +49,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]],
-                name='bn'+name+'_branch2a', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch2a', training=is_training)
 
         layers[layer_numbers[2]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[1]]),
                 filter_dims=[kernel_size, kernel_size, n_filters[1]], padding='SAME',
@@ -57,7 +57,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[3]] = batch_normalization(layers[layer_numbers[2]],
-                name='bn'+name+'_branch2b', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch2b', training=is_training)
 
         layers[layer_numbers[4]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[3]]),
                 filter_dims=[1,1,n_filters[2]], padding = 'VALID',
@@ -65,7 +65,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[5]] = batch_normalization(layers[layer_numbers[4]],
-                name='bn'+name+'_branch2c', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch2c', training=is_training)
 
         # Shortcuts
         layers[layer_numbers[6]] = conv_layer(input_tensor=input_layer,
@@ -75,7 +75,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[7]] = batch_normalization(layers[layer_numbers[6]],
-                name='bn'+name+'_branch1', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch1', training=is_training)
 
         # END OF CONV BLOCK
 
@@ -109,7 +109,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]],
-                name='bn'+name+'_branch2a', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch2a', training=is_training)
 
         layers[layer_numbers[2]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[1]]),
                 filter_dims=[kernel_size, kernel_size, n_filters[1]], padding='SAME',
@@ -117,7 +117,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[3]] = batch_normalization(layers[layer_numbers[2]],
-                name='bn'+name+'_branch2b', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch2b', training=is_training)
 
         layers[layer_numbers[4]] = conv_layer(input_tensor=tf.nn.relu(layers[layer_numbers[3]]),
                 filter_dims=[1,1,n_filters[2]], padding='VALID',
@@ -125,7 +125,7 @@ class ResNet(Abstract_Model_Class):
                 weight_decay = weight_decay, non_linear_fn=None)
 
         layers[layer_numbers[5]] = batch_normalization(layers[layer_numbers[4]],
-                name='bn'+name+'_branch2c', training=is_training, trainable=is_training)
+                name='bn'+name+'_branch2c', training=is_training)
 
         # END OF IDENTITY BLOCK
 
@@ -172,7 +172,7 @@ class ResNet(Abstract_Model_Class):
                     weight_decay = weight_decay, non_linear_fn=None)
 
             layers['2'] = batch_normalization(layers['1'],
-                    name='bn_conv1', training=False, trainable=False)
+                    name='bn_conv1', training=False)
 
             layers['3'] = max_pool_layer(tf.nn.relu(layers['2']),
                                          filter_dims=[3, 3], stride_dims=[2,2],
