@@ -465,7 +465,8 @@ Due to the large size that features can become over modern datasets with thousan
 
 \begin{table}[tp!]
 \begin{center}
-\caption{Mean recognition accuracies are shown for various SOTA action recognition models across split 1 of HMDB51 and UCF101. 
+\caption{Mean recognition accuracies are shown for various SOTA action recognition models across split 1 of HMDB51 and UCF101.
+Values marked with a (*) indicate that  
 Accuracies are reported for each baseline model and preprocessing technique combination.}
 \label{tab:model_results}
 \begin{tabular}{c|c|c|c||c|c}
@@ -473,9 +474,9 @@ Accuracies are reported for each baseline model and preprocessing technique comb
 \multirow{2}{*}{Base Model} & \multirow{2}{*}{Pretraining} & \multicolumn{2}{c||}{HMDB51} & \multicolumn{2}{c}{UCF101} \\\cline{3-6}
 & & Our Acc & Author Acc & Our Acc & Author Acc \\
 \hline
-C3D & Sports-1M & --.-- & 50.30 & --.-- & 82.30 \\
+C3D & Sports-1M & --.-- & 50.30 * & --.-- & 82.30 * \\
 \hline
-I3D & Kinetics & --.-- & 74.80 & --.-- & 95.60 \\
+I3D & Kinetics & --.-- & 74.30 * & --.-- & 95.1 * \\
 \hline
 TSN & ImageNet & --.-- & 54.40 & --.-- & 85.50 \\
 \hline
