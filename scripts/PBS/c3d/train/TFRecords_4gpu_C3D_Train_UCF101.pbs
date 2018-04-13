@@ -129,12 +129,13 @@ python train.py \
 --split 1 \
 --wd 0.0005 \
 --lr 0.0001 \
---nEpochs 20 \
+--nEpochs 10 \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \
 --verbose 1 \
---batchSize 7
+--batchSize 10 \
+--preprocMethod sport1m_mean
 
 
 echo "end"

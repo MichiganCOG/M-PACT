@@ -18,7 +18,6 @@ except:
 # END TRY
 
 from default_preprocessing       import preprocess
-from kyle_preprocessing          import preprocess  as kyle_preprocess
 
 class TSN(Abstract_Model_Class):
 
@@ -179,7 +178,7 @@ class TSN(Abstract_Model_Class):
        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
        """
 
-       return np.load('models/weights/tsn_pretrained_UCF101_reordered.npy')#bn_inception_rgb_init.npy')
+       return np.load('models/weights/tsn_BNInception_ImageNet_pretrained.npy')#tsn_pretrained_UCF101_reordered.npy')#bn_inception_rgb_init.npy')
 
 
 
@@ -200,10 +199,7 @@ class TSN(Abstract_Model_Class):
             :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
         """
 
-        if self.preproc_method == 'kyle':
-            return kyle_preprocess(input_data_tensor, frames, height, width, channel, size, label, istraining, self.num_segs, input_dims, self.input_alpha)
-        else:
-            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.num_segs, self.input_alpha)
+        return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.num_segs, self.input_alpha)
 
 
 
@@ -228,10 +224,11 @@ class TSN(Abstract_Model_Class):
 
 # Base testing setup to check if model loads
 if __name__=="__main__":
-    x = tf.placeholder(tf.float32, shape=(3, 60, 224, 224, 3))
+    batch_size = 128
+    x = tf.placeholder(tf.float32, shape=(batch_size, 3, 224, 224, 3))
     y = tf.placeholder(tf.int32, [51])
-    network = TSN(modelName='tsn', inputDims=60, outputDims=51, expName='tsn_test', numVids=3, batchSize=3, preprocMethod='default', clipLength=-1, numEpochs=1, numClips=-1, numGpus=1, train=0, modelAlpha=1, inputAlpha=1, dropoutRate=0.5, freeze=0, verbose=1)
-    XX =  network.inference(x, is_training=True, input_dims=60, output_dims=51, seq_length=20, batch_size=3, scope='my_scope')
+    network = TSN(modelName='tsn', inputDims=3, outputDims=51, expName='tsn_test', numVids=3570, batchSize=batch_size, preprocMethod='default', clipLength=-1, numEpochs=1, numClips=-1, numGpus=1, train=1, modelAlpha=1, inputAlpha=1, dropoutRate=0.8, freeze=0, verbose=1)
+    XX =  network.inference(x, is_training=True, input_dims=3, output_dims=51, seq_length=3, scope='my_scope')
     sess = tf.Session()
     init = tf.global_variables_initializer()
     sess.run(init)

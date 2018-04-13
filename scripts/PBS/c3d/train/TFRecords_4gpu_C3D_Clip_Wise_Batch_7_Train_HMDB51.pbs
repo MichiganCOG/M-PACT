@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_4gpu_C3D_Sport1M_Mean_Train_HMDB51     # Name of the job
+#PBS -N TFRecords_4gpu_C3D_Clip_Wise_Batch_7_Train_HMDB51     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -120,20 +120,20 @@ python train.py \
 --outputDims 51 \
 --seqLength 1 \
 --size 112  \
---expName c3d_clip_wise_preproc_HMDB51 \
+--expName c3d_clip_wise_b7_lr003_HMDB51 \
 --numClips 5 \
 --clipLength 16 \
 --clipOffset random \
 --numVids 3570 \
 --split 1 \
 --wd 0.0005 \
---lr 0.0001 \
---nEpochs 21 \
+--lr 0.003 \
+--nEpochs 20 \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \
 --verbose 1 \
---batchSize 10 \
+--batchSize 7 \
 --preprocMethod sport1m_mean
 
 

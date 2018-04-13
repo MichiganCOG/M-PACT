@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.python.training import queue_runner
 
 
-def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, shuffle_seed=0, verbose=True):
+def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, preproc_debugging=0, shuffle_seed=0, verbose=True):
     """
     Function load dataset, setup queue and read data into queue
     Args:
@@ -40,31 +40,44 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     if verbose:
         print "Number of records available: ", number_of_tfrecords
 
+    # END IF
+
     # Create Queue which will read in videos num_gpus at a time (Queue seeded for repeatability of experiments)
     tfrecord_file_queue = tf.train.string_input_producer(filenames, shuffle=istraining, name='file_q', seed=shuffle_seed)
 
-    tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
+    # Errors occurring in a model's preprocessing function are not properly traced back when using 'clip_q'.
+    # If an error occurs stating that "fifo_queue has insufficient elements", then set '--preprocDebugging 1'
+    # For debugging, a batch_size other than 1 will cause instability
+    if preproc_debugging:
+        input_data_tensor, labels_tensor, names_tensor, video_step_tensor, alpha_tensor = _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step)
 
-    # Number of threads to be used
-    thread_count = 1
+    else:
+        tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
 
-    # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
-    clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[],[]])
+        # Number of threads to be used
+        thread_count = 1
 
-    # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
-    enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step))
+        # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
+        clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[],[]])
 
-    # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
-    qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*thread_count)
-    queue_runner.add_queue_runner(qr)
+        # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
+        enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step))
 
-    # Dequeue the required number of clips so that each gpu contains batch_size clips
-    input_data_tensor, labels_tensor, names_tensor, video_step_tensor, alpha_tensor = clip_q.dequeue_many(num_gpus*batch_size)
+        # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
+        qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*thread_count)
+        queue_runner.add_queue_runner(qr)
+
+        # Dequeue the required number of clips so that each gpu contains batch_size clips
+        input_data_tensor, labels_tensor, names_tensor, video_step_tensor, alpha_tensor = clip_q.dequeue_many(num_gpus*batch_size)
+
+    # END IF
 
     # Track scalar value defined in a models preprocessing function in a class variable called 'store_alpha'
     if hasattr(model, 'store_alpha'):
         model.store_alpha = alpha_tensor
         model.add_track_variables('Parameterization_Variables', model.store_alpha)
+
+    # END IF
 
     return input_data_tensor, labels_tensor, names_tensor
 

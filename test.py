@@ -152,10 +152,16 @@ parser.add_argument('--preprocMethod', action='store', default='default',
         help = 'Which preprocessing method to use (default, cvr, rr, sr are options for existing models)')
 
 parser.add_argument('--randomInit', action='store', type=int, default=0,
-        help = 'Randomly initialize model weights, not loading from any files (deafult False)')
+        help = 'Randomly initialize model weights, not loading from any files (Default 0)')
 
 parser.add_argument('--avgClips', action='store', type=int, default=0,
-        help = 'Boolean indicating whether to average predictions across clips')
+        help = 'Boolean indicating whether to average predictions across clips (Default 0)')
+
+parser.add_argument('--useSoftmax', action='store', type=int, default=1,
+        help = 'Boolean indicating whether to apply softmax to the inference of the model (Default 1)')
+
+parser.add_argument('--preprocDebugging', action='store', type=int, default=0,
+        help = 'Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging (Default 0)')
 
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
@@ -192,7 +198,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    verbose = args.verbose)
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips, use_softmax, preproc_debugging):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -223,7 +229,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :gpu_list:           List of GPU IDs to be used
         :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
         :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
-        :avg_clips:          Boolean indicating whether to average predictions across clips
+        :avg_clips:          Binary boolean indicating whether to average predictions across clips
+        :use_softmax:        Binary boolean indicating whether to apply softmax to the inference of the model
+        :preproc_debugging:  Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging (Default 0)
 
     Returns:
         Does not return anything
@@ -276,7 +284,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Setting up tensors for models
         # input_data_tensor - [batchSize, inputDims, height, width, channels]
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, 0, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, preproc_debugging, 0, verbose)
 
         ######### GPU list check block ####################
 
@@ -303,12 +311,15 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
             # Logits shape: [batchSize, seqLength, outputDims] if not, reshape
             logits_shape = logits.get_shape().as_list()
-            if logits_shape[0] != batch_size or logits_shape[1] != seq_length or logits_shape[2] != output_dims:
+            if (logits_shape[0] != batch_size or logits_shape[1] != seq_length or logits_shape[2] != output_dims) and return_layer[0] == 'logits':
                 logits = tf.reshape(logits, [batch_size, seq_length, output_dims])
 
+            # END IF
 
-            # Logits
-            softmax = tf.nn.softmax(logits)
+            if use_softmax:
+                logits = tf.nn.softmax(logits)
+
+            # END IF
 
         # END WITH
 
@@ -366,7 +377,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         ########################################## Testing loop block ################################################################
 
         while videos_loaded <= num_vids:
-            output_predictions, labels, names = sess.run([softmax, labels_tensor, names_tensor])
+            output_predictions, labels, names = sess.run([logits, labels_tensor, names_tensor])
 
             if avg_clips:
                 output_predictions = np.array([np.mean(output_predictions, 0)])
@@ -439,7 +450,9 @@ if __name__=="__main__":
                 gpu_list          = args.gpuList,
                 preproc_method    = args.preprocMethod,
                 random_init       = args.randomInit,
-                avg_clips         = args.avgClips)
+                avg_clips         = args.avgClips,
+                use_softmax       = args.useSoftmax,
+                preproc_debugging = args.preprocDebugging)
 
     # END IF
 

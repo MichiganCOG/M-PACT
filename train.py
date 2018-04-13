@@ -151,6 +151,9 @@ parser.add_argument('--randomInit', action='store', type=int, default=0,
 parser.add_argument('--shuffleSeed', action='store', type=int, default=0,
         help = 'Seed integer for random shuffle of files in load_dataset function')
 
+parser.add_argument('--preprocDebugging', action='store', type=int, default=0,
+        help = 'Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging (Default 0)')
+
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
 
@@ -230,7 +233,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed, preproc_debugging):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -268,6 +271,8 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :lr_values:          List of lr multipliers to learning_rate_init at boundaries mentioned in lr_boundaries
         :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
         :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
+        :preproc_debugging:  Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging (Default 0)
+
     Returns:
         Does not return anything
     """
@@ -324,7 +329,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Setup tensors for models
         # input_data_tensor - [batchSize, inputDims, height, width, channels]
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, shuffle_seed, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, preproc_debugging, shuffle_seed, verbose)
 
         ############### TO DO: FIX THIS ASAP ########################
         if ((batch_size == 1) and (num_clips==1)):
@@ -544,8 +549,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                     # END IF
 
                 # END IF
+
                 if len(losses_tracker) == 10:
                     losses_tracker = []
+
+                # END IF
 
             # END IF
 
@@ -684,6 +692,7 @@ if __name__=="__main__":
                 grad_clip_value     = args.gradClipValue,
                 preproc_method      = args.preprocMethod,
                 random_init         = args.randomInit,
-                shuffle_seed        = args.shuffleSeed)
+                shuffle_seed        = args.shuffleSeed,
+                preproc_debugging   = args.preprocDebugging)
 
     # END IF

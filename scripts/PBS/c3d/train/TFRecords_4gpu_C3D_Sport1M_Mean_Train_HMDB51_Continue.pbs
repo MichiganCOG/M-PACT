@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#PBS -N TFRecords_4gpu_C3D_Sport1M_Mean_Train_HMDB51     # Name of the job
+#PBS -N TFRecords_4gpu_C3D_Sport1M_Mean_Train_HMDB51_Continue     # Name of the job
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
@@ -115,7 +115,7 @@ python train.py \
 --numGpus 4 \
 --dataset HMDB51 \
 --train 1 \
---load 0 \
+--load 1 \
 --inputDims 16 \
 --outputDims 51 \
 --seqLength 1 \
@@ -128,7 +128,7 @@ python train.py \
 --split 1 \
 --wd 0.0005 \
 --lr 0.0001 \
---nEpochs 21 \
+--nEpochs 20 \
 --baseDataPath /z/dat \
 --fName trainlist \
 --saveFreq 1 \

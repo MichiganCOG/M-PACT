@@ -74,8 +74,8 @@ def crop_clip(clip, offset_height, offset_width, crop_height, crop_width):
     Returns:
     the cropped clip.
     """
-    clip = tf.map_fn(lambda img: crop(img, offset_height, offset_width, crop_height, crop_width), clip)
     original_shape = tf.shape(clip)
+    clip = tf.map_fn(lambda img: crop(img, offset_height, offset_width, crop_height, crop_width), clip)
     cropped_shape = tf.stack([original_shape[0], crop_height, crop_width, original_shape[3]])
     return tf.reshape(clip, cropped_shape)
 
@@ -92,7 +92,7 @@ def random_crop_clip(clip, crop_height, crop_width):
     the cropped clip.
     """
     original_shape = tf.shape(clip)
-    
+
     offset_height = tf.random_uniform([], 0, tf.cast(original_shape[1] - crop_height, tf.float32))
     offset_width = tf.random_uniform([], 0, tf.cast(original_shape[2] - crop_width, tf.float32))
 
@@ -102,42 +102,44 @@ def random_crop_clip(clip, crop_height, crop_width):
 
 
 def crop(image, offset_height, offset_width, crop_height, crop_width):
-  """Crops the given image using the provided offsets and sizes.
-  Note that the method doesn't assume we know the input image size but it does
-  assume we know the input image rank.
-  Args:
+    """Crops the given image using the provided offsets and sizes.
+    Note that the method doesn't assume we know the input image size but it does
+    assume we know the input image rank.
+    Args:
     image: an image of shape [height, width, channels].
     offset_height: a scalar tensor indicating the height offset.
     offset_width: a scalar tensor indicating the width offset.
     crop_height: the height of the cropped image.
     crop_width: the width of the cropped image.
-  Returns:
+    Returns:
     the cropped (and resized) image.
-  Raises:
+    Raises:
     InvalidArgumentError: if the rank is not 3 or if the image dimensions are
       less than the crop size.
-  """
-  original_shape = tf.shape(image)
+    """
+    original_shape = tf.shape(image)
 
-  rank_assertion = tf.Assert(
-      tf.equal(tf.rank(image), 3),
-      ['Rank of image must be equal to 3.'])
-  with tf.control_dependencies([rank_assertion]):
-    cropped_shape = tf.stack([crop_height, crop_width, original_shape[2]])
+    rank_assertion = tf.Assert(
+        tf.equal(tf.rank(image), 3),
+        ['Rank of image must be equal to 3.'])
 
-  size_assertion = tf.Assert(
-      tf.logical_and(
-          tf.greater_equal(original_shape[0], crop_height),
-          tf.greater_equal(original_shape[1], crop_width)),
-      ['Crop size greater than the image size.'])
+    with tf.control_dependencies([rank_assertion]):
+        cropped_shape = tf.stack([crop_height, crop_width, original_shape[2]])
 
-  offsets = tf.to_int32(tf.stack([offset_height, offset_width, 0]))
+    size_assertion = tf.Assert(
+        tf.logical_and(
+            tf.greater_equal(original_shape[0], crop_height),
+            tf.greater_equal(original_shape[1], crop_width)),
+        ['Crop size greater than the image size.'])
 
-  # Use tf.slice instead of crop_to_bounding box as it accepts tensors to
-  # define the crop size.
-  with tf.control_dependencies([size_assertion]):
-    image = tf.slice(image, offsets, cropped_shape)
-  return tf.reshape(image, cropped_shape)
+    offsets = tf.to_int32(tf.stack([offset_height, offset_width, 0]))
+
+    # Use tf.slice instead of crop_to_bounding box as it accepts tensors to
+    # define the crop size.
+    with tf.control_dependencies([size_assertion]):
+        image = tf.slice(image, offsets, cropped_shape)
+
+    return tf.reshape(image, cropped_shape)
 
 
 def random_crop(image_list, crop_height, crop_width):
