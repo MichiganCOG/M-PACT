@@ -8,11 +8,11 @@ import numpy      as np
 from models.models_abstract import Abstract_Model_Class
 from utils.layers_utils     import *
 
-from default_preprocessing       import preprocess
-from default_video_preprocessing import preprocess as preprocess_video
-from cvr_preprocessing           import preprocess as preprocess_cvr
-from rr_preprocessing            import preprocess as preprocess_rr
-from sr_preprocessing            import preprocess as preprocess_sr
+from default_preprocessing import preprocess
+from video_preprocessing   import preprocess as preprocess_video
+from cvr_preprocessing     import preprocess as preprocess_cvr
+from rr_preprocessing      import preprocess as preprocess_rr
+from sr_preprocessing      import preprocess as preprocess_sr
 
 class ResNet(Abstract_Model_Class):
 

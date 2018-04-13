@@ -3,7 +3,7 @@
 #PBS -j oe                             # Join output and error in single file
 #PBS -l walltime=500:00:00             # walltime requested
 #PBS -l mem=10Gb                       # memory requested
-#PBS -l nodes=lgn3:ppn=24:gpus=4    # nodes requested: Processor per node: gpus requested
+#PBS -l nodes=1:ppn=24:gpus=4    # nodes requested: Processor per node: gpus requested
 #PBS -M madantrg@umich.edu      #  send email to user@umich.edu
 #PBS -m abe                     # send email on abort, begin and end
 #PBS -V                         # Pass current environment variables to the script
@@ -126,9 +126,9 @@ python train.py \
 --split 1 \
 --wd 0.0 \
 --lr 0.001 \
---nEpochs 10 \
+--nEpochs 11 \
 --saveFreq 1 \
 --lossType half_loss \
---dropoutRate 0.0
+--dropoutRate 0.5
 
 echo "end"

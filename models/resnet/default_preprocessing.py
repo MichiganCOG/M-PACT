@@ -3,8 +3,6 @@ import numpy      as np
 
 from utils.preprocessing_utils import *
 
-#slim = tf.contrib.slim
-
 _R_MEAN = 123.68
 _G_MEAN = 116.78
 _B_MEAN = 103.94
@@ -15,8 +13,7 @@ _RESIZE_SIDE_MAX = 340
 def preprocess_for_train(image,
                          output_height,
                          output_width,
-                         resize_side_min=_RESIZE_SIDE_MIN,
-                         resize_side_max=_RESIZE_SIDE_MAX):
+                         resize_side=_RESIZE_SIDE_MIN):
   """Preprocesses the given image for training.
   Note that the actual resizing scale is sampled from
     [`resize_size_min`, `resize_size_max`].
@@ -31,10 +28,7 @@ def preprocess_for_train(image,
   Returns:
     A preprocessed image.
   """
-  resize_side = tf.random_uniform(
-      [], minval=resize_side_min, maxval=resize_side_max+1, dtype=tf.int32)
-
-  image = aspect_preserving_resize(image, resize_side_min)
+  image = aspect_preserving_resize(image, resize_side)
   image = random_crop([image], output_height, output_width)[0]
 
   image.set_shape([output_height, output_width, 3])
@@ -88,7 +82,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
   """
   if is_training:
     return preprocess_for_train(image, output_height, output_width,
-                                resize_side_min, resize_side_max)
+                                resize_side_min)
   else:
     return preprocess_for_eval(image, output_height, output_width,
                                resize_side_min)
@@ -117,6 +111,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     if istraining:
         footprint = 125 
         sample_dims = input_dims/2
+
     else:
         footprint = 250
         sample_dims = input_dims

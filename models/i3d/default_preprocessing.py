@@ -29,8 +29,8 @@ def preprocess_for_train(image,
     A preprocessed image.
   """
   image = aspect_preserving_resize(image, resize_side_min)
-  #image = random_crop([image], output_height, output_width)[0]
-  image = tf.random_crop(image, size=[output_height, output_width, 3])
+  image = random_crop([image], output_height, output_width)[0]
+  #image = tf.random_crop(image, size=[output_height, output_width, 3])
 
   image.set_shape([output_height, output_width, 3])
 
@@ -119,7 +119,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     else:
         footprint   = 250
-        sample_dims = 79
+        sample_dims = 250#79
     #Training: input_dims == 64
     #Testing:  input_dims == 79
 
@@ -129,8 +129,8 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # Ensure that sufficient frames exist in input to extract 250 frames (assuming a 5 sec temporal footprint)
     temporal_offset   = tf.cond(tf.greater(frames, footprint), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - footprint + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
 
-    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, footprint), 
-                                lambda: loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint),
+    input_data_tensor = tf.cond(tf.less(frames, footprint), 
+                                lambda: loop_video_with_offset(input_data_tensor, input_data_tensor, frames, frames, height, width, channel, footprint),
                                 lambda: input_data_tensor[temporal_offset:temporal_offset + footprint, :, :, :])
 
     # Remove excess frames after looping to reduce to footprint size

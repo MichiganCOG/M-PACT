@@ -27,7 +27,7 @@ class I3D(Abstract_Model_Class):
         super(I3D, self).__init__(**kwargs)
 
 
-    def _unit_3d(self, layer_numbers, input_layer, kernel_size=(1,1,1,1), stride=(1,1,1), activation_fn=tf.nn.relu, use_batch_norm=True, use_bias=False, is_training=True, name='unit_3d'):
+    def _unit_3d(self, layer_numbers, input_layer, kernel_size=(1,1,1,1), stride=(1,1,1), activation_fn=tf.nn.relu, use_batch_norm=True, use_bias=False, is_training=True, name='unit_3d', freeze=False):
         """
         Args:
             :layer_numbers:   List detailing the connecting layer indices
@@ -47,10 +47,10 @@ class I3D(Abstract_Model_Class):
 
         layers = {}
         
-        layers[layer_numbers[0]] = conv3d_layer(input_tensor = input_layer, filter_dims = kernel_size, name = 'RGB/inception_i3d/' + name + '/conv_3d', stride_dims = stride, non_linear_fn = None, use_bias=use_bias) 
+        layers[layer_numbers[0]] = conv3d_layer(input_tensor = input_layer, filter_dims = kernel_size, name = 'RGB/inception_i3d/' + name + '/conv_3d', stride_dims = stride, non_linear_fn = None, use_bias=use_bias, trainable=freeze) 
 
         if use_batch_norm:
-            layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]], training = is_training, name = 'RGB/inception_i3d/' + name + '/batch_norm')  
+            layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]], training = is_training, name = 'RGB/inception_i3d/' + name + '/batch_norm', trainable=freeze)  
 
             if activation_fn is not None:
                 layers[layer_numbers[2]] = activation_fn(layers[layer_numbers[1]])
@@ -432,7 +432,7 @@ class I3D(Abstract_Model_Class):
             
             layers['193'] = dropout(layers['192'], rate=dropout_rate, training=is_training)
 
-            layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='RGB/inception_i3d/Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False))
+            layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='RGB/inception_i3d/Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False, freeze=True))
             
             layers['logits'] = tf.expand_dims(tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1), 1)
 
