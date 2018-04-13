@@ -36,7 +36,7 @@
 \newcommand{\model}{\textbf{Model submodule}}
 \newcommand{\checkpoint}{\textbf{Checkpoint submodule}}
 \newcommand{\metrics}{\textbf{Metrics submodule}}
-\newcommand{\data}{\textbf{Data Input Block}}
+\newcommand{\data}{\textbf{Input Data Block}}
 \newcommand{\exec}{\textbf{Execution Block}}
 
 \maketitle
@@ -95,18 +95,18 @@ an input pipeline that condenses the loading and processing of videos into a set
 The ability to convert models trained in another language to work with this framework using only a common NumPy structure.
 layers and preprocessing utils 
 
-
-
-
-\section{Overview of \acro}
-\label{sec:overview}
-
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.8\textwidth]{images/overview.pdf}
 \caption{Illustration of the two main components of \acro}
 \label{fig:overview}
 \end{figure}
+
+
+\section{Overview of \acro}
+\label{sec:overview}
+
+
 
 \acro~is comprised of two main components, 1) the \textbf{Input Data Block}, and 2) the \textbf{Execution Block}, as shown in Fig.~\ref{fig:overview}.
 The pipeline contained within the \textbf{Input Data Block} can be divided into three simple stages,
@@ -132,7 +132,7 @@ The three stages of the \textbf{Input Data Block}, reading video data, extractin
 The input pipeline is structured around two separate queues, one queue for storing file names of all tfrecords in the specified dataset and another queue for storing processed clips waiting to be passed to the model.
 During runtime, the \texttt{\textcolor{ForestGreen}{video\_file\_queue}} gets filled with all available tfrecords filenames in a given dataset, which then get dequeued one by one.
 The video corresponding to a dequeued file name gets loaded into the system and broken down into clips as described in Sec.~\ref{sec:extractclips} and Fig.~\ref{fig:extract_clips}.
-Each clip then gets individually preprocessed according to a set of user defined steps as described in Sec.~\ref{sec:modeldesc}.
+Each clip then gets individually preprocessed according to a set of user defined steps as described in Sec.~\ref{sec:modeldefblock}.
 The processed queues then get loaded into the \texttt{\textcolor{ForestGreen}{clips\_queue}} so that exactly one \texttt{\textcolor{ForestGreen}{batch\_size}} of clips is available to be loaded into the model.}
 \label{fig:ip_block}
 \end{figure}
@@ -168,17 +168,17 @@ In addition to the options shown in Fig.~\ref{fig:extract_clips}, \acro~also pro
 \caption{This figure shows the varying ways that a video can be broken into clips.
 By default the entire video is passed directly on to the user defined preprocessing without any modifications.
 A variable number of clips can be extracted from a video if only the \texttt{\textcolor{ForestGreen}{clip\_length}} parameter is given.
-Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}} is critical
+Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}y} is critical.
+Alternatively, a set number of clips of a certain length can be extracted from every video using the \texttt{\textcolor{ForestGreen}{num\_clips}} parameter.
+If a video does not contain enough frames to extract the requested number of clips, the video will be looped until the necessary frame count is reached.
+There also exists an \texttt{\textcolor{ForestGreen}{offset}} parameter which can be set to randomly modify where from the beginning of the video the function begins to extract clips. 
+The \texttt{\textcolor{ForestGreen}{stride}}  parameter can be used to set a number of frames that will be common between sequential clips.
+This \texttt{\textcolor{ForestGreen}{stride}} parameter can be set to a negative value to skip a set number of frames between sequential clips.
 }
 \label{fig:extract_clips}
 \end{figure}
 
 
-\subsection{\textcolor{red}{Preprocess clips}}
-\label{sec:preprocessclips}
-Activity recognition models employ a number of various preprocessing methods on a frame or clip-based level often used for data augmentation.
-These can include frame-wise cropping, flipping, and resizing, or clip-wise cropping, flipping, temporal offsets, resampling, looping, and more.
-\acro~includes implementations of all of these options which can easily be added to a model's preprocessing file.
 The desired preprocessing file for a model can be defined within the \textbf{Model Submodule} and will be used automatically in the \textbf{Input Data Block} after a video has been broken down into clips.
 Preprocessed clips can significantly vary in shape when compared to the input video.
 Any change in frame height, width, or number of frames is allowed as long as clips are not broken down further.
@@ -190,6 +190,66 @@ The enqueue is simply canceled and an error will occur when the dequeue attempts
 This effect occurs within the \texttt{\textcolor{ForestGreen}{clips\_q}} if an error occurs in the user defined preprocessing submodule.
 In order to allow proper debugging of the preprocessing submodule, the argument \texttt{\textcolor{ForestGreen}{preprocDebugging}} is available to bypass the \texttt{\textcolor{ForestGreen}{clips\_q}} and see any error tracebacks.
 Since the queue used to store clips is removed, the requirement is set that \texttt{\textcolor{ForestGreen}{batch\_size}} must equal \texttt{\textcolor{ForestGreen}{num\_clips}} while debugging.
+
+
+
+\section{Model Definition Block}
+\label{sec:modeldefblock}
+
+\begin{figure}[b!]
+\centering
+\includegraphics[width=\columnwidth]{images/model_submodule.pdf}
+\caption{}
+\label{fig:model_submodule}
+\end{figure}
+
+
+\subsection{Preprocessing}
+The class definition of a model within \acro~can be divided into four main components as shown in Fig.~\ref{fig:model_submodule}.
+Preprocessing is the first module in the \model that gets used within \data.
+Activity recognition models employ a number of various preprocessing methods on a frame or clip-based level often used for data augmentation.
+These can include frame-wise cropping, flipping, and resizing, or clip-wise cropping, flipping, temporal offsets, resampling, looping, and more.
+In keeping with the modular design paradigm, we use individual functions to define each variant of the preprocessing pipeline.
+By keeping each variant within its own file, marked with the suffix ``\textcolor{blue}{\_preprocessing.py}'', we increase their reusability and ensure debugging them is easy.
+Within the class definition of a model, multiple preprocessing pipelines can be included using a simple \textit{if-else} construct.
+The expected final product from any preprocessing function is the complete preprocessed input data that needs to be passed into a network's input layer.
+
+
+
+
+\subsection{Model Architecture}
+The definition of a model's input layer and the subsequent layers that make up the model's network architecture should be present within the \textcolor{red}{inference} function.
+The layers used must strictly be called from within the set of definitions provided within the \textcolor{blue}{layer\_utils} file.
+This ensures that layer definitions are not specific to any network and become available to all models defined within \acro.
+Further, it is essential that the inference function returns the outcome of any and all desired layers from within the defined network.
+Any accompanying functions to help quickly and/or recursively define a network can be added outisde of the inference function.
+
+
+\subsection{Loss and Loading Weights}
+As a minor deviation from standard practices, we attach the definition of a loss to the model definition instead of the main training file.
+We do this to avoid cluttering and increasing the complexity of the main training file.
+Thus, a prime requirement within any model definition is the implementation of a loss function, with the expected return from this function being the final loss value.
+To add further flexibility in using multiple losses with a single model, the basic loss function can alternatively be overloaded to call different losses using the internally defined \texttt{\textcolor{ForestGreen}{loss\_type}} keyword.
+
+The final and optional component of any model definition within \acro~is the definition of the \textcolor{red}{load\_default\_weights} function.
+This function is defined to ensure that a predetermined set of weights can be loaded into a network's layers.
+The explicit rules required to define the layer names and ensure their respective weights can be assigned are provided in Section~\ref{sec:checkpoint}.
+The final values returned by this function are the parameter weights loaded from an external file.
+
+\subsection{Automatic Template Generation}
+Given that the focus of \acro~is to help the end-user quickly define and integrate a model to the framework, we provide a template file named \textcolor{blue}{models\_template.py} which provides the outline for the user to quickly fill out the inference, preprocessing, loss and load weights functions.
+A separate file named \textcolor{blue}{models\_preprocessing\_template.py} provides an outline of the necessary function to defining the preprocessing pipeline.
+Once a model has been completely defined, it is automatically imported into the framework through a recursive call strategy.
+To quickly track and log a model class variable an inbuilt dictionary named \texttt{\textcolor{ForestGreen}{track\_variables}} is available.
+Adding any pre-defined variable name and graph title allows the logging of the desired variable on tensorboard.
+
+Note: 1) Any model defined must be placed within the models folder under a directory with the same name as that of the model,
+2) The actual model file must be named with a suffix ``\textcolor{blue}{\_model}''.
+2) No explicit model class attributes can be added to a specific model. Instead, they must be added to the \textcolor{blue}{model\_abstract.py} file and made available to any and all model definitions within \acro.
+
+The models that come standard with \acro~include the state-of-the-art activity recognition architectures I3D~\cite{}, C3D~\cite{}, ResNet50~\cite{}, and TSN~\cite{}.
+
+
 
 
 \section{Execution Block}
@@ -205,7 +265,7 @@ An algorithmic overview of each phase, followed by a detailed description of the
 \label{fig:exec_block}
 \end{figure}
 
-\subsection{Training: Algorithmic flow of processes}
+\subsection{Training: Flow of processes}
 \label{sec:training}
 Training, within the context of the execution block, follows the process flow outlined in Alg.~\ref{}.
 The beginning of every training phase is associated with the selection and set up of a model.
@@ -263,84 +323,9 @@ The main operation that gets executed within each iteration is the training oper
 It is important to note that during the setup of the experiment, \acro~ offers adaptive learning rate control which steps down the learning rate when the loss plateaus.
 The repeated application of train\_op forms the most crucial and final step in the training process flow.
 
-\subsection{Model Description Submodule}
-\label{sec:modeldesc}
-\begin{figure}[b!]
-\centering
-\includegraphics[width=\columnwidth]{images/model_submodule.pdf}
-\caption{}
-\label{fig:model_submodule}
-\end{figure}
-
-The class definition of a model within \acro~can be divided into four main components as shown in Fig.~\ref{}.
-Preprocessing is the first module in the \model that gets used within \data.
-In keeping with the modular design paradigm, we use individual functions to define each variant of the preprocessing pipeline.
-By keeping each variant within its own file, marked with the suffix ``\textcolor{blue}{\_preprocessing.py}'', we increase their reusability and ensure debugging them is easy.
-Within the class definition of a model, multiple preprocessing pipelines can be included using a simple \textit{if-else} construct.
-The expected final product from any preprocessing function is the complete preprocessed input data that needs to be passed into a network's input layer.
-
-The definition of a model's input layer and the subsequent layers that make up the model's network architecture should be present within the \textcolor{red}{inference} function.
-The layers used must strictly be called from within the set of definitions provided within the \textcolor{blue}{layer\_utils} file.
-This ensures that layer definitions are not specific to any network and become available to all models defined within \acro.
-Further, it is essential that the inference function returns the outcome of any and all desired layers from within the defined network.
-Any accompanying functions to help quickly and/or recursively define a network can be added outisde of the inference function.
 
 
-As a minor deviation from standard practices, we attach the definition of a loss to the model definition instead of the main training file.
-We do this to avoid cluttering and increasing the complexity of the main training file.
-Thus, a prime requirement within any model definition is the implementation of a loss function, with the expected return from this function being the final loss value.
-To add further flexibility in using multiple losses with a single model, the basic loss function can alternatively be overloaded to call different losses using the internally defined \texttt{\textcolor{ForestGreen}{loss\_type}} keyword.
-
-The final and optional component of any model definition within \acro~is the definition of the \textcolor{red}{load\_default\_weights} function.
-This function is defined to ensure that a predetermined set of weights can be loaded into a network's layers.
-The explicit rules required to define the layer names and ensure their respective weights can be assigned are provided in Section~\ref{sec:checkpoint}.
-The final values returned by this function are the parameter weights loaded from an external file.
-
-Given that the focus of \acro~is to help the end-user quickly define and integrate a model to the framework, we provide a template file named \textcolor{blue}{models\_template.py} which provides the outline for the user to quickly fill out the inference, preprocessing, loss and load weights functions.
-A separate file named \textcolor{blue}{models\_preprocessing\_template.py} provides an outline of the necessary function to defining the preprocessing pipeline.
-Once a model has been completely defined, it is automatically imported into the framework through a recursive call strategy.
-To quickly track and log a model class variable an inbuilt dictionary named \texttt{\textcolor{ForestGreen}{track\_variables}} is available.
-Adding any pre-defined variable name and graph title allows the logging of the desired variable on tensorboard.
-
-Note: 1) Any model defined must be placed within the models folder under a directory with the same name as that of the model,
-2) The actual model file must be named with a suffix ``\textcolor{blue}{\_model}''.
-2) No explicit model class attributes can be added to a specific model. Instead, they must be added to the \textcolor{blue}{model\_abstract.py} file and made available to any and all model definitions within \acro.
-
-The models that come standard with \acro~include the state-of-the-art activity recognition architectures I3D~\cite{}, C3D~\cite{}, ResNet50~\cite{}, and TSN~\cite{}.
-
-\subsection{Checkpoint Submodule}
-\label{sec:checkpoint}
-The checkpoint submodule contains utility functions that handle all the essential functions w.r.t. checkpoints.
-Checkpoints themselves are stored in a custom format as shown in Fig.~\ref{}.
-This format readily lends itself to a recursive access strategy while offering easy conversion capabilities from its native numpy format to ``\textcolor{blue}{.ckpt}'',``\textcolor{blue}{.caffemodel}'' and other formats.
-Among the variety of operations that can be performed on and using checkpoints, there are two broad categories, Load/Save and Tensor handling.
-
-\paragraph{Load/Save}
-At the beginning and end of every training processes, the ability to save and recover the current/last known state of the model parameters is paramount.
-In order to save the current state of a model's parameters, a new checkpoints folder is generated in the results directory.
-The folder structure generated to save the checkpoints is, \textless dataset\textgreater/\textless preprocessing\_method\_name\textgreater/\\\textless experiment\_name\textgreater/\textless metric\_name\textgreater/checkpoints.
-Within this folder three distinct files are generated.
-\begin{itemize}
-\item Checkpoint file: A replica of the checkpoint file obtained from native tensorflow code is generated by the \textcolor{red}{save\_checkpoint} function.
-The current global step is saved within this file, named ``\textcolor{blue}{checkpoint}''.
-\item Data file: A separate data file is used to store the current learning rate of the experiment.
-The file is named using the convention \textcolor{blue}{checkpoint-\textless global step number\textgreater .dat}.
-\item Numpy weights file: Variables declared and available within the global scope of the experiment are retrieved, name and value, and stored within the numpy weights file.
-It follows a similar naming convention to the Data file, \textcolor{blue}{checkpoint-\textless global step number\textgreater .npy}.
-\end{itemize}
-
-When a checkpoint is being loaded, the utility searches for each of the three files defined above to return a distinct variable holding the contents of the files.
-If any of the files are missing, the checkpoints fails to get loaded and it is a clear indication of a corrupted checkpoint.
-
-\paragraph{Tensor Handling}
-The tensor handler is a recursively defined function which takes names of tensors from the numpy file and loops over assigning the corresponding values associated with those tensor names through the function \texttt{\textcolor{ForestGreen}{tf.assign(tf.graph.get\_tensor\_by\_name(\textless tensor\_name\textgreater), numpy value)}}.
-A model is initialized from a pre-existing numpy dictionary through the use of a depth first search and assign policy using the tensor handler.
-An example of this is shown in Fig.~\ref{}.
-
-An important rule for the definition of any tensor name is that the name must explicitly use the terms ``\texttt{\textcolor{ForestGreen}{kernel}}'' and ``\texttt{\textcolor{ForestGreen}{bias}}'' to denote the \texttt{W} (weight) and \texttt{b} (bias) matrices respectively.
-No other name is recognized within the framework.
-
-\subsection{Testing: Flowchart of processes}
+\subsection{Testing: Flow of processes}
 \label{sec:testing}
 
 Testing begins similarly to training in that a specified model gets defined and initialized according to given parameters.
@@ -399,13 +384,48 @@ Finally, the thread coordinator for the input queues is stopped and the all pred
 \EndProcedure
 \end{algorithmic}
 
+
+\subsection{Checkpoint Submodule}
+\label{sec:checkpoint}
+The checkpoint submodule contains utility functions that handle all the essential functions w.r.t. checkpoints.
+Checkpoints themselves are stored in a custom format as shown in Fig.~\ref{}.
+This format readily lends itself to a recursive access strategy while offering easy conversion capabilities from its native numpy format to ``\textcolor{blue}{.ckpt}'',``\textcolor{blue}{.caffemodel}'' and other formats.
+Among the variety of operations that can be performed on and using checkpoints, there are two broad categories, Load/Save and Tensor handling.
+
+\paragraph{Load/Save}
+At the beginning and end of every training processes, the ability to save and recover the current/last known state of the model parameters is paramount.
+In order to save the current state of a model's parameters, a new checkpoints folder is generated in the results directory.
+The folder structure generated to save the checkpoints is, \textless dataset\textgreater/\textless preprocessing\_method\_name\textgreater/\\\textless experiment\_name\textgreater/\textless metric\_name\textgreater/checkpoints.
+Within this folder three distinct files are generated.
+\begin{itemize}
+\item Checkpoint file: A replica of the checkpoint file obtained from native tensorflow code is generated by the \textcolor{red}{save\_checkpoint} function.
+The current global step is saved within this file, named ``\textcolor{blue}{checkpoint}''.
+\item Data file: A separate data file is used to store the current learning rate of the experiment.
+The file is named using the convention \textcolor{blue}{checkpoint-\textless global step number\textgreater .dat}.
+\item Numpy weights file: Variables declared and available within the global scope of the experiment are retrieved, name and value, and stored within the numpy weights file.
+It follows a similar naming convention to the Data file, \textcolor{blue}{checkpoint-\textless global step number\textgreater .npy}.
+\end{itemize}
+
+When a checkpoint is being loaded, the utility searches for each of the three files defined above to return a distinct variable holding the contents of the files.
+If any of the files are missing, the checkpoints fails to get loaded and it is a clear indication of a corrupted checkpoint.
+
+\paragraph{Tensor Handling}
+The tensor handler is a recursively defined function which takes names of tensors from the numpy file and loops over assigning the corresponding values associated with those tensor names through the function \texttt{\textcolor{ForestGreen}{tf.assign(tf.graph.get\_tensor\_by\_name(\textless tensor\_name\textgreater), numpy value)}}.
+A model is initialized from a pre-existing numpy dictionary through the use of a depth first search and assign policy using the tensor handler.
+An example of this is shown in Fig.~\ref{}.
+
+An important rule for the definition of any tensor name is that the name must explicitly use the terms ``\texttt{\textcolor{ForestGreen}{kernel}}'' and ``\texttt{\textcolor{ForestGreen}{bias}}'' to denote the \texttt{W} (weight) and \texttt{b} (bias) matrices respectively.
+No other name is recognized within the framework.
+
+
+
 \subsection{Metrics Submodule}
 \label{sec:metrics}
 
 \begin{figure}[t!]
 \centering
 %\includegraphics[width=0.7\columnwidth]{images/extract_features_h.pdf}
-\includegraphics[width=0.3\columnwidth]{images/extract_features_v.pdf}
+\includegraphics[width=0.7\columnwidth]{images/extract_features.pdf}
 \caption{}
 \label{fig:extract_features}
 \end{figure}
@@ -442,6 +462,29 @@ Due to the large size that features can become over modern datasets with thousan
 
 \section{Benchmarks}
 \label{sec:benchmarks}
+
+\begin{table}[tp!]
+\begin{center}
+\caption{Mean recognition accuracies are shown for various SOTA action recognition models across split 1 of HMDB51 and UCF101. 
+Accuracies are reported for each baseline model and preprocessing technique combination.}
+\label{tab:model_results}
+\begin{tabular}{c|c|c|c||c|c}
+\hline
+\multirow{2}{*}{Base Model} & \multirow{2}{*}{Pretraining} & \multicolumn{2}{c||}{HMDB51} & \multicolumn{2}{c}{UCF101} \\\cline{3-6}
+& & Our Acc & Author Acc & Our Acc & Author Acc \\
+\hline
+C3D & Sports-1M & --.-- & 50.30 & --.-- & 82.30 \\
+\hline
+I3D & Kinetics & --.-- & 74.80 & --.-- & 95.60 \\
+\hline
+TSN & ImageNet & --.-- & 54.40 & --.-- & 85.50 \\
+\hline
+ResNet50+LSTM & ImageNet & --.-- & 43.90 & --.-- & 84.30 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
 
 \clearpage
 
