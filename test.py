@@ -133,11 +133,11 @@ parser.add_argument('--videoOffset', action='store', default='none',
 parser.add_argument('--clipOffset', action='store', default='none',
         help = '(none or random) indicating if clips are selected sequentially or randomly')
 
-parser.add_argument('--clipOverlap', action='store', type=int, default=0,
-        help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
+parser.add_argument('--clipStride', action='store', type=int, default=0,
+        help = 'Number of frames that overlap between clips, 0 indicates no overlap and negative values indicate a gap of frames between clips')
 
 parser.add_argument('--numClips', action='store', type=int, default=-1,
-        help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
+        help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipStride, and clipOffset')
 
 parser.add_argument('--batchSize', action='store', type=int, default=1,
         help = 'Number of clips to load into the model each step.')
@@ -198,7 +198,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    verbose = args.verbose)
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_overlap, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips, use_softmax, preproc_debugging):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_stride, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips, use_softmax, preproc_debugging):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -220,7 +220,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :video_offset:       String indicating where to begin selecting video clips (provided clipOffset is None)
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
-        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :clip_stride:        Number of frames that overlap between clips, 0 indicates no overlap and negative values indicate a gap of frames between clips
         :metrics_method:     Which method to use to calculate accuracy metrics. ("default" or "svm")
         :batch_size:         Number of clips to load into the model each step.
         :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
@@ -284,7 +284,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Setting up tensors for models
         # input_data_tensor - [batchSize, inputDims, height, width, channels]
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, preproc_debugging, 0, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging, 0, verbose)
 
         ######### GPU list check block ####################
 
@@ -441,7 +441,7 @@ if __name__=="__main__":
                 video_offset      = args.videoOffset,
                 clip_offset       = args.clipOffset,
                 num_clips         = args.numClips,
-                clip_overlap      = args.clipOverlap,
+                clip_stride       = args.clipStride,
                 metrics_method    = args.metricsMethod,
                 batch_size        = args.batchSize,
                 metrics_dir       = args.metricsDir,

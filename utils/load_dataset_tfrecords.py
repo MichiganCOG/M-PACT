@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.python.training import queue_runner
 
 
-def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, preproc_debugging=0, shuffle_seed=0, verbose=True):
+def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging=0, shuffle_seed=0, verbose=True):
     """
     Function load dataset, setup queue and read data into queue
     Args:
@@ -22,7 +22,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
         :clip_length:        Length of clips to cut video into, -1 indicates using the entire video as one clip')
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
-        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :clip_stride:        Number of frames that overlap between clips, 0 indicates no overlap and negative values indicate a gap of frames between clips
 
     Return:
         Input data tensor, label tensor and name of loaded data (video/image)
@@ -49,7 +49,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     # If an error occurs stating that "fifo_queue has insufficient elements", then set '--preprocDebugging 1'
     # For debugging, a batch_size other than 1 will cause instability
     if preproc_debugging:
-        input_data_tensor, labels_tensor, names_tensor, video_step_tensor, alpha_tensor = _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step)
+        input_data_tensor, labels_tensor, names_tensor, video_step_tensor, alpha_tensor = _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step)
 
     else:
         tf.set_random_seed(0) # To ensure the numbers are generated for temporal offset consistently
@@ -61,7 +61,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
         clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[],[]])
 
         # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
-        enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step))
+        enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step))
 
         # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
         qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*thread_count)
@@ -82,7 +82,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     return input_data_tensor, labels_tensor, names_tensor
 
 
-def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, tfrecord_file_queue, video_step):
+def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step):
     """
     Function to load a single video and preprocess its' frames
     Args:
@@ -97,7 +97,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
         :clip_length:          Length of clips to cut video into, -1 indicates using the entire video as one clip')
         :clip_offset:          "none" or "random" indicating where to begin selecting video clips
         :num_clips:            Number of clips to break video into
-        :clip_overlap:         Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :clip_stride:         Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
         :tfrecord_file_queue:  A queue containing remaining videos to be loaded for the current epoch
 
     Return:
@@ -132,7 +132,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
         clips = tf.to_int32(clips)  # Usually occurs within _extract_clips
 
     else:
-        clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, video_offset, clip_overlap, height, width, channel)
+        clips = _extract_clips(input_data_tensor, frames, num_clips, clip_offset, clip_length, video_offset, clip_stride, height, width, channel)
 
     # END IF
 
@@ -198,7 +198,7 @@ def _read_tfrecords(filename_queue):
     return features
 
 
-def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_offset, clip_overlap, height, width, channel):
+def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_offset, clip_stride, height, width, channel):
     """
     Function that extracts clips from a video based off of clip specifications
     Args:
@@ -207,7 +207,7 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_off
         :num_clips:            Number of clips to break video into
         :clip_offset:          "none" or "random" indicating where to begin selecting video clips
         :clip_length:          Length of clips to cut video into, -1 indicates using the entire video as one clip')
-        :clip_overlap:         Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :clip_stride:          Number of frames that overlap between clips, 0 indicates no overlap and negative values indicate a gap of frames between clips
 
 
     Return:
@@ -231,19 +231,19 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_off
 
     else:
         if num_clips > 0:
-            frames_needed = clip_length + (clip_length-clip_overlap) * (num_clips-1)
+            frames_needed = clip_length + (clip_length-clip_stride) * (num_clips-1)
             video = tf.cond(tf.greater(frames_needed, frames-video_start),
                             lambda: _loop_video_with_offset(video[video_start:,:,:,:], video, frames-video_start, frames, height, width, channel, frames_needed),
                             lambda: video[video_start:,:,:,:])
 
-            clip_begin = tf.range(0, frames_needed, delta = clip_length-clip_overlap)[:num_clips]
+            clip_begin = tf.range(0, frames_needed, delta = clip_length-clip_stride)[:num_clips]
 
             rs = tf.reshape(clip_begin, [num_clips,1,1,1])
             video = tf.to_int32(video)
             clips = tf.map_fn(lambda clip_start: video[clip_start[0][0][0]:clip_start[0][0][0]+clip_length], rs)
 
         else:
-            # Get total number of clips possible given clip_length overlap and offset
+            # Get total number of clips possible given clip_length stride and offset
 
             # Need minimum one clip: loop video until at least have clip_length frames
             video = tf.cond(tf.greater(clip_length, frames-video_start),
@@ -252,10 +252,10 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_off
 
             number_of_clips = tf.cond(tf.greater(clip_length, frames-video_start),
                             lambda: 1,
-                            lambda: (frames-video_start-clip_length) / (clip_length - clip_overlap) + 1)
+                            lambda: (frames-video_start-clip_length) / (clip_length - clip_stride) + 1)
 
 
-            clip_begin = tf.range(0, number_of_clips*(clip_length-clip_overlap), delta=clip_length-clip_overlap)[:num_clips]
+            clip_begin = tf.range(0, number_of_clips*(clip_length-clip_stride), delta=clip_length-clip_stride)[:num_clips]
 
             rs = tf.reshape(clip_begin, [num_clips,1,1,1])
             video = tf.to_int32(video)

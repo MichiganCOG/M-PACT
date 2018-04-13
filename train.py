@@ -127,11 +127,11 @@ parser.add_argument('--videoOffset', action='store', default='none',
 parser.add_argument('--clipOffset', action='store', default='none',
         help = '(none or random) indicating if clips are selected sequentially or randomly')
 
-parser.add_argument('--clipOverlap', action='store', type=int, default=0,
-        help = 'Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential')
+parser.add_argument('--clipStride', action='store', type=int, default=0,
+        help = 'Number of frames that overlap between clips, 0 indicates no overlap and negative values indicate a gap of frames between clips')
 
 parser.add_argument('--numClips', action='store', type=int, default=-1,
-        help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset')
+        help = 'Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipStride, and clipOffset')
 
 parser.add_argument('--batchSize', action='store', type=int, default=1,
         help = 'Number of clips to load into the model each step.')
@@ -233,7 +233,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_overlap, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed, preproc_debugging):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_stride, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed, preproc_debugging):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -258,7 +258,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :video_offset:       String indicating where to begin selecting video clips (provided clipOffset is None)
         :clip_offset:        "none" or "random" indicating where to begin selecting video clips
         :num_clips:          Number of clips to break video into
-        :clip_overlap:       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+        :clip_stride:        Number of frames that overlap between clips, 0 indicates no overlap and negative values indicate a gap of frames between clips
         :batch_size:         Number of clips to load into the model each step.
         :loss_type:          String declaring loss type associated with a chosen model
         :metrics_dir:        Name of subdirectory within the experiment to store metrics. Unique directory names allow for parallel testing
@@ -329,7 +329,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Setup tensors for models
         # input_data_tensor - [batchSize, inputDims, height, width, channels]
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_overlap, video_step, preproc_debugging, shuffle_seed, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging, shuffle_seed, verbose)
 
         ############### TO DO: FIX THIS ASAP ########################
         if ((batch_size == 1) and (num_clips==1)):
@@ -681,7 +681,7 @@ if __name__=="__main__":
                 video_offset        = args.videoOffset,
                 clip_offset         = args.clipOffset,
                 num_clips           = args.numClips,
-                clip_overlap        = args.clipOverlap,
+                clip_stride         = args.clipStride,
                 batch_size          = args.batchSize,
                 loss_type           = args.lossType,
                 metrics_dir         = args.metricsDir,

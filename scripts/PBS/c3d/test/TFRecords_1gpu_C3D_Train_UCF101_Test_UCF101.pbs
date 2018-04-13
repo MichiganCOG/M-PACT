@@ -129,7 +129,8 @@ python test.py \
 --split 1 \
 --baseDataPath /z/dat \
 --fName testlist \
---verbose 1
+--verbose 1 \
+--preprocMethod sport1m_mean
 
 
 echo "end"

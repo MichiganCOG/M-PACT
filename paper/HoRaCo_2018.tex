@@ -68,29 +68,30 @@ The recognition performed achieved by these models are, $XX\%$ for ResNet50+LSTM
 \label{fig:overview}
 \end{figure}
 
-\acro~is comprised of two main components, 1) the data input block, and 2) the execution block, as shown in Fig.~\ref{fig:overview}.
-The pipeline contained within the data input block can be divided into three simple stages,
+\acro~is comprised of two main components, 1) the \textbf{Input Data Block}, and 2) the \textbf{Execution Block}, as shown in Fig.~\ref{fig:overview}.
+The pipeline contained within the \textbf{Input Data Block} can be divided into three simple stages,
 \begin{enumerate}
 \item Read video data from disk
 \item Extract the desired number of clips from a given video
 \item Preprocess the frames of clips using a selected model's preprocessing strategy.
 \end{enumerate}
-On the other hand, the execution block houses all of the code required to setup, train, test as well as log the outputs of a chosen model.
+On the other hand, the \textbf{Execution Block} houses all of the code required to setup, train, test as well as log the outputs of a chosen model.
 This includes defining the layers that comprise the model, training the model up to a predetermined number of epochs, saving parameter values of a model are regular intervals and finally testing the performance of the trained model over a variety of recognition metrics.
-The following sections provide an in depth discussion of the setup and structure of various components that make up the data input and execution blocks.
+The following sections provide an in depth discussion of the setup and structure of various components that make up the \textbf{Input Data} and \textbf{Execution Blocks}.
 
 \section{Input Data Block}
 \label{sec:ipblock}
-Included in the input pipeline are all of the steps required to pass a video into a model in the proper format.
-The three stages of the input pipeline, including reading video data, extracting clips, and preprocessing clips, are detailed below.
+Included in the \textbf{Input Data Block} are all of the steps required to load a video and process it into the proper format.
+Fig.~\ref{fig:ip_block} shows the structure and flow of data as it passes through the \textbf{Input Data Block}.
+The three stages of the \textbf{Input Data Block}, reading video data, extracting clips, and preprocessing clips, are detailed below.
 
 \begin{figure}[t!]
 \centering
 \includegraphics[width=1.0\columnwidth]{images/ip_pipeline.pdf}
 \caption{This figure depicts the data flow from loading video files to passing a processed batch of clips into the specified model.
-The input pipeline revolves around two separate queues, one queue for storing file names of all tfrecords in the specified dataset and another queue for storing processed clips waiting to be passed to the model.
-During runtime, the video file queue gets filled with all tfrecords filenames, which then get dequeued one by one.
-The corresponding video to that file gets loaded into the system and it gets broken down into clips as described in Sec.~\ref{sec:extractclips}.
+The input pipeline is structured around two separate queues, one queue for storing file names of all tfrecords in the specified dataset and another queue for storing processed clips waiting to be passed to the model.
+During runtime, the \texttt{\textcolor{ForestGreen}{video\_file\_queue}} gets filled with all available tfrecords filenames in a given dataset, which then get dequeued one by one.
+The video corresponding to a dequeued file name gets loaded into the system and broken down into clips as described in Sec.~\ref{sec:extractclips} and Fig.~\ref{fig:extract_clips}.
 Each clip then gets individually preprocessed according to a set of user defined steps as described in Sec.~\ref{sec:modeldesc}.
 The processed queues then get loaded into the \texttt{\textcolor{ForestGreen}{clips\_queue}} so that exactly one \texttt{\textcolor{ForestGreen}{batch\_size}} of clips is available to be loaded into the model.}
 \label{fig:ip_block}
@@ -99,30 +100,27 @@ The processed queues then get loaded into the \texttt{\textcolor{ForestGreen}{cl
 
 \subsection{Read video data}
 \label{sec:readdata}
-In \acro, video data is stored in the form of tfrecords files.
-These files can be generated using the provided code given that the original video datasets have been acquired.
+In \acro, video data is stored in the form of tfrecords files to allow the entire \textbf{Input Data Block} to be constructed into the tensorflow graph for efficient parallel data loading.
+These files can be generated using provided scripts and examples, assuming that the original video datasets have been acquired.
 The contents of these files include the video height, width, channels, number of frames, BGR data, name of the video file, and the label of the action class related to the video.
-Video data is stored in BGR format due to the use of OpenCV for converting the given video files to python arrays.
-However, the first step of the input pipeline after reading in the tfrecords data is to convert the video to RGB.
+Video data is stored in BGR format due to the use of OpenCV for converting the original video files to python arrays.
+The first step of the input pipeline after reading in the tfrecords data is to convert the video to RGB.
 
-Reading tfrecords files is accomplished through the use of a \texttt{\textcolor{ForestGreen}{tfrecord\_file\_queue}} which stores the names of all tfrecords in the requested dataset split.
-Enqueue and dequeue operations to this queue are built into the tensorflow graph to allow for efficient parallel data loading.
-After individuals are able to be loaded from this queue, these videos must now be broken down into clips and preprocessed.
-
-To allow for the loading of multiple clips for each loaded video, another FIFO queue is added to the pipeline to store individual clips.
+Reading tfrecords files is accomplished through the use of a \texttt{\textcolor{ForestGreen}{tfrecord\_file\_queue}} which stores the names of all tfrecords in the given dataset directory.
+After a file name has been extracted form this queue, the corresponding video will then be broken down into clips and preprocessed.
+To allow for the loading of multiple clips from each video, a \texttt{\textcolor{ForestGreen}{clips\_queue}} is added to the pipeline to store individual clips.
 
 Note: When loading the dataset HMDB51, videos are stored in a 30 frames-per-second (fps) format while most models require 25 fps. A function, \textcolor{red}{\_reduce\_fps} is used to remove every sixth frame from HMDB51 videos in order to reduce the fps.
+
 
 \subsection{Extract clips}
 \label{sec:extractclips}
 Certain models, for example C3D~\ref{}, require their inputs to be in the form of multiple clips extracted from a single video.
 Fig.~\ref{fig:extract_clips} details the various arguments that are available to break down a video into clips.
-These methods shown are able to be used in conjunction with one another to give the user the flexibility needed to extract clips with different shapes and sizes.
-
+These methods shown are able to be used in conjunction with one another to give the user the flexibility needed to extract clips with different dimensions.
+All of this can be done through the use of only a handful of arguments including \texttt{\textcolor{ForestGreen}{clip\_length}}, \texttt{\textcolor{ForestGreen}{num\_clips}}, \texttt{\textcolor{ForestGreen}{clip\_offset}}, and \texttt{\textcolor{ForestGreen}{clip\_stride}}
 By default, the clip extraction algorithm is set to process and entire video at a time and only extract clips if the required arguments have been specified.
 In addition to the options shown in Fig.~\ref{fig:extract_clips}, \acro~also provides options for random selection of clips.
-
-
 
 \begin{figure}[b!]
 \centering
@@ -334,6 +332,31 @@ A tracker counts the number of videos that have been loaded using the video \tex
 The \texttt{\textcolor{ForestGreen}{output\_predictions}} and ground truth \texttt{\textcolor{ForestGreen}{labels}} are then fed into the \textbf{Metrics Submodule} for logging and storing.
 Finally, the thread coordinator for the input queues is stopped and the all predictions from the \textbf{Metrics Submodule} are saved as a numpy format.
 
+\begin{algorithmic}[H]
+\Procedure{Testing}{}
+\State \textbf{Model\_definition}.\textcolor{red}{setup}(model\_params)
+\State \textbf{Checkpoint}.\textcolor{red}{load\_param\_weights}(default or specific file)
+\State Data, Labels = \textbf{DIB}.\textcolor{red}{load\_data}(expt\_params)
+\\
+\For{one GPU}
+\State \textbf{Model\_definition}.\textcolor{red}{inference}(Data, model\_params, return\_layer)
+\If{use\_softmax}
+\State logits = softmax(logits)
+\EndIf
+\EndFor
+\\
+\State \textbf{Metrics}()
+\\
+\While{num\_videos\_loaded \textless~videos\_in\_dataset}
+\State output\_predictions = sess.run(logits)
+\If{average\_over\_clips}
+\State mean(output\_predictions, 0)
+\EndIf
+\State \textbf{Metrics.}\textcolor{red}{log\_prediction}(output\_predictions)
+\State update(num\_videos\_loaded)
+\EndWhile
+\EndProcedure
+\end{algorithmic}
 
 \subsection{Metrics Submodule}
 \label{sec:metrics}
