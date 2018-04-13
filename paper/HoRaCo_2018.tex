@@ -43,7 +43,7 @@
 
 \begin{abstract}
 Action recognition is a widely known and popular task that is essential to build up knowledge for video understanding.
-Within the wide research community that take up action recognition challenges, there does not exist a simple and easy-to-use platform that contains a large number of state-of-the-art (SOTA) models and is capable of quickly generating results across multiple datasets.
+The absence of an easy-to-use platform containing state-of-the-art (SOTA) models presents an issue for the community.
 Given that individual research code is not written with an end user in mind and in certain cases code is not released, even for published articles, the importance of a common unified platform capable of delivering results while removing the burden of developing an entire system is further underlined.
 To try and overcome these issues, we develop a tensorflow-based unified platform to abstract away unnecessary overheads in terms of an end-to-end pipeline setup in order to allow the end user to quickly and easily prototype action recognition models.
 With the use of a consistent coding style across different models and seamless data flow between various submodules, the platform lends itself to the quick generation of results on a wide range of SOTA methods across a variety of datasets.
@@ -57,6 +57,46 @@ The recognition performed achieved by these models are, $XX\%$ for ResNet50+LSTM
 
 \section{Introduction}
 \label{sec:intro}
+
+
+Problem Space:
+The wider research comminity has a tendency to follow their own internal guildines and coding practices which vary form place to place adn even between professors.
+Given this, the vast expanse of sota models for any given task that get published tend to
+1. look different
+2. not all components required for experiment get published
+Hence, these two factors in combination make it difficult to reproduce results from papers related to these models.
+We are trying to solve this problem in the context of action recognition in computer vision.
+
+
+
+How others have attempted it, Why they're bad:
+There has been a recent trend in the computer vision researh community for open sourcing code.
+The problem being that code is not written in a consistent way.
+When a new sota model gets released with no way to reproduce results, there will be researchers that take on the challenge of replicating that work in order to be able to compare against it.
+This takes away valuable time to analyze and improve upon these models and instead focuses on the task of replication.
+The wider research code has their own style of writing using a variety of languages.
+Wherein each of these languages there can exist subtle differences, for example dropout meaning how much to keep vs how much to throw out btwn caffe and tf.
+In terms of a task like feature extraction, each language will have a model zoo to access various models, however this does not exist for the task of activity reocgntiion.
+
+
+
+How we do it, why it's better:
+To avoid the complication of parsing between languages and for there to be a miscommunication, we use a single language and provide multiple sota activity recognition models.
+The existence of sota models in it removes the necessity of replication and the researcher can focus their time on improving upon existing concepts and models.
+For this purpose, we provide \acro~which is a platform that allows the user to solely focus on the creation or fine-tuning of models by abstracting away uncessecary periferal details about input, computing metrics, and output.
+
+
+
+Our contributions:
+general feature extraction from sota models
+quickly generate results across a variety of models and datasets.
+multi-gpu support to train and finetune models
+an input pipeline that condenses the loading and processing of videos into a set of flexible and easy-to-use options for the user.
+The ability to convert models trained in another language to work with this framework using only a common NumPy structure.
+layers and preprocessing utils 
+
+
+
 
 \section{Overview of \acro}
 \label{sec:overview}
@@ -125,24 +165,25 @@ In addition to the options shown in Fig.~\ref{fig:extract_clips}, \acro~also pro
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.8\columnwidth]{images/extract_clips.pdf}
-\caption{The clip extraction function allows for videos to be broken into clips according to defined specifications.
-Whenever a video has been completely processed and used for training or testing, a new video is loaded from the queue.
-The video is then passed through our clip extraction algorithm which enqueues the clips individually into a secondary queue.
-Clips are then dequeued from the clips queue according to the number of GPUs being used and the required clip batch size.}
+\caption{This figure shows the varying ways that a video can be broken into clips.
+By default the entire video is passed directly on to the user defined preprocessing without any modifications.
+A variable number of clips can be extracted from a video if only the \texttt{\textcolor{ForestGreen}{clip\_length}} parameter is given.
+Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}} is critical
+}
 \label{fig:extract_clips}
 \end{figure}
 
 
-\subsection{Preprocess clips}
+\subsection{\textcolor{red}{Preprocess clips}}
 \label{sec:preprocessclips}
-Activity recognition employ a number of various preprocessing methods on a frame or clip-based level.
-These can include frame-wise cropping, flipping, and resizing, or clip-wise cropping, flipping, temporal offsets, resampling, and looping.
-In order to incorporate these methods as desired per model, we create one or multiple preprocessing files for each model.
-The desired preprocessing file for a model can be defined within the model and then called from the inputs call
-
+Activity recognition models employ a number of various preprocessing methods on a frame or clip-based level often used for data augmentation.
+These can include frame-wise cropping, flipping, and resizing, or clip-wise cropping, flipping, temporal offsets, resampling, looping, and more.
 \acro~includes implementations of all of these options which can easily be added to a model's preprocessing file.
-
-
+The desired preprocessing file for a model can be defined within the \textbf{Model Submodule} and will be used automatically in the \textbf{Input Data Block} after a video has been broken down into clips.
+Preprocessed clips can significantly vary in shape when compared to the input video.
+Any change in frame height, width, or number of frames is allowed as long as clips are not broken down further.
+The \texttt{\textcolor{ForestGreen}{clips\_queue}} is designed to be compatible with any dimensionality of clips, as long as all clips that are being stored have the same dimensionality.
+More specifically, processed clips must be of the shape [\texttt{\textcolor{ForestGreen}{input\_dimensions}}, \texttt{\textcolor{ForestGreen}{size}}, \texttt{\textcolor{ForestGreen}{size}}, \texttt{\textcolor{ForestGreen}{sequence\_length}}] for the entirety of a training or testing session.
 
 Note: Due to the nature of tensorflow enqueue operations, errors that occur within an enqueue operation do not properly throw an error.
 The enqueue is simply canceled and an error will occur when the dequeue attempts to access an empty queue.
@@ -363,8 +404,8 @@ Finally, the thread coordinator for the input queues is stopped and the all pred
 
 \begin{figure}[t!]
 \centering
-\includegraphics[width=0.7\columnwidth]{images/extract_features_h.pdf}
-%\includegraphics[width=0.3\columnwidth]{images/extract_features_v.pdf}
+%\includegraphics[width=0.7\columnwidth]{images/extract_features_h.pdf}
+\includegraphics[width=0.3\columnwidth]{images/extract_features_v.pdf}
 \caption{}
 \label{fig:extract_features}
 \end{figure}
