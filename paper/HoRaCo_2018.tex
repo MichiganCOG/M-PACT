@@ -387,7 +387,7 @@ Finally, the thread coordinator for the input queues is stopped and the all pred
 \subsection{Checkpoint Submodule}
 \label{sec:checkpoint}
 The checkpoint submodule contains utility functions that handle all the essential functions w.r.t. checkpoints.
-Checkpoints themselves are stored in a custom format as shown in Fig.~\ref{}.
+Checkpoints themselves are stored in a custom format as shown in Fig.~\ref{fig:checkpoint_recursive}.
 This format readily lends itself to a recursive access strategy while offering easy conversion capabilities from its native numpy format to ``\textcolor{blue}{.ckpt}'',``\textcolor{blue}{.caffemodel}'' and other formats.
 Among the variety of operations that can be performed on and using checkpoints, there are two broad categories, Load/Save and Tensor handling.
 
@@ -408,10 +408,16 @@ It follows a similar naming convention to the Data file, \textcolor{blue}{checkp
 When a checkpoint is being loaded, the utility searches for each of the three files defined above to return a distinct variable holding the contents of the files.
 If any of the files are missing, the checkpoints fails to get loaded and it is a clear indication of a corrupted checkpoint.
 
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.7\columnwidth]{images/checkpoint_recursive.pdf}
+\caption{}
+\label{fig:checkpoint_recursive}
+\end{figure}
 \paragraph{Tensor Handling}
 The tensor handler is a recursively defined function which takes names of tensors from the numpy file and loops over assigning the corresponding values associated with those tensor names through the function \texttt{\textcolor{ForestGreen}{tf.assign(tf.graph.get\_tensor\_by\_name(\textless tensor\_name\textgreater), numpy value)}}.
 A model is initialized from a pre-existing numpy dictionary through the use of a depth first search and assign policy using the tensor handler.
-An example of this is shown in Fig.~\ref{}.
+An example of this is shown in Fig.~\ref{fig:checkpoint_recursive}.
 
 An important rule for the definition of any tensor name is that the name must explicitly use the terms ``\texttt{\textcolor{ForestGreen}{kernel}}'' and ``\texttt{\textcolor{ForestGreen}{bias}}'' to denote the \texttt{W} (weight) and \texttt{b} (bias) matrices respectively.
 No other name is recognized within the framework.
@@ -421,7 +427,7 @@ No other name is recognized within the framework.
 \subsection{Metrics Submodule}
 \label{sec:metrics}
 
-\begin{figure}[t!]
+\begin{figure}[b!]
 \centering
 %\includegraphics[width=0.7\columnwidth]{images/extract_features_h.pdf}
 \includegraphics[width=0.7\columnwidth]{images/extract_features.pdf}
