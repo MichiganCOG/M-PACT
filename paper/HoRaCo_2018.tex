@@ -58,47 +58,48 @@ The recognition performed achieved by these models are, $XX\%$ for ResNet50+LSTM
 \section{Introduction}
 \label{sec:intro}
 
+The research community is focused on exploring concepts at the frontiers on science and help solve problems that bog our development down.
+An important part of research is the analysis of currently proposed theories and further improving upon them. 
+This necessitates the use and re-use of models and theories that are currently state-of-the-art. 
+However, given the strong emphasis on concepts and modelling, coding is relegated to a lower priority.
+Thus, there isn't a universal standard guideline for coding practice and this leads to strong variations from place to place and even between communities within a university.
+Further, not all the components that are needed to re-create the results published are provided to the research community, which takes away from valuable time spent on research and instead is used to replicate the published results through common knowledge, details published in the paper and a little guesswork.
+In this paper, we propose to solve this problem in the context of action recognition in the field of computer vision.
 
-Problem Space:
-The wider research comminity has a tendency to follow their own internal guildines and coding practices which vary form place to place adn even between professors.
-Given this, the vast expanse of sota models for any given task that get published tend to
-1. look different
-2. not all components required for experiment get published
-Hence, these two factors in combination make it difficult to reproduce results from papers related to these models.
-We are trying to solve this problem in the context of action recognition in computer vision.
+There has been a recent positive trend towards open sourcing code, in the computer vision community.
+However, even when the same language is used to develop software, custom coding practices make it extremely difficult to quickly assimilate and integrate code.
+When custom coding styles are combined with the vast array of languages available, e.g., tensorflow~\cite{}, pytoch~\cite{}, caffe~\cite{} in deep learning, it adds to the complexity since key words in languages tend to vary in meaning and this necessitates an extremely deep understanding of each and every language.
+Subtle differences, such as, the keyword ``\texttt{\textcolor{ForestGreen}{dropout ratio}}'' can mean the ratio of nodes to drop or keep, can have massive impacts on the final results.
+When put into the context of feature exatraction, each deep learning language has a model zoo to access a number of staples. However, we aren't aware of such a model zoo for a task like activity recognition. 
+Given the popularity of activity recognition, as a precursor to video understanding, and the prevalence of deep learning it is surprising.
 
+In order to avoid the complication of parsing code between different language and the complications that can arise from doing so, we use a single language, tensorflow, for our platform.
+We further supplement it with a suite of state-of-the-art activity recognition models.
+The existences of SOTA models removes the necessity of replication and the end user can focus their time on implementing deep learning models and conduct research.
+For this purpose, we provide \acro~which is a platform that allows the user to solely focus on the creation or fine-tuning of models by abstracting away unnecessary peripheral details like data input, computing metrics, and extracting features.
 
+The main contributions of the platform are:
+\begin{itemize}
+\item Extract features from SOTA activity recognition models.
+\item Quickly generate results across a combination of a variety of dataset and ANN models.
+\item Single node multi-GPU expansion support to train and fine-tune models.
+\item A custom input pipeline that condenses the loading and processing of videos into a set of flexible and easy-to-use options for the user.
+\item The ability to convert model weights, stored in our custom Numpy dictionary format, to alternative formats used in other deep learning languages..
+\item A vast array of customized options for neural network layer definitions and preprocessing functions.
+\end{itemize}
 
-How others have attempted it, Why they're bad:
-There has been a recent trend in the computer vision researh community for open sourcing code.
-The problem being that code is not written in a consistent way.
-When a new sota model gets released with no way to reproduce results, there will be researchers that take on the challenge of replicating that work in order to be able to compare against it.
-This takes away valuable time to analyze and improve upon these models and instead focuses on the task of replication.
-The wider research code has their own style of writing using a variety of languages.
-Wherein each of these languages there can exist subtle differences, for example dropout meaning how much to keep vs how much to throw out btwn caffe and tf.
-In terms of a task like feature extraction, each language will have a model zoo to access various models, however this does not exist for the task of activity reocgntiion.
-
-
-
-How we do it, why it's better:
-To avoid the complication of parsing between languages and for there to be a miscommunication, we use a single language and provide multiple sota activity recognition models.
-The existence of sota models in it removes the necessity of replication and the researcher can focus their time on improving upon existing concepts and models.
-For this purpose, we provide \acro~which is a platform that allows the user to solely focus on the creation or fine-tuning of models by abstracting away uncessecary periferal details about input, computing metrics, and output.
-
-
-
-Our contributions:
-general feature extraction from sota models
-quickly generate results across a variety of models and datasets.
-multi-gpu support to train and finetune models
-an input pipeline that condenses the loading and processing of videos into a set of flexible and easy-to-use options for the user.
-The ability to convert models trained in another language to work with this framework using only a common NumPy structure.
-layers and preprocessing utils 
+Within this report, we use the following formatting techinques,
+\begin{itemize}
+\item \textcolor{red}{loss} - To denote functions
+\item \textcolor{blue}{file.npy} - To denote different file names
+\item \texttt{\textcolor{ForestGreen}{loss\_type}} - To denote keywords in the code
+\item \textbf{Model block} - To denote Blocks, submodules and any higher level construct
+\end{itemize}
 
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.8\textwidth]{images/overview.pdf}
-\caption{Illustration of the two main components of \acro}
+\caption{Illustration of the three main components of \acro}
 \label{fig:overview}
 \end{figure}
 
@@ -106,9 +107,7 @@ layers and preprocessing utils
 \section{Overview of \acro}
 \label{sec:overview}
 
-
-
-\acro~is comprised of two main components, 1) the \textbf{Input Data Block}, and 2) the \textbf{Execution Block}, as shown in Fig.~\ref{fig:overview}.
+\acro~is comprised of three main components, 1) the \textbf{Input Data Block}, 2) \textbf{Model Definition Block} and 3) the \textbf{Execution Block}, as shown in Fig.~\ref{fig:overview}.
 The pipeline contained within the \textbf{Input Data Block} can be divided into three simple stages,
 \begin{enumerate}
 \item Read video data from disk
@@ -486,6 +485,9 @@ ResNet50+LSTM & ImageNet & --.-- & 43.90 & --.-- & 84.30 \\
 \end{center}
 \end{table}
 
+
+\section{Future Endeavors}
+\label{sec:future}
 
 \clearpage
 
