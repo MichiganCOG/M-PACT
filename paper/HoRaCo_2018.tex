@@ -145,11 +145,14 @@ In \acro, video data is stored in the form of tfrecords files to allow the entir
 These files can be generated using provided scripts and examples, assuming that the original video datasets have been acquired.
 The contents of these files include the video height, width, channels, number of frames, BGR data, name of the video file, and the label of the action class related to the video as can be seen in Fig.~\ref{fig:overview}.
 Video data is stored in BGR format due to the use of OpenCV for converting the original video files to python arrays.
-The first step of the \data after reading in tfrecords data is to convert the video to RGB.
+The first step of the \data, after reading in tfrecords data, is to convert the video to RGB.
 
 Reading tfrecords files is accomplished through the use of a \texttt{\textcolor{ForestGreen}{tfrecord\_file\_queue}} which stores the names of all tfrecords in the given dataset directory.
-After a file name has been extracted form this queue, the corresponding video will then be broken down into clips and preprocessed.
-To allow for the loading of multiple clips from each video, a \texttt{\textcolor{ForestGreen}{clips\_queue}} is added to the \data to store individual clips.
+After a file name has been extracted from this queue, the corresponding video will then be broken down into clips and preprocessed.
+To allow for the loading of multiple clips from each video, a \texttt{\textcolor{ForestGreen}{clips\_queue}} is added to the \data~to store individual clips.
+These two queues work in parallel with one another, meaning that if a video is broken down into more clips than can be loaded in one \texttt{\textcolor{ForestGreen}{batch}}, the remaining clips will be stored in the clips queue.
+Conversely, if the \texttt{\textcolor{ForestGreen}{clips\_queue}} does not contain enough clips to fill one \texttt{\textcolor{ForestGreen}{batch}}, then the \texttt{\textcolor{ForestGreen}{tfrecord\_file\_queue}} will automatically load and process a new video.
+Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}} is critical.
 
 Note: When loading the dataset HMDB51, videos are stored in a 30 frames-per-second (fps) format while most models require 25 fps. A function, \textcolor{red}{\_reduce\_fps} is used to remove every sixth frame from HMDB51 videos in order to reduce the fps.
 
@@ -169,7 +172,6 @@ In addition to the options shown in Fig.~\ref{fig:extract_clips}, \acro~also pro
 \caption{This figure shows the varying ways that a video can be broken into clips.
 By default the entire video is passed directly on to the user defined preprocessing without any modifications.
 A variable number of clips can be extracted from a video if only the \texttt{\textcolor{ForestGreen}{clip\_length}} parameter is given.
-Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}} is critical.
 Alternatively, a set number of clips of a certain length can be extracted from every video using the \texttt{\textcolor{ForestGreen}{num\_clips}} parameter.
 If a video does not contain enough frames to extract the requested number of clips, the video will be looped until the necessary frame count is reached.
 There also exists an \texttt{\textcolor{ForestGreen}{offset}} parameter which can be set to randomly modify where from the beginning of the video the function begins to extract clips. 
