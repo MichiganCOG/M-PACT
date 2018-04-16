@@ -152,6 +152,9 @@ The first step of the \data~after reading in tfrecords data is to convert the vi
 Reading tfrecords files is accomplished through the use of a \texttt{\textcolor{ForestGreen}{tfrecord\_file\-\_queue}} which stores the names of all tfrecords in the given dataset directory.
 After a file name has been extracted form this queue, the corresponding video will then be broken down into clips and preprocessed.
 To allow for the loading of multiple clips from each video, a \texttt{\textcolor{ForestGreen}{clips\_queue}} is added to the \data~to store individual clips.
+These two queues work in parallel with one another, meaning that if a video is broken down into more clips than can be loaded in one \texttt{\textcolor{ForestGreen}{batch}}, the remaining clips will be stored in the clips queue.
+Conversely, if the \texttt{\textcolor{ForestGreen}{clips\_queue}} does not contain enough clips to fill one \texttt{\textcolor{ForestGreen}{batch}}, then the \texttt{\textcolor{ForestGreen}{tfrecord\_file\_queue}} will automatically load and process a new video.
+Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}} is critical.
 
 Note: When loading the dataset HMDB51, videos are stored in a 30 frames-per-second (fps) format while most models require 25 fps. A function, \textcolor{red}{\_reduce\_fps} is used to remove every sixth frame from HMDB51 videos in order to reduce the fps.
 
