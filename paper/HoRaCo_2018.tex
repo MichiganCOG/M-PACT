@@ -12,6 +12,9 @@
 \usepackage[width=122mm,left=12mm,paperwidth=146mm,height=193mm,top=12mm,paperheight=217mm]{geometry}
 \usepackage{multirow}
 \usepackage{algorithm}
+\usepackage{footnote}
+\makesavenoteenv{tabular}
+\makesavenoteenv{table}
 \usepackage[]{algpseudocode}
 \newcommand{\jason}[1]{\textcolor{orange}{\textbf{JASON: #1}}}
 \newcommand{\madan}[1]{\textcolor{red}{#1}}
@@ -488,19 +491,19 @@ Results for C3D, I3D, TSN, and ResNet50+LSTM are compared between those generate
 \begin{table}[h!]
 \begin{center}
 \caption{Mean recognition accuracies are shown for various SOTA action recognition models across split 1 of HMDB51 and UCF101.
-Values marked with a (*) indicate that  
+Values marked with a (*) indicate that results are shown across all three splits of a given model.
 Accuracies are reported for each baseline model and preprocessing technique combination.}
 \label{tab:model_results}
 \begin{tabular}{c|c|c|c||c|c}
 \hline
-\multirow{2}{*}{Base Model} & \multirow{2}{*}{Pretraining} & \multicolumn{2}{c||}{HMDB51} & \multicolumn{2}{c}{UCF101} \\\cline{3-6}
-& & Our Acc & Author Acc & Our Acc & Author Acc \\
+\multirow{2}{*}{Base Model} & \multirow{2}{*}{Pretraining} & \multicolumn{2}{c||}{HMDB51 Acc.} & \multicolumn{2}{c}{UCF101 Acc.} \\\cline{3-6}
+& & Ours & Authors & Ours & Authors \\
 \hline
-C3D & Sports-1M & --.-- & 50.30 * & --.-- & 82.30 * \\
+C3D & Sports-1M & 48.24 & 50.30 * & 93.66 & 82.30 * \\
 \hline
-I3D & Kinetics & --.-- & 74.30 * & --.-- & 95.1 * \\
+I3D & Kinetics & --.-- & 74.80 * & --.-- & 95.60 * \\
 \hline
-TSN & ImageNet & --.-- & 54.40 & --.-- & 85.50 \\
+TSN & ImageNet & 51.70 & 54.40 & 85.25 & 85.50 \\
 \hline
 ResNet50+LSTM & ImageNet & --.-- & 43.90 & --.-- & 84.30 \\
 \hline
@@ -509,8 +512,73 @@ ResNet50+LSTM & ImageNet & --.-- & 43.90 & --.-- & 84.30 \\
 \end{table}
 
 
-\section{Future Endeavors}
-\label{sec:future}
+\subsection{C3D}
+\label{sec:c3d}
+
+Table \ref{tab:c3d} shows more detailed results of the various finetuining methods used for C3D on split 1 of HMDB51 and UCF101.
+C3D~\cite{} was originally trained on the Sports-1M~\cite{} dataset, then used on other activity recognition datasets by exctracting C3D features and training a linear SVM for activity classification.
+Most models are transferred to a new dataset by finetuneing either the entire model or a select few layers on the new dataset in order to incorporate a different number of action classes.
+In the paper introducing Res3D~\cite{}, the authors give results for the original C3D model architecture finetuned on HMDB51 and UCF101.
+Code is available for both the original C3D feature extraction method as well as the finetuning method, however it is entirely in Caffe.
+In order to use the available models, they first need to be converted to tensorflow, which was done by GitHub user hx173149\footnote{https://github.com/hx173149/C3D-tensorflow}.
+This tensorflow version of C3D provides the original Sports-1M trained model as well as the weights after fine-tuning it on UCF101.
+While this tensorflow implementation is slightly different than that used in \acro, we will be using these weights to compare C3D performance on UCF101.
+Minor variations include the use of the Sport-1M mean clip in our implementation versus the UCF101 mean clip.
+Our other models are generally all pre-trained on the ImageNet~\cite{} dataset and use the ImageNet mean image to normalize their data.
+For this reason, we use the Sports-1M mean clip to normalize C3D data since it was pre-trained on that dataset, as opposed to the UCF101 mean clip which we finetune on.
+This makes it easier to add new datasets since the same Sports-1M mean clip file will be used for fine-tuning in all cases.
+
+No weights are available for C3D that have been finetuned on HMDB51, thus we finetune it entirely in \acro~from the provided Sports-1M model.
+
+
+
+\begin{table}[h!]
+\begin{center}
+\label{tab:c3d}
+\caption{Mean recognition accuracies are shown for C3D finetuned on split 1 of HMDB51 and UCF101.
+Values marked with a (*) indicate that results are shown across all three splits of a given model.
+The "Training" column denotes which datasets were used to achieve the given performance.
+All models were intially train on Sports-1M in Caffe by the authors of C3D.
+This model was converted to tensorflow and then we finetune directly on it within \acro~for HMDB51.
+There exists a model in the tensorflow version of C3D which was the original Sports-1M model then finetuned on UCF101.
+We attempt to use these weights directly to match the reported clip-accuracy.
+We also use these UCF101 finetune weights and finetune on them more within \acro.
+We report results after one and ten additional epochs of finetuning within \acro.}
+\label{tab:model_results}
+\begin{tabular}{c|c|c|c}
+\hline
+\multirow{2}{*}{Base Model} & \multirow{2}{*}{Training} & \multicolumn{2}{c}{HMDB51 Acc.} \\\cline{3-4}
+& & Ours & Authors\\
+\hline
+C3D & Sport1M \footnote{We finetune the Sports-1M trained model of C3D found at https://github.com/hx173149/C3D-tensorflow under Download: "C3D sports1M". The file is named conv3d\_deepnetA\_sport1m\_iter\_1900000\_TF.model and renamed to c3d\_Sports1M.npy in \acro.} + 41 Epochs HMDB51 in \acro & 48.24 & 50.30 *\\ 
+\hline
+\\[-0.2 cm]
+\hline
+\multirow{1}{*}{} & \multirow{1}{*}{} & \multicolumn{2}{c}{UCF101 Acc.} \\
+\hline
+C3D & Sports-1M + UCF101 & 73.46 & 74.65\footnote{This is the tensorflow version of C3D trained on Sports-1M and finetuned on UCF101 which achieved a clip-accuracy of 74.65\%. We are testing directly on the provided weights found under Download: "C3D UCF101 split1" at https://github.com/hx173149/C3D-tensorflow. The file is named sports1m\_finetuning\_ucf101.model and in \acro~we renamed it to c3d\_Sports1M\_finetune\_UCF101.npy. Since we are directly using these weights, we try to match 74.65\% even though the original authors achieved 82.30\%.} \\
+\hline
+C3D & Sports-1M + UCF101 + 1 Epoch UCF101 in \acro & 91.04 & 74.65 \\
+\hline
+C3D & Sports-1M + UCF101 + 10 Epochs UCF101 in \acro & 93.66 & 74.65 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+
+
+
+
+
+
+
+
+
+%\section{Future Endeavors}
+%\label{sec:future}
+
 
 
 \clearpage
