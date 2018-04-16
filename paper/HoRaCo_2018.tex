@@ -38,6 +38,7 @@
 \newcommand{\metrics}{\textbf{Metrics submodule}}
 \newcommand{\data}{\textbf{Input Data Block}}
 \newcommand{\exec}{\textbf{Execution Block}}
+\newcommand{\modeldef}{\textbf{Model Definition Block}}
 
 \maketitle
 
@@ -47,7 +48,7 @@ The absence of an easy-to-use platform containing state-of-the-art (SOTA) models
 Given that individual research code is not written with an end user in mind and in certain cases code is not released, even for published articles, the importance of a common unified platform capable of delivering results while removing the burden of developing an entire system is further underlined.
 To try and overcome these issues, we develop a tensorflow-based unified platform to abstract away unnecessary overheads in terms of an end-to-end pipeline setup in order to allow the end user to quickly and easily prototype action recognition models.
 With the use of a consistent coding style across different models and seamless data flow between various submodules, the platform lends itself to the quick generation of results on a wide range of SOTA methods across a variety of datasets.
-All of these features are made possible through the use of a fully pre-defined training and testing pipeline built on top of a small but powerful set of modular functions that handle asynchronous data loading, model initializations, metric calculations, saving and loading of checkpoints, and logging of results.
+All of these features are made possible through the use of a fully pre-defined training and testing blocks built on top of a small but powerful set of modular functions that handle asynchronous data loading, model initializations, metric calculations, saving and loading of checkpoints, and logging of results.
 The platform is geared towards easily creating models, with the minimum requirement being the definition of a network architecture and preprocessing steps from a large custom selection of layers and preprocessing functions.
 \acro~currently houses four SOTA activity recognition models which include, I3D, C3D, ResNet50+LSTM and TSN.
 The recognition performed achieved by these models are, $XX\%$ for ResNet50+LSTM and $YY\%$ for C3D on XXXXX while I3D and TSN achieve $ZZ\%$ and $QQ\%$ on YYYYY respectively.
@@ -58,47 +59,50 @@ The recognition performed achieved by these models are, $XX\%$ for ResNet50+LSTM
 \section{Introduction}
 \label{sec:intro}
 
+The research community is focused on exploring concepts at the frontiers on science and help solve problems that bog our development down.
+An important part of research is the analysis of currently proposed theories and further improving upon them. 
+This necessitates the use and re-use of models and theories that are currently state-of-the-art. 
+However, given the strong emphasis on concepts and modelling, coding is relegated to a lower priority.
+Thus, there isn't a universal standard guideline for coding practice and this leads to strong variations from place to place and even between communities within a university.
+Further, not all the components that are needed to re-create the results published are provided to the research community, which takes away from valuable time spent on research and instead is used to replicate the published results through common knowledge, details published in the paper and a little guesswork.
+In this paper, we propose to solve this problem in the context of action recognition in the field of computer vision.
 
-Problem Space:
-The wider research comminity has a tendency to follow their own internal guildines and coding practices which vary form place to place adn even between professors.
-Given this, the vast expanse of sota models for any given task that get published tend to
-1. look different
-2. not all components required for experiment get published
-Hence, these two factors in combination make it difficult to reproduce results from papers related to these models.
-We are trying to solve this problem in the context of action recognition in computer vision.
+There has been a recent positive trend towards open sourcing code, in the computer vision community.
+However, even when the same language is used to develop software, custom coding practices make it extremely difficult to quickly assimilate and integrate code.
+When custom coding styles are combined with the vast array of languages available, e.g., tensorflow~\cite{}, pytoch~\cite{}, caffe~\cite{} in deep learning, it adds to the complexity since key words in languages tend to vary in meaning and this necessitates an extremely deep understanding of each and every language.
+Subtle differences, such as, the keyword ``\texttt{\textcolor{ForestGreen}{dropout ratio}}'' can mean the ratio of nodes to drop or keep, can have massive impacts on the final results.
+When put into the context of feature exatraction, each deep learning language has a model zoo to access a number of staples. However, we aren't aware of such a model zoo for a task like activity recognition. 
+Given the popularity of activity recognition, as a precursor to video understanding, and the prevalence of deep learning it is surprising.
 
+In order to avoid the complication of parsing code between different language and the complications that can arise from doing so, we use a single language, tensorflow, for our platform.
+We further supplement it with a suite of state-of-the-art activity recognition models.
+The existences of SOTA models removes the necessity of replication and the end user can focus their time on implementing deep learning models and conduct research.
+For this purpose, we provide \acro~which is a platform that allows the user to solely focus on the creation or fine-tuning of models by abstracting away unnecessary peripheral details like data input, computing metrics, and extracting features.
 
+The main contributions of the platform are:
+\begin{itemize}
+\item Extract features from SOTA activity recognition models.
+\item Quickly generate results across a combination of a variety of dataset and ANN models.
+\item Single node multi-GPU expansion support to train and fine-tune models.
+\item A custom input block that condenses the loading and processing of videos into a set of flexible and easy-to-use options for the user.
+\item The ability to convert model weights, stored in our custom Numpy dictionary format, to alternative formats used in other deep learning languages..
+\item A vast array of customized options for neural network layer definitions and preprocessing functions.
+\end{itemize}
 
-How others have attempted it, Why they're bad:
-There has been a recent trend in the computer vision researh community for open sourcing code.
-The problem being that code is not written in a consistent way.
-When a new sota model gets released with no way to reproduce results, there will be researchers that take on the challenge of replicating that work in order to be able to compare against it.
-This takes away valuable time to analyze and improve upon these models and instead focuses on the task of replication.
-The wider research code has their own style of writing using a variety of languages.
-Wherein each of these languages there can exist subtle differences, for example dropout meaning how much to keep vs how much to throw out btwn caffe and tf.
-In terms of a task like feature extraction, each language will have a model zoo to access various models, however this does not exist for the task of activity reocgntiion.
-
-
-
-How we do it, why it's better:
-To avoid the complication of parsing between languages and for there to be a miscommunication, we use a single language and provide multiple sota activity recognition models.
-The existence of sota models in it removes the necessity of replication and the researcher can focus their time on improving upon existing concepts and models.
-For this purpose, we provide \acro~which is a platform that allows the user to solely focus on the creation or fine-tuning of models by abstracting away uncessecary periferal details about input, computing metrics, and output.
-
-
-
-Our contributions:
-general feature extraction from sota models
-quickly generate results across a variety of models and datasets.
-multi-gpu support to train and finetune models
-an input pipeline that condenses the loading and processing of videos into a set of flexible and easy-to-use options for the user.
-The ability to convert models trained in another language to work with this framework using only a common NumPy structure.
-layers and preprocessing utils 
+Within this report, we use the following formatting techinques,
+\begin{itemize}
+\item \textcolor{red}{loss} - To denote functions
+\item \textcolor{blue}{file.npy} - To denote different file names
+\item \texttt{\textcolor{ForestGreen}{loss\_type}} - To denote keywords in the code
+\item \textbf{Model block} - To denote Blocks, submodules and any higher level construct
+\end{itemize}
 
 \begin{figure}[b!]
 \centering
 \includegraphics[width=0.8\textwidth]{images/overview.pdf}
-\caption{Illustration of the two main components of \acro}
+\caption{Illustration of the three main components of \acro.
+The presented color scheme will be common throught all figures in this paper.
+Blue, green, and orange identify components of the \data, \model, and \exec~repectively.}
 \label{fig:overview}
 \end{figure}
 
@@ -106,14 +110,11 @@ layers and preprocessing utils
 \section{Overview of \acro}
 \label{sec:overview}
 
-
-
-\acro~is comprised of two main components, 1) the \textbf{Input Data Block}, and 2) the \textbf{Execution Block}, as shown in Fig.~\ref{fig:overview}.
-The pipeline contained within the \textbf{Input Data Block} can be divided into three simple stages,
+\acro~is comprised of three main components, 1) the \textbf{Input Data Block}, 2) \textbf{Model Definition Block} and 3) the \textbf{Execution Block}, as shown in Fig.~\ref{fig:overview}.
+The \textbf{Input Data Block} can be divided into two simple stages,
 \begin{enumerate}
 \item Read video data from disk
-\item Extract the desired number of clips from a given video
-\item Preprocess the frames of clips using a selected model's preprocessing strategy.
+\item Extract the desired number of clips from a given video and process them.
 \end{enumerate}
 On the other hand, the \textbf{Execution Block} houses all of the code required to setup, train, test as well as log the outputs of a chosen model.
 This includes defining the layers that comprise the model, training the model up to a predetermined number of epochs, saving parameter values of a model are regular intervals and finally testing the performance of the trained model over a variety of recognition metrics.
@@ -123,13 +124,13 @@ The following sections provide an in depth discussion of the setup and structure
 \label{sec:ipblock}
 Included in the \textbf{Input Data Block} are all of the steps required to load a video and process it into the proper format.
 Fig.~\ref{fig:ip_block} shows the structure and flow of data as it passes through the \textbf{Input Data Block}.
-The three stages of the \textbf{Input Data Block}, reading video data, extracting clips, and preprocessing clips, are detailed below.
+The two stages of the \textbf{Input Data Block}, reading video data and extracting clips, are detailed below.
 
 \begin{figure}[t!]
 \centering
 \includegraphics[width=1.0\columnwidth]{images/ip_pipeline.pdf}
 \caption{This figure depicts the data flow from loading video files to passing a processed batch of clips into the specified model.
-The input pipeline is structured around two separate queues, one queue for storing file names of all tfrecords in the specified dataset and another queue for storing processed clips waiting to be passed to the model.
+The \textbf{Input Data Block} is structured around two separate queues, one queue for storing file names of all tfrecords in the specified dataset and another queue for storing processed clips waiting to be passed to the model.
 During runtime, the \texttt{\textcolor{ForestGreen}{video\_file\_queue}} gets filled with all available tfrecords filenames in a given dataset, which then get dequeued one by one.
 The video corresponding to a dequeued file name gets loaded into the system and broken down into clips as described in Sec.~\ref{sec:extractclips} and Fig.~\ref{fig:extract_clips}.
 Each clip then gets individually preprocessed according to a set of user defined steps as described in Sec.~\ref{sec:modeldefblock}.
@@ -142,13 +143,13 @@ The processed queues then get loaded into the \texttt{\textcolor{ForestGreen}{cl
 \label{sec:readdata}
 In \acro, video data is stored in the form of tfrecords files to allow the entire \textbf{Input Data Block} to be constructed into the tensorflow graph for efficient parallel data loading.
 These files can be generated using provided scripts and examples, assuming that the original video datasets have been acquired.
-The contents of these files include the video height, width, channels, number of frames, BGR data, name of the video file, and the label of the action class related to the video.
+The contents of these files include the video height, width, channels, number of frames, BGR data, name of the video file, and the label of the action class related to the video as can be seen in Fig.~\ref{fig:overview}.
 Video data is stored in BGR format due to the use of OpenCV for converting the original video files to python arrays.
-The first step of the input pipeline after reading in the tfrecords data is to convert the video to RGB.
+The first step of the \data after reading in tfrecords data is to convert the video to RGB.
 
 Reading tfrecords files is accomplished through the use of a \texttt{\textcolor{ForestGreen}{tfrecord\_file\_queue}} which stores the names of all tfrecords in the given dataset directory.
 After a file name has been extracted form this queue, the corresponding video will then be broken down into clips and preprocessed.
-To allow for the loading of multiple clips from each video, a \texttt{\textcolor{ForestGreen}{clips\_queue}} is added to the pipeline to store individual clips.
+To allow for the loading of multiple clips from each video, a \texttt{\textcolor{ForestGreen}{clips\_queue}} is added to the \data to store individual clips.
 
 Note: When loading the dataset HMDB51, videos are stored in a 30 frames-per-second (fps) format while most models require 25 fps. A function, \textcolor{red}{\_reduce\_fps} is used to remove every sixth frame from HMDB51 videos in order to reduce the fps.
 
@@ -168,7 +169,7 @@ In addition to the options shown in Fig.~\ref{fig:extract_clips}, \acro~also pro
 \caption{This figure shows the varying ways that a video can be broken into clips.
 By default the entire video is passed directly on to the user defined preprocessing without any modifications.
 A variable number of clips can be extracted from a video if only the \texttt{\textcolor{ForestGreen}{clip\_length}} parameter is given.
-Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}y} is critical.
+Due to this variablity, the implementation of the \texttt{\textcolor{ForestGreen}{clips\_queue}} is critical.
 Alternatively, a set number of clips of a certain length can be extracted from every video using the \texttt{\textcolor{ForestGreen}{num\_clips}} parameter.
 If a video does not contain enough frames to extract the requested number of clips, the video will be looped until the necessary frame count is reached.
 There also exists an \texttt{\textcolor{ForestGreen}{offset}} parameter which can be set to randomly modify where from the beginning of the video the function begins to extract clips. 
@@ -199,19 +200,20 @@ Since the queue used to store clips is removed, the requirement is set that \tex
 \begin{figure}[b!]
 \centering
 \includegraphics[width=\columnwidth]{images/model_submodule.pdf}
-\caption{}
+\caption{The components of the \modeldef, preprocessing, layer definitions, loss, and loading weights, are shown in green.
+These four modules are to be implemented by the user when creating a new model. }
 \label{fig:model_submodule}
 \end{figure}
 
 
 \subsection{Preprocessing}
 The class definition of a model within \acro~can be divided into four main components as shown in Fig.~\ref{fig:model_submodule}.
-Preprocessing is the first module in the \model that gets used within \data.
+Preprocessing is the first module in the \model~that gets used within \data.
 Activity recognition models employ a number of various preprocessing methods on a frame or clip-based level often used for data augmentation.
 These can include frame-wise cropping, flipping, and resizing, or clip-wise cropping, flipping, temporal offsets, resampling, looping, and more.
-In keeping with the modular design paradigm, we use individual functions to define each variant of the preprocessing pipeline.
+In keeping with the modular design paradigm, we use individual functions to define each variant of the preprocessing block.
 By keeping each variant within its own file, marked with the suffix ``\textcolor{blue}{\_preprocessing.py}'', we increase their reusability and ensure debugging them is easy.
-Within the class definition of a model, multiple preprocessing pipelines can be included using a simple \textit{if-else} construct.
+Within the class definition of a model, multiple preprocessing blocks can be included using a simple \textit{if-else} construct.
 The expected final product from any preprocessing function is the complete preprocessed input data that needs to be passed into a network's input layer.
 
 
@@ -328,35 +330,37 @@ The repeated application of train\_op forms the most crucial and final step in t
 \subsection{Testing: Flow of processes}
 \label{sec:testing}
 
-Testing begins similarly to training in that a specified model gets defined and initialized according to given parameters.
-The model parameters during testing are identical to those used to instantiate a model during training.
-Other input arguments that do exist when testing that are not used during training include \texttt{\textcolor{ForestGreen}{metrics\_method}}, \texttt{\textcolor{ForestGreen}{return\_layer}}, and \texttt{\textcolor{ForestGreen}{avg\_clips}}.
+Testing begins similarly to training in that the specified model gets defined and initialized according to the \modeldef.
+During testing, model parameters are identical to those used to instantiate a model during training.
+Block-specific input arguments do exist between training and testing.
+Testing-specific arguments include \texttt{\textcolor{ForestGreen}{metrics\_method}}, \texttt{\textcolor{ForestGreen}{return\_layer}}, and \texttt{\textcolor{ForestGreen}{avg\_clips}}.
 
 After a model object has been instantiated, the model weights are loaded.
-The option exists to either load the weights from the default weight file specified within the \textbf{Model Submodule} or to initialize the model to random weights if that is desired.
-Most commly, however, the \textbf{Checkpoint Submodule} is used to load the checkpoints of a model that has been trained from scratch or fine-tuned.
+The option exists to either load the weights from the default weights file specified within the \textbf{Model Submodule} or to initialize the model to random weights.
+Most commly, however, the \textbf{Checkpoint Submodule} is used to load the weights of a model that has been trained from scratch or fine-tuned within \acro.
 
 Once the model weights are accessible, the dataset will be loaded into the system following the process described in the \textbf{Data Input Block} in Sec.~\ref{sec:ippipeline}.
 Videos are not shuffled when being loaded for testing so that all testing instances are directly comparable.
-The shape of this input data is set to allow for any number of different videos or multiple clips of a single video to be loaded for testing.
-More specifically, the \texttt{\textcolor{ForestGreen}{batch\_size}} of input data can be used to load multiple clips of a single video in order to determine a consensus across these clips which will act as the prediction for the entire video as explained in C3D~\cite{}.
-In addition, this \texttt{\textcolor{ForestGreen}{batch\_size}} parameter can also load multiple videos simultaneously if videos are broken into a number of clips which is smaller than the batch.
-No models currently use this multiple video functionality for testing, videos are loaded one at a time for testing and only batched for training, but it is available if needed in the future.
+The shape of input data is set to allow for any number of different videos or clips to be loaded for testing within a single \texttt{\textcolor{ForestGreen}{batch}}.
+This is useful in C3D for example, where a consensus across the outputs for multiple clips is calculated which will act as the prediction for an entire video.
 
-Before the data can be loaded into the model, the model must first be copied onto the GPU.
-While only a single GPU is used for testing, a GPU list can still be given to \acro~to determine which GPU the testing instance will be assigned to.
+Before data can be loaded into the model, the model must first be copied onto the GPU.
+While only a single GPU is used for testing, a device id list can still be given to \acro~to determine which GPU the testing instance will be assigned to.
 If the list contains more than one GPU device id, the first element in that list will be used.
-The process of copying the model to the GPU is based around the \textbf{Model\_definition.}\textcolor{red}{inference} call which will return the output of the layer specified in the \texttt{\textcolor{ForestGreen}{return\_layer}} argument.
-By default, the layer that will be returned by \textbf{Model\_definition.}\textcolor{red}{inference} are of the shape [\texttt{\textcolor{ForestGreen}{batch\_size}}, \texttt{\textcolor{ForestGreen}{sequence\_length}}, \texttt{\textcolor{ForestGreen}{output\_dimensions}}] and then converted to action class predictions using the softmax function.
-This shape is only required when the \texttt{\textcolor{ForestGreen}{logits}} layer is returned from the \textcolor{red}{inference} call and the application of softmax is dependent on the \texttt{\textcolor{ForestGreen}{useSoftmax}} argument.
-With the model output acquired, the final stepis of preparation for testing is to set up the output directory structure, the \textbf{Metrics Submodule} detailed in Sec.~\ref{sec:metrics}, and to load weights into the model as described in the \textbf{Checkpoints Submodule} in Sec.~\ref{sec:checkpoint}.
+The process of copying the model to the GPU is based around calling \textbf{Model\_definition.}\textcolor{red}{inference} in the scope of each id.
 
-The testing block iterates through the \texttt{\textcolor{ForestGreen}{num\_vids}} specified which generally includes an entire testing split of a dataset.
-Within this block, the tensorflow session is run to extract the model's \texttt{\textcolor{ForestGreen}{output\_predictions}}, ground truth \texttt{\textcolor{ForestGreen}{labels}}, and all video \texttt{\textcolor{ForestGreen}{names}} in this batch.
-If the \texttt{\textcolor{ForestGreen}{avg\_clips}} argument has been specified, then the \texttt{\textcolor{ForestGreen}{output\_predictions}} are averaged over their first dimension which is \texttt{\textcolor{ForestGreen}{batch\_size}} or in this case, the number of clips loaded for this testing iteration.
+The \textbf{Model\_definition.}\textcolor{red}{inference} call will return the output of the layer specified in the \texttt{\textcolor{ForestGreen}{return\_layer}} argument.
+By default, the \texttt{\textcolor{ForestGreen}{logits}} layer is returned by \textcolor{red}{inference} and it is of the shape [\texttt{\textcolor{ForestGreen}{batch\_size}}, \texttt{\textcolor{ForestGreen}{sequence\_length}}, \texttt{\textcolor{ForestGreen}{output\_dims}}].
+In general, a softmax function is applied whenever \texttt{\textcolor{ForestGreen}{logits}} are returned.
+However, the application of softmax can be removed using the \texttt{\textcolor{ForestGreen}{useSoftmax}} argument.
+With the model output acquired, the final steps of preparation for testing is to set up the output directory structure, the \textbf{Metrics Submodule} detailed in Sec.~\ref{sec:metrics}, and to load weights into the model as described in the \textbf{Checkpoints Submodule} in Sec.~\ref{sec:checkpoint}.
+
+The testing block iterates through the \texttt{\textcolor{ForestGreen}{num\_vids}} specified, which generally includes an entire testing split of a dataset.
+Within each iteration, the tensorflow session is run to extract the model's \texttt{\textcolor{ForestGreen}{output\_predictions}}, ground truth \texttt{\textcolor{ForestGreen}{labels}}, and all video \texttt{\textcolor{ForestGreen}{names}} the current batch.
+If the \texttt{\textcolor{ForestGreen}{avg\_clips}} argument has been specified, then the \texttt{\textcolor{ForestGreen}{output\_predictions}} are averaged over their first dimension, which is the number of clips loaded for this testing iteration.
 A tracker counts the number of videos that have been loaded using the video \texttt{\textcolor{ForestGreen}{names}} output.
 The \texttt{\textcolor{ForestGreen}{output\_predictions}} and ground truth \texttt{\textcolor{ForestGreen}{labels}} are then fed into the \textbf{Metrics Submodule} for logging and storing.
-Finally, the thread coordinator for the input queues is stopped and the all predictions from the \textbf{Metrics Submodule} are saved as a numpy format.
+
 
 \begin{algorithmic}[H]
 \Procedure{Testing}{}
@@ -376,7 +380,7 @@ Finally, the thread coordinator for the input queues is stopped and the all pred
 \While{num\_videos\_loaded \textless~videos\_in\_dataset}
 \State output\_predictions = sess.run(logits)
 \If{average\_over\_clips}
-\State mean(output\_predictions, 0)
+\State mean(output\_predictions, axis=0)
 \EndIf
 \State \textbf{Metrics.}\textcolor{red}{log\_prediction}(output\_predictions)
 \State update(num\_videos\_loaded)
@@ -384,11 +388,12 @@ Finally, the thread coordinator for the input queues is stopped and the all pred
 \EndProcedure
 \end{algorithmic}
 
+Once all videos have been tested, the thread coordinator for the input queues is stopped and the all predictions from the \textbf{Metrics Submodule} are saved as a numpy format.
 
 \subsection{Checkpoint Submodule}
 \label{sec:checkpoint}
 The checkpoint submodule contains utility functions that handle all the essential functions w.r.t. checkpoints.
-Checkpoints themselves are stored in a custom format as shown in Fig.~\ref{}.
+Checkpoints themselves are stored in a custom format as shown in Fig.~\ref{fig:checkpoint_recursive}.
 This format readily lends itself to a recursive access strategy while offering easy conversion capabilities from its native numpy format to ``\textcolor{blue}{.ckpt}'',``\textcolor{blue}{.caffemodel}'' and other formats.
 Among the variety of operations that can be performed on and using checkpoints, there are two broad categories, Load/Save and Tensor handling.
 
@@ -409,10 +414,16 @@ It follows a similar naming convention to the Data file, \textcolor{blue}{checkp
 When a checkpoint is being loaded, the utility searches for each of the three files defined above to return a distinct variable holding the contents of the files.
 If any of the files are missing, the checkpoints fails to get loaded and it is a clear indication of a corrupted checkpoint.
 
+\begin{figure}[t!]
+\centering
+\includegraphics[width=0.7\columnwidth]{images/checkpoint_recursive.pdf}
+\caption{}
+\label{fig:checkpoint_recursive}
+\end{figure}
 \paragraph{Tensor Handling}
 The tensor handler is a recursively defined function which takes names of tensors from the numpy file and loops over assigning the corresponding values associated with those tensor names through the function \texttt{\textcolor{ForestGreen}{tf.assign(tf.graph.get\_tensor\_by\_name(\textless tensor\_name\textgreater), numpy value)}}.
 A model is initialized from a pre-existing numpy dictionary through the use of a depth first search and assign policy using the tensor handler.
-An example of this is shown in Fig.~\ref{}.
+An example of this is shown in Fig.~\ref{fig:checkpoint_recursive}.
 
 An important rule for the definition of any tensor name is that the name must explicitly use the terms ``\texttt{\textcolor{ForestGreen}{kernel}}'' and ``\texttt{\textcolor{ForestGreen}{bias}}'' to denote the \texttt{W} (weight) and \texttt{b} (bias) matrices respectively.
 No other name is recognized within the framework.
@@ -422,39 +433,44 @@ No other name is recognized within the framework.
 \subsection{Metrics Submodule}
 \label{sec:metrics}
 
-\begin{figure}[t!]
+\begin{figure}[b!]
 \centering
 %\includegraphics[width=0.7\columnwidth]{images/extract_features_h.pdf}
 \includegraphics[width=0.7\columnwidth]{images/extract_features.pdf}
-\caption{}
+\caption{The \textbf{Metrics Submodule} utilizses a variety of metrics to measure the performance of a model.
+It also allows features to be extracted from any defined model using any formatted dataset.
+This figure shows features being extracted from various layers within a model.}
 \label{fig:extract_features}
 \end{figure}
 
 \acro~offers a \textbf{Metrics Submodule} for testing and logging the activity recognition performance of a model as well as extracting features from a model.
-This \textbf{Metrics Submodule} is incorporated in the testing pipeline as a class which gets instantiated in \textcolor{blue}{test.py}.
-During testing, the output prediction, correct label, and name of each video which is loaded and passed through the model gets stored in this object during every iteration.
-These performance metrics and other temporary data gets stored in an hdf5 file format and then deleted at the end of each testing session.
-Hdf5 files are used for storing large amounts of temporary data due to their quick reading and writing capabilities.
-Just before getting deleted, all relevent testing outputs are saved as numpy files.
+This \textbf{Metrics Submodule} is incorporated in the \textbf{Testing Block} as a class which gets instantiated in \textcolor{blue}{test.py}.
+During testing, the model output, correct label, and name of each video gets stored in this \textbf{Metrics} object during every iteration.
+Depending on the layer from which the outputs, either features or predictions, are extracted, they can be too large in size to efficiently store in memory.
+Thus all outputs, labels, and names get stored in a temporary hdf5 file format and then deleted at the end of each testing session.
+Hdf5 files are used due to their quick reading and writing capabilities.
+Just before getting deleted, any final video predictions are saved as numpy files if applicable.
 Additionally, during testing, the chosen metric and any other specified varaible will be logged automatically using tensorboard.
 
 Available performance metrics include average pooling, last frame prediction, and training a linear SVM classifier.
-Average pooling is a common technique which uses the softmax predictions of a model's outputs and averages them across all frames of an input video.
-From these predictions, the maximum value is used as the overall class prediction for that video.
-The outputs of models can vary in shape so we standardize them to be in the form of [\texttt{\textcolor{ForestGreen}{batch\_size}}, \texttt{\textcolor{ForestGreen}{sequence\_length}}, \texttt{\textcolor{ForestGreen}{number\_of\_classes}}].
-The \texttt{\textcolor{ForestGreen}{batch\_size}} parameter slightly changes meaning depending on the model being used.
-For example for C3D, multiple clips can be loaded for a single video, the average can then be taken across all of these clips while the temporal dimensionality gets reduced from 16 frames to 1, removing the need for any average pooling or last frame prediction.
-On the other hand, TSN would take multiple videos and refer to each as a single clip, thus the batch of different videos would each be logged separately.
-\acro~is robust enough to handle both such cases.
+Average pooling is a common technique which uses the softmax per-class predictions of a model and averages them across all frames of an input video.
+From these averaged predictions, the maximum value is used as the overall class prediction for that video.
+Last frame prediction simply uses the softmax per-class prediction of the last frame in the video to generate the overall class prediction.
 Last frame classification is referenced originally in the ConvNet + LSTM model~\cite{}.
-This technique calculates the argmax of solely the last frame of the input clip.
 In addition to these metrics which directly classify the output of a model, \acro~also provides the option of training a linear SVM classifier based off of features extracted from any user specified layer within the model.
 A linear SVM was used to classify video in the UCF101 dataset in C3D~\cite{}
 
-Features can be extracted for a multitude of reasons other than just to train a linear SVM.
-This quality allows \acro~to accomplish more than just activity recognition.
+The output predictions of models can vary in shape so we standardize them to be in the form of [\texttt{\textcolor{ForestGreen}{batch\_size}}, \texttt{\textcolor{ForestGreen}{sequence\_length}}, \texttt{\textcolor{ForestGreen}{number\_of\_classes}}].
+The \texttt{\textcolor{ForestGreen}{batch\_size}} parameter slightly changes meaning depending on the model being used.
+For example for C3D, it refers to clips extracted from one video that are used for testing which will all get averaged to produce a single video-level prediction.
+On the other hand, TSN would take multiple videos and refer to each as a single clip, thus a signle batch containing different videos would each be logged separately.
+\acro~is robust enough to handle both such cases.
+
+As previously mentioned, \acro~provides the ability to extract features from a model as shown in Fig.~\ref{fig:extract_features}.
+Features can be extracted for a multitude of reasons including to train a linear SVM which allows \acro~to accomplish more than just activity recognition.
 Any of the state-of-the-art models that have been implemented, or even any custom model, can be used for feature extraction.
-With any dataset that has been converted to the proper tfrecords format, the correct input arguments allow the user to extract features from any layer in any available model.
+With any dataset that has been converted to the proper tfrecords format, the correct input arguments allow the user to extract features from any layer in a given model.
+When features are being extracted, the output of a model is not required to be of any standardized form.
 Due to the large size that features can become over modern datasets with thousands and even millions of videos, it is crucial to be able to read and write them to memory quickly which is why we use an hdf5 file format for writing this data.
 
 
@@ -462,8 +478,12 @@ Due to the large size that features can become over modern datasets with thousan
 
 \section{Benchmarks}
 \label{sec:benchmarks}
+In this section we will be providing numerical evaluations of \acro.
 
-\begin{table}[tp!]
+Table \ref{tab:model_results} show the performance on four SOTA models on the HMDB51 and UCF101 datasets.
+Results for C3D, I3D, TSN, and ResNet50+LSTM are compared between those generated in \acro~and those given by the original authors of the models.
+
+\begin{table}[h!]
 \begin{center}
 \caption{Mean recognition accuracies are shown for various SOTA action recognition models across split 1 of HMDB51 and UCF101.
 Values marked with a (*) indicate that  
@@ -485,6 +505,10 @@ ResNet50+LSTM & ImageNet & --.-- & 43.90 & --.-- & 84.30 \\
 \end{tabular}
 \end{center}
 \end{table}
+
+
+\section{Future Endeavors}
+\label{sec:future}
 
 
 \clearpage

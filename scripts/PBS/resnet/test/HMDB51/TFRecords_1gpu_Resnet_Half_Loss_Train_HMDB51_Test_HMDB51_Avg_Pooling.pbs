@@ -125,6 +125,7 @@ python test.py \
 --split 1 \
 --baseDataPath /z/dat \
 --fName testlist \
---lossType half_loss
+--lossType half_loss \
+--freeze 1
 
 echo "end"

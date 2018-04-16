@@ -125,11 +125,10 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # END IF
 
     # Selecting a random, seeded temporal offset
-    temporal_offset   = tf.cond(tf.greater(frames, footprint), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - footprint + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
+    temporal_offset   = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames, shape=np.asarray([1]))[0]
 
-    input_data_tensor = tf.cond(tf.less(frames - temporal_offset, footprint), 
-                                lambda: loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, frames-temporal_offset, frames, height, width, channel, footprint),
-                                lambda: input_data_tensor[temporal_offset:temporal_offset + footprint, :, :, :])
+    input_data_tensor = loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, 
+                                               frames-temporal_offset, frames, height, width, channel, footprint)
 
     # Remove excess frames after looping to reduce to footprint size
     input_data_tensor = tf.slice(input_data_tensor, [0,0,0,0], tf.stack([footprint, height, width, channel]))

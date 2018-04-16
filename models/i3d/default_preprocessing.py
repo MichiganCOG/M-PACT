@@ -119,7 +119,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     else:
         footprint   = 250
-        sample_dims = 250#79
+        sample_dims = input_dims 
     #Training: input_dims == 64
     #Testing:  input_dims == 79
 

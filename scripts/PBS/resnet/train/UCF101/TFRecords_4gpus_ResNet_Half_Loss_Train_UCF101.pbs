@@ -129,6 +129,7 @@ python train.py \
 --nEpochs 11 \
 --saveFreq 1 \
 --lossType half_loss \
---dropoutRate 0.5
+--dropoutRate 0.5 \
+--freeze 1
 
 echo "end"
