@@ -433,7 +433,7 @@ class I3D(Abstract_Model_Class):
             layers['193'] = dropout(layers['192'], rate=dropout_rate, training=is_training)
 
             layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='RGB/inception_i3d/Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False, freeze=True))
-            
+ 
             layers['logits'] = tf.expand_dims(tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1), 1)
 
             # END WITH

@@ -348,6 +348,9 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         if opt_choice == 'gd':
             optimizer = lambda lr: tf.train.GradientDescentOptimizer(lr)
 
+        elif opt_choice == 'adam':
+            optimizer = lambda lr: tf.train.AdamOptimizer(lr)
+
         else:
             optimizer = lambda lr: tf.train.MomentumOptimizer(learning_rate=lr, momentum=0.9)
 
