@@ -1,14 +1,9 @@
 *.pyc
 *.npy
-Logs
-logs/
-*c3d_Sports1M*
-*c3d_frozen*
 *.mp4
 *.o*
-results/*
-train_test_TFRecords_multigpu_model_test_tsn.py
 *.swp
 *.model
-.nfs*
-i3d_UCF101_training_continue.sh
+*.nfs*
+visualization/
+paper/
