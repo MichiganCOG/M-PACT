@@ -12,10 +12,6 @@ from models.models_abstract import Abstract_Model_Class
 from utils.layers_utils     import *
 
 from default_preprocessing import preprocess
-from cvr_preprocessing     import preprocess as preprocess_cvr
-from rr_preprocessing      import preprocess as preprocess_rr
-from sr_preprocessing      import preprocess as preprocess_sr
-
 
 class I3D(Abstract_Model_Class):
 
@@ -35,7 +31,7 @@ class I3D(Abstract_Model_Class):
             :kernel_size:     List detailing the height, width  and temporal dimension of the kernel
             :strides:         Integer value for stride between filters (Height, Width and Temporal width)
             :activation_fn:   Activation function to be applied at the end of 3d convolution
-            :use_batch_norm:  Boolean indicating the use of batch normalization 
+            :use_batch_norm:  Boolean indicating the use of batch normalization
             :use_bias:        Boolean indication the use of bias
             :name:            Name of 3d convolution unit
 
@@ -46,11 +42,11 @@ class I3D(Abstract_Model_Class):
         # BIAS IS NOT USED BUT OUR LAYER UTILS DOES NOT OFFER THE OPTION TO AVOID BIAS!!
 
         layers = {}
-        
-        layers[layer_numbers[0]] = conv3d_layer(input_tensor = input_layer, filter_dims = kernel_size, name = 'RGB/inception_i3d/' + name + '/conv_3d', stride_dims = stride, non_linear_fn = None, use_bias=use_bias, trainable=freeze) 
+
+        layers[layer_numbers[0]] = conv3d_layer(input_tensor = input_layer, filter_dims = kernel_size, name = 'RGB/inception_i3d/' + name + '/conv_3d', stride_dims = stride, non_linear_fn = None, use_bias=use_bias, trainable=freeze)
 
         if use_batch_norm:
-            layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]], training = is_training, name = 'RGB/inception_i3d/' + name + '/batch_norm', trainable=freeze)  
+            layers[layer_numbers[1]] = batch_normalization(layers[layer_numbers[0]], training = is_training, name = 'RGB/inception_i3d/' + name + '/batch_norm', trainable=freeze)
 
             if activation_fn is not None:
                 layers[layer_numbers[2]] = activation_fn(layers[layer_numbers[1]])
@@ -120,11 +116,11 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['20','21','22'], input_layer=layers['11_inp'], kernel_size=[1,1,1,16], name='Mixed_3b/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['23','24','24'], input_layer=layers['22'], kernel_size=[3,3,3,32], name='Mixed_3b/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['25'] = max_pool3d_layer(layers['11_inp'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_3b/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['26','27','28'], input_layer=layers['25'], kernel_size=[1,1,1,32], name='Mixed_3b/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['29'] = tf.concat([layers['13'], layers['19'], layers['24'], layers['28']], 4)
 
             #### END OF MIXED_3b ####
@@ -136,15 +132,15 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['33','34','35'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Mixed_3c/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['36','37','38'], input_layer=layers['35'], kernel_size=[3,3,3,192], name='Mixed_3c/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers.update(self._unit_3d(layer_numbers=['39','40','41'], input_layer=layers['29'], kernel_size=[1,1,1,32], name='Mixed_3c/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['42','43','44'], input_layer=layers['41'], kernel_size=[3,3,3,96], name='Mixed_3c/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['45'] = max_pool3d_layer(layers['29'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_3c/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['46','47','48'], input_layer=layers['45'], kernel_size=[1,1,1,64], name='Mixed_3c/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['49'] = tf.concat([layers['32'], layers['38'], layers['44'], layers['48']], 4)
 
             #### END OF MIXED_3c ####
@@ -162,11 +158,11 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['60','61','62'], input_layer=layers['50'], kernel_size=[1,1,1,16], name='Mixed_4b/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['63','64','65'], input_layer=layers['62'], kernel_size=[3,3,3,48], name='Mixed_4b/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['66'] = max_pool3d_layer(layers['50'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4b/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['67','68','69'], input_layer=layers['66'], kernel_size=[1,1,1,64], name='Mixed_4b/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['70'] = tf.concat([layers['53'], layers['59'], layers['65'], layers['69']], 4)
 
             #### END OF MIXED_4b ####
@@ -178,15 +174,15 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['74','75','76'], input_layer=layers['70'], kernel_size=[1,1,1,112], name='Mixed_4c/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['77','78','79'], input_layer=layers['76'], kernel_size=[3,3,3,224], name='Mixed_4c/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers.update(self._unit_3d(layer_numbers=['80','81','82'], input_layer=layers['70'], kernel_size=[1,1,1,24], name='Mixed_4c/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['83','84','85'], input_layer=layers['82'], kernel_size=[3,3,3,64], name='Mixed_4c/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['86'] = max_pool3d_layer(layers['70'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4c/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['87','88','89'], input_layer=layers['86'], kernel_size=[1,1,1,64], name='Mixed_4c/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['90'] = tf.concat([layers['73'], layers['79'], layers['85'], layers['89']], 4)
 
             #### END OF MIXED_4c ####
@@ -203,21 +199,21 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['94','95','96'], input_layer=layers['90'], kernel_size=[1,1,1,128], name='Mixed_4d/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['97','98','99'], input_layer=layers['96'], kernel_size=[3,3,3,256], name='Mixed_4d/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
                 # END WITH
 
                 #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['100','101','102'], input_layer=layers['90'], kernel_size=[1,1,1,24], name='Mixed_4d/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['103','104','105'], input_layer=layers['102'], kernel_size=[3,3,3,64], name='Mixed_4d/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
                 # END WITH
 
                 #with tf.variable_scope('Branch_3'):
             layers['106'] = max_pool3d_layer(layers['90'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4d/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['107','108','109'], input_layer=layers['106'], kernel_size=[1,1,1,64], name='Mixed_4d/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
                 # END WITH
 
             layers['110'] = tf.concat([layers['93'], layers['99'], layers['105'], layers['109']], 4)
@@ -233,15 +229,15 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['114','115','116'], input_layer=layers['110'], kernel_size=[1,1,1,144], name='Mixed_4e/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['117','118','119'], input_layer=layers['116'], kernel_size=[3,3,3,288], name='Mixed_4e/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers.update(self._unit_3d(layer_numbers=['120','121','122'], input_layer=layers['110'], kernel_size=[1,1,1,32], name='Mixed_4e/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['123','124','125'], input_layer=layers['122'], kernel_size=[3,3,3,64], name='Mixed_4e/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['126'] = max_pool3d_layer(layers['110'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4e/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['127','128','129'], input_layer=layers['126'], kernel_size=[1,1,1,64], name='Mixed_4e/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['130'] = tf.concat([layers['113'], layers['119'], layers['125'], layers['129']], 4)
 
             #### END OF MIXED_4e ####
@@ -253,15 +249,15 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['134','135','136'], input_layer=layers['130'], kernel_size=[1,1,1,160], name='Mixed_4f/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['137','138','139'], input_layer=layers['136'], kernel_size=[3,3,3,320], name='Mixed_4f/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers.update(self._unit_3d(layer_numbers=['140','141','142'], input_layer=layers['130'], kernel_size=[1,1,1,32], name='Mixed_4f/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['143','144','145'], input_layer=layers['142'], kernel_size=[3,3,3,128], name='Mixed_4f/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['146'] = max_pool3d_layer(layers['130'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4f/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['147','148','149'], input_layer=layers['146'], kernel_size=[1,1,1,128], name='Mixed_4f/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['150'] = tf.concat([layers['133'], layers['139'], layers['145'], layers['149']], 4)
 
             #### END OF MIXED_4f ####
@@ -275,15 +271,15 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['155','156','157'], input_layer=layers['151'], kernel_size=[1,1,1,160], name='Mixed_5b/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['158','159','160'], input_layer=layers['157'], kernel_size=[3,3,3,320], name='Mixed_5b/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers.update(self._unit_3d(layer_numbers=['161','162','163'], input_layer=layers['151'], kernel_size=[1,1,1,32], name='Mixed_5b/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['164','165','166'], input_layer=layers['163'], kernel_size=[3,3,3,128], name='Mixed_5b/Branch_2/Conv3d_0a_3x3', is_training=False))
-                                
+
             layers['167'] = max_pool3d_layer(layers['151'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_5b/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['168','169','170'], input_layer=layers['167'], kernel_size=[1,1,1,128], name='Mixed_5b/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['171'] = tf.concat([layers['154'], layers['160'], layers['166'], layers['170']], 4)
 
             #### END OF MIXED_5b ####
@@ -295,25 +291,25 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['175','176','177'], input_layer=layers['171'], kernel_size=[1,1,1,192], name='Mixed_5c/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['178','179','180'], input_layer=layers['177'], kernel_size=[3,3,3,384], name='Mixed_5c/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers.update(self._unit_3d(layer_numbers=['181','182','183'], input_layer=layers['171'], kernel_size=[1,1,1,48], name='Mixed_5c/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['184','185','186'], input_layer=layers['183'], kernel_size=[3,3,3,128], name='Mixed_5c/Branch_2/Conv3d_0b_3x3', is_training=False))
-                                
+
             layers['187'] = max_pool3d_layer(layers['171'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_5c/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['188','189','190'], input_layer=layers['187'], kernel_size=[1,1,1,128], name='Mixed_5c/Branch_3/Conv3d_0b_1x1', is_training=False))
-                                
+
             layers['191'] = tf.concat([layers['174'], layers['180'], layers['186'], layers['190']], 4)
 
             #### END OF MIXED_5c ####
 
             layers['192'] = avg_pool3d_layer(layers['191'], filter_dims=[1,2,7,7,1], stride_dims=[1,1,1,1,1], padding='VALID', name='RGB/inception_i3d/avg_pooling')
-            
+
             layers['193'] = dropout(layers['192'], rate=dropout_rate, training=is_training)
 
             layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='RGB/inception_i3d/Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False, freeze=True))
- 
+
             layers['logits'] = tf.expand_dims(tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1), 1)
 
         # END WITH
@@ -342,23 +338,8 @@ class I3D(Abstract_Model_Class):
             :is_training:           Boolean value indication phase (TRAIN OR TEST)
             :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
         """
-        if self.preproc_method == 'cvr':
-            output, alpha_tensor = preprocess_cvr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.model_alpha, self.input_alpha)
-            self.add_track_variables('Parameterization_Variables',tf.Variable(alpha_tensor, trainable=False))
-            return output
+        return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
-        elif self.preproc_method == 'rr':
-            output, alpha_tensor = preprocess_rr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
-            return output, alpha_tensor
-
-        elif self.preproc_method == 'sr':
-            output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha, video_step)
-            return output, alpha_tensor
-
-        else:
-            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
-
-        # END IF
 
     """ Function to return loss calculated on all the outputs of a given network """
     def full_loss(self, logits, labels):

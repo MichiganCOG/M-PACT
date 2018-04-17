@@ -10,7 +10,7 @@ _G_MEAN = 116.78
 _B_MEAN = 103.94
 
 _RESIZE_SIDE_MIN = 256
-_RESIZE_SIDE_MAX = 340 
+_RESIZE_SIDE_MAX = 340
 
 def preprocess_for_train(image,
                          output_height,
@@ -115,7 +115,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
 
     # Fixed temporal footprint assuming 25 fps input
     if istraining:
-        footprint = 125 
+        footprint = 125
         sample_dims = input_dims/2
     else:
         footprint = 250
@@ -126,7 +126,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # Selecting a random, seeded temporal offset
     temporal_offset   = tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames, shape=np.asarray([1]))[0]
 
-    input_data_tensor = loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor, 
+    input_data_tensor = loop_video_with_offset(input_data_tensor[temporal_offset:,:,:,:], input_data_tensor,
                                                frames-temporal_offset, frames, height, width, channel, footprint)
 
     # Remove excess frames after looping to reduce to footprint size
@@ -134,15 +134,16 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     input_data_tensor = tf.reshape(input_data_tensor, tf.stack([footprint, height, width, channel]))
     input_data_tensor = resample_input(input_data_tensor, sample_dims, footprint, 1.0)
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
-    
+
     # Preprocess data
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
-    input_data_tensor = random_crop_clip(input_data_tensor, size[0], size[1]) 
-    input_data_tensor = random_flip_left_right_clip(input_data_tensor) 
-
 
     if istraining:
+        input_data_tensor = random_crop_clip(input_data_tensor, size[0], size[1])
+        input_data_tensor = random_flip_left_right_clip(input_data_tensor)
         padding_zeros     = tf.zeros((sample_dims, size[0], size[1], 3), dtype=tf.float32)
         input_data_tensor = tf.concat([input_data_tensor, padding_zeros], 0)
+
+    # END IF
 
     return input_data_tensor
