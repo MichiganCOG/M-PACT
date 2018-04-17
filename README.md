@@ -1,4 +1,5 @@
-# Tensorflow Activity Recognition Framework
+# M-PACT: Michigan Platform for Activity Classification in Tensorflow
+## Authors: Eric Hofesmann, Madan Ravi Ganesh, Jason J. Corso
 ## Needs to be updated 
 
 This python framework provides modular access to common activity recognition models for the use of baseline comparisons between the current state of the art and custom models.
@@ -50,16 +51,10 @@ This README will walk you through the process of installing dependencies, downlo
 
 
 
-### Implemented Datasets:
+### Common Datasets:
 
 * HMDB51
 * UCF101
-
-### Future Models:
-* ARTNet
-
-
-### Future Datasets:
 * Kinetics
 * Moments in Time
 
