@@ -11,9 +11,6 @@ from utils.layers_utils     import *
 from default_preprocessing    import preprocess
 from video_preprocessing      import preprocess as preprocess_video
 from video_full_preprocessing import preprocess as preprocess_video_full
-from cvr_preprocessing        import preprocess as preprocess_cvr
-from rr_preprocessing         import preprocess as preprocess_rr
-from sr_preprocessing         import preprocess as preprocess_sr
 
 class ResNet(Abstract_Model_Class):
 
@@ -276,20 +273,7 @@ class ResNet(Abstract_Model_Class):
         Return:
             Pointer to preprocessing function of current model
         """
-        if self.preproc_method == 'cvr':
-            output, alpha_tensor = preprocess_cvr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.model_alpha, self.input_alpha, istraining)
-            self.add_track_variables('Parameterization_Variables',tf.Variable(alpha_tensor, trainable=False))
-	    return output
-
-        elif self.preproc_method == 'rr':
-            output, alpha_tensor = preprocess_rr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining)
-	    return output, aplha_tensor
-
-        elif self.preproc_method == 'sr':
-            output, alpha_tensor = preprocess_sr(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining, video_step)
-	    return output, alpha_tensor 
-
-        elif self.preproc_method == 'video':
+        if self.preproc_method == 'video':
             return preprocess_video(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, self.input_alpha, istraining)
 
         elif self.preproc_method == 'video_full':
