@@ -1,4 +1,5 @@
 # Tensorflow Activity Recognition Framework
+# Needs to be updated 
 
 This python framework provides modular access to common activity recognition models for the use of baseline comparisons between the current state of the art and custom models.
 

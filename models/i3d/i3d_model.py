@@ -96,7 +96,7 @@ class I3D(Abstract_Model_Class):
 
 
         with tf.name_scope(scope, 'i3d', [inputs]):
-            #with tf.variable_scope('RGB/inception_i3d'):
+
             layers = {}
 
             layers.update(self._unit_3d(layer_numbers=['1','2','3'], input_layer=inputs, kernel_size=[7,7,7,64], stride=[2,2,2], name='Conv3d_1a_7x7', is_training=False))
@@ -111,71 +111,41 @@ class I3D(Abstract_Model_Class):
 
             #### Mixed_3b ####
 
-            #with tf.variable_scope('Mixed_3b'):
-                #with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['11','12','13'], input_layer=layers['11_inp'], kernel_size=[1,1,1,64], name='Mixed_3b/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['14','15','16'], input_layer=layers['11_inp'], kernel_size=[1,1,1,96], name='Mixed_3b/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['17','18','19'], input_layer=layers['16'], kernel_size=[3,3,3,128], name='Mixed_3b/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
-                # END WITH
 
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['20','21','22'], input_layer=layers['11_inp'], kernel_size=[1,1,1,16], name='Mixed_3b/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['23','24','24'], input_layer=layers['22'], kernel_size=[3,3,3,32], name='Mixed_3b/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['25'] = max_pool3d_layer(layers['11_inp'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_3b/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['26','27','28'], input_layer=layers['25'], kernel_size=[1,1,1,32], name='Mixed_3b/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['29'] = tf.concat([layers['13'], layers['19'], layers['24'], layers['28']], 4)
-
-            # END WITH
 
             #### END OF MIXED_3b ####
 
             #### Mixed_3c ####
 
-            #with tf.variable_scope('Mixed_3c'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['30','31','32'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Mixed_3c/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['33','34','35'], input_layer=layers['29'], kernel_size=[1,1,1,128], name='Mixed_3c/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['36','37','38'], input_layer=layers['35'], kernel_size=[3,3,3,192], name='Mixed_3c/Branch_1/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['39','40','41'], input_layer=layers['29'], kernel_size=[1,1,1,32], name='Mixed_3c/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['42','43','44'], input_layer=layers['41'], kernel_size=[3,3,3,96], name='Mixed_3c/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['45'] = max_pool3d_layer(layers['29'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_3c/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['46','47','48'], input_layer=layers['45'], kernel_size=[1,1,1,64], name='Mixed_3c/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['49'] = tf.concat([layers['32'], layers['38'], layers['44'], layers['48']], 4)
-
-            # END WITH
 
             #### END OF MIXED_3c ####
 
@@ -183,71 +153,41 @@ class I3D(Abstract_Model_Class):
 
             #### Mixed_4b ####
 
-            #with tf.variable_scope('Mixed_4b'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['51','52','53'], input_layer=layers['50'], kernel_size=[1,1,1,192], name='Mixed_4b/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['54','55','56'], input_layer=layers['50'], kernel_size=[1,1,1,96], name='Mixed_4b/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['57','58','59'], input_layer=layers['56'], kernel_size=[3,3,3,208], name='Mixed_4b/Branch_1/Conv3d_0b_3x3', is_training=False))
-                                
-                # END WITH
 
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['60','61','62'], input_layer=layers['50'], kernel_size=[1,1,1,16], name='Mixed_4b/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['63','64','65'], input_layer=layers['62'], kernel_size=[3,3,3,48], name='Mixed_4b/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['66'] = max_pool3d_layer(layers['50'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4b/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['67','68','69'], input_layer=layers['66'], kernel_size=[1,1,1,64], name='Mixed_4b/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['70'] = tf.concat([layers['53'], layers['59'], layers['65'], layers['69']], 4)
-
-            # END WITH
 
             #### END OF MIXED_4b ####
 
             #### Mixed_4c ####
 
-            #with tf.variable_scope('Mixed_4c'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['71','72','73'], input_layer=layers['70'], kernel_size=[1,1,1,160], name='Mixed_4c/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['74','75','76'], input_layer=layers['70'], kernel_size=[1,1,1,112], name='Mixed_4c/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['77','78','79'], input_layer=layers['76'], kernel_size=[3,3,3,224], name='Mixed_4c/Branch_1/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['80','81','82'], input_layer=layers['70'], kernel_size=[1,1,1,24], name='Mixed_4c/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['83','84','85'], input_layer=layers['82'], kernel_size=[3,3,3,64], name='Mixed_4c/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['86'] = max_pool3d_layer(layers['70'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4c/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['87','88','89'], input_layer=layers['86'], kernel_size=[1,1,1,64], name='Mixed_4c/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['90'] = tf.concat([layers['73'], layers['79'], layers['85'], layers['89']], 4)
-
-            # END WITH
 
             #### END OF MIXED_4c ####
 
@@ -288,71 +228,41 @@ class I3D(Abstract_Model_Class):
 
             #### Mixed_4e ####
 
-            #with tf.variable_scope('Mixed_4e'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['111','112','113'], input_layer=layers['110'], kernel_size=[1,1,1,112], name='Mixed_4e/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['114','115','116'], input_layer=layers['110'], kernel_size=[1,1,1,144], name='Mixed_4e/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['117','118','119'], input_layer=layers['116'], kernel_size=[3,3,3,288], name='Mixed_4e/Branch_1/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['120','121','122'], input_layer=layers['110'], kernel_size=[1,1,1,32], name='Mixed_4e/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['123','124','125'], input_layer=layers['122'], kernel_size=[3,3,3,64], name='Mixed_4e/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['126'] = max_pool3d_layer(layers['110'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4e/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['127','128','129'], input_layer=layers['126'], kernel_size=[1,1,1,64], name='Mixed_4e/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['130'] = tf.concat([layers['113'], layers['119'], layers['125'], layers['129']], 4)
-
-            # END WITH
 
             #### END OF MIXED_4e ####
 
             #### Mixed_4f ####
 
-            #with tf.variable_scope('Mixed_4f'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['131','132','133'], input_layer=layers['130'], kernel_size=[1,1,1,256], name='Mixed_4f/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['134','135','136'], input_layer=layers['130'], kernel_size=[1,1,1,160], name='Mixed_4f/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['137','138','139'], input_layer=layers['136'], kernel_size=[3,3,3,320], name='Mixed_4f/Branch_1/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['140','141','142'], input_layer=layers['130'], kernel_size=[1,1,1,32], name='Mixed_4f/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['143','144','145'], input_layer=layers['142'], kernel_size=[3,3,3,128], name='Mixed_4f/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['146'] = max_pool3d_layer(layers['130'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_4f/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['147','148','149'], input_layer=layers['146'], kernel_size=[1,1,1,128], name='Mixed_4f/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['150'] = tf.concat([layers['133'], layers['139'], layers['145'], layers['149']], 4)
-
-            # END WITH
 
             #### END OF MIXED_4f ####
 
@@ -360,71 +270,41 @@ class I3D(Abstract_Model_Class):
 
             #### Mixed_5b ####
 
-            #with tf.variable_scope('Mixed_5b'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['152','153','154'], input_layer=layers['151'], kernel_size=[1,1,1,256], name='Mixed_5b/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['155','156','157'], input_layer=layers['151'], kernel_size=[1,1,1,160], name='Mixed_5b/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['158','159','160'], input_layer=layers['157'], kernel_size=[3,3,3,320], name='Mixed_5b/Branch_1/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['161','162','163'], input_layer=layers['151'], kernel_size=[1,1,1,32], name='Mixed_5b/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['164','165','166'], input_layer=layers['163'], kernel_size=[3,3,3,128], name='Mixed_5b/Branch_2/Conv3d_0a_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['167'] = max_pool3d_layer(layers['151'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_5b/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['168','169','170'], input_layer=layers['167'], kernel_size=[1,1,1,128], name='Mixed_5b/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['171'] = tf.concat([layers['154'], layers['160'], layers['166'], layers['170']], 4)
-
-            # END WITH
 
             #### END OF MIXED_5b ####
 
             #### Mixed_5c ####
 
-            #with tf.variable_scope('Mixed_5c'):
-            #    with tf.variable_scope('Branch_0'):
             layers.update(self._unit_3d(layer_numbers=['172','173','174'], input_layer=layers['171'], kernel_size=[1,1,1,384], name='Mixed_5c/Branch_0/Conv3d_0a_1x1', is_training=False))
 
-                # END WITH
-
-                #with tf.variable_scope('Branch_1'):
             layers.update(self._unit_3d(layer_numbers=['175','176','177'], input_layer=layers['171'], kernel_size=[1,1,1,192], name='Mixed_5c/Branch_1/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['178','179','180'], input_layer=layers['177'], kernel_size=[3,3,3,384], name='Mixed_5c/Branch_1/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_2'):
             layers.update(self._unit_3d(layer_numbers=['181','182','183'], input_layer=layers['171'], kernel_size=[1,1,1,48], name='Mixed_5c/Branch_2/Conv3d_0a_1x1', is_training=False))
 
             layers.update(self._unit_3d(layer_numbers=['184','185','186'], input_layer=layers['183'], kernel_size=[3,3,3,128], name='Mixed_5c/Branch_2/Conv3d_0b_3x3', is_training=False))
                                 
-                # END WITH
-
-                #with tf.variable_scope('Branch_3'):
             layers['187'] = max_pool3d_layer(layers['171'], filter_dims=[1,3,3,3,1], stride_dims=[1,1,1,1,1], padding='SAME', name='RGB/inception_i3d/Mixed_5c/Branch_3/MaxPool3d_0a_3x3')
 
             layers.update(self._unit_3d(layer_numbers=['188','189','190'], input_layer=layers['187'], kernel_size=[1,1,1,128], name='Mixed_5c/Branch_3/Conv3d_0b_1x1', is_training=False))
                                 
-                # END WITH
-
             layers['191'] = tf.concat([layers['174'], layers['180'], layers['186'], layers['190']], 4)
-
-            # END WITH
 
             #### END OF MIXED_5c ####
 
@@ -435,8 +315,6 @@ class I3D(Abstract_Model_Class):
             layers.update(self._unit_3d(layer_numbers=['logits_pre'], input_layer=layers['193'], kernel_size=[1,1,1,output_dims], name='RGB/inception_i3d/Logits/Conv3d_0c_1x1', is_training=is_training, activation_fn=None, use_batch_norm=False, freeze=True))
  
             layers['logits'] = tf.expand_dims(tf.reduce_mean(tf.squeeze(layers['logits_pre'], [2, 3]), axis=1), 1)
-
-            # END WITH
 
         # END WITH
 
@@ -509,7 +387,6 @@ class I3D(Abstract_Model_Class):
         Return:
             Cross entropy loss value
         """
-    
         labels = tf.cast(labels, tf.int64)
 
         cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
