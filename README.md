@@ -1,6 +1,5 @@
 # [M-PACT: Michigan Platform for Activity Classification in Tensorflow](https://arxiv.org/abs/1804.05879)
 ## Authors: Eric Hofesmann, Madan Ravi Ganesh, Jason J. Corso
-## Needs to be updated 
 
 This python framework provides modular access to common activity recognition models for the use of baseline comparisons between the current state of the art and custom models.
 
@@ -62,12 +61,12 @@ Link: https://arxiv.org/abs/1804.05879
 * Cudnn
 * Gflags
 
-#### Python Dependencies:
-* Tensorflow 1.2.1
-* Numpy
-* Scikit Learn
-* H5py
-
+#### Python Dependencies (All can be installed using pip):
+* [Tensorflow 1.2.1](https://www.tensorflow.org/install/install_linux)
+* [Numpy](https://askubuntu.com/questions/868599/how-to-install-scipy-and-numpy-on-ubuntu-16-04?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa)
+* [Scikit Learn](http://scikit-learn.org/stable/install.html)
+* [H5py](http://docs.h5py.org/en/2.7.1/build.html)
+* [OpenCV](https://pypi.org/project/opencv-python/) (Only for dataset to tfrecords conversion, can use other video reading programs)
 
 ### Configuring Datasets
 
@@ -80,11 +79,13 @@ Methods to import and configure datasets correctly can be found in the section [
 ### Using the framework
 
 From the root directory, the training and testing is done through `train.py` and `test.py`.
+Implemented models can be used if the weights have been acquired.
+Download weights and mean files by running the script `sh scripts/shell/download_weights.sh`.
 
 Ex. Train ResNet50+LSTM on HMDB51 using 4 GPUs
 
 ```
-python train.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --dropoutRate 0.5  --expName example_1  --numVids 3570  --lr 0.01  --nEpochs 30  --baseDataPath /data  --fName trainlist  --optChoice adam
+python train.py  --model resnet  --dataset HMDB51  --numGpus 4  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --dropoutRate 0.5  --expName example_1  --numVids 3570  --lr 0.01  --nEpochs 30  --baseDataPath /data  --fName trainlist  --optChoice adam
 ```
 
 
@@ -95,13 +96,7 @@ python  train.py \
 
 --model             The model archetecture to be used (i3d, c3d, tsn, resnet)   **REQUIRED**
 
---dataset           The dataset to use for training (UCF101, HMDB51)
-
---numGpus           Number of GPUs to train on over a single node (default 1)
-
---train             1 or 0 whether to set up model in testing or training format (default 1)
-
---load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
+--dataset           The dataset to use for training (UCF101, HMDB51)    **REQUIRED**
 
 --size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D) **REQUIRED**
 
@@ -111,6 +106,18 @@ python  train.py \
 
 --seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)    **REQUIRED**
 
+--expName           Experiment name **REQUIRED**
+
+--baseDataPath      The path to where all datasets are stored (Ex. For HMDB51, this directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)   **REQUIRED**
+
+--fName			    Which dataset list to use (trainlist, testlist, vallist)    **REQUIRED**
+
+--numGpus           Number of GPUs to train on over a single node (default 1)
+
+--train             1 or 0 whether to set up model in testing or training format (default 1)
+
+--load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
+
 --modelAlpha        Optional rsampling factor constant value resampling or initializing other resampling strategies maininly during training.
 
 --inputAlpha        Resampling factor for constant value resampling of input video, used mainly for testing models.
@@ -118,8 +125,6 @@ python  train.py \
 --dropoutRate      Value indicating proability of keeping inputs of the model's dropout layers. (defaulat 0.5)
 
 --freeze            Freeze weights during training of any layers within the model that have the option manually set. (default 0)
-
---expName           Experiment name **REQUIRED**
 
 --numVids           Number of videos to train on within the specified split 
     
@@ -132,10 +137,6 @@ python  train.py \
 --nEpochs           Number of epochs to train over (default 1)
 
 --split             Dataset split to use (deafult 1)
-
---baseDataPath      The path to where all datasets are stored (Ex. For HMDB51, this directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)   **REQUIRED**
-
---fName			    Which dataset list to use (trainlist, testlist, vallist)    **REQUIRED**
 
 --saveFreq		    Frequency in epochs to save model checkpoints (default 1 aka every epoch)
 
@@ -192,10 +193,6 @@ python  test.py \
 
 --dataset           The dataset to use (UCF101, HMDB51) **REQUIRED**
 
---train             0 or 1 whether to set up model in testing or training format (default 0)
-
---load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to test from default weights (default 1)
-
 --size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D) **REQUIRED**
 
 --inputDims         Input dimensions (number of frames to pass into model)  **REQUIRED**
@@ -203,6 +200,18 @@ python  test.py \
 --outputDims        Output dimensions(number of classes in dataset) **REQUIRED**
 
 --seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)    **REQUIRED**
+
+--expName           Experiment name **REQUIRED**
+
+--numVids           Number of videos to test on within the split   **REQUIRED**
+
+--fName			    Which dataset list to use (trainlist, testlist, vallist)    **REQUIRED**
+
+--loadedDataset	    Dataset that the model was trained on. This is to be used when testing a model on a different dataset than it was trained on.   **REQUIRED**
+
+--train             0 or 1 whether to set up model in testing or training format (default 0)
+
+--load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to test from default weights (default 1)
 
 --modelAlpha        Resampling factor constant value resampling or initializing other resampling strategies maininly during training, optional.
 
@@ -212,17 +221,9 @@ python  test.py \
 
 --freeze            Freeze weights during training of any layers within the model that have the option manually set. (default 0)
 
---expName           Experiment name **REQUIRED**
-
---numVids           Number of videos to test on within the split   **REQUIRED**
-
---split             Dataset split to use (deafult 1)
+--split             Dataset split to use (default 1)
 
 --baseDataPath      The path to where all datasets are stored (Ex. For HMDB51, this directory should then contain tfrecords_HMDB51/Split1/testlist/exampleVidName.tfrecords)
-
---fName			    Which dataset list to use (trainlist, testlist, vallist)    **REQUIRED**
-
---loadedDataset	    Dataset that the model was trained on. This is to be used when testing a model on a different dataset than it was trained on.   **REQUIRED**
 
 --returnLayer	    String indicating which layer to apply 'metricsMethod' on (default ['logits'])
 
@@ -262,7 +263,7 @@ python  test.py \
 Ex. Test C3D on UCF101 split 1
 
 ```
-python train_test_TFRecords_multigpu_model.py --model c3d --dataset UCF101 --loadedDataset UCF101 --train 0 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName example_2 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /data --fName testlist
+python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName example_2 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /data --fName testlist
 ```
 
 ### Framework File Structure
@@ -628,6 +629,34 @@ Each tfrecord contains a dictionary with the following information from the orig
 * Name - Name of the video (type bytes)
 
 
+We provide a script that converts a dataset to tfrecords using OpenCV, as long as the dataset is being stored using the correct file structure.
+```
+/dataset
+    /action_class
+        /video1.avi
+```
+
+
+An important note is that the TFRecords for each dataset must be stored in a specific file structure, HMDB51 for example:
+```
+/tfrecords_HMDB51
+	/Split1
+		/trainlist
+			vidName1.tfrecords
+			vidName2.tfrecords
+		/testlist
+		/vallist
+	/Split2
+	/Split3
+```
+This means that either before or after the videos are converted, they need to be arranged into this file structure!!!
+A vallist is not required, just a trainlist and testlist stored inside the folder 'Split1'.
+Additionally, if only one split is desired, it still must be named 'Split1'
+
+
+
+
+You can also manually convert your dataset to tfrecords if need be.
 The following code snipped is an example of how to convert a single video to tfrecords given the video data in the form of a numpy array.
 ```
 def save_tfrecords(data, label, vidname, save_dir):
@@ -656,19 +685,6 @@ def _bytes(value):
 
 ```
 A prerequisite to this is that the video must be passed in as a numpy or python array of floats/ints which can be done a number of ways. For example using OpenCV, matplotlib, or any other desired method.
-
-The TFRecords for each dataset must be stored in a specific file structure, HMDB51 for example:
-```
-/tfrecords_HMDB51
-	/Split1
-		/trainlist
-			vidName1.tfrecords
-			vidName2.tfrecords
-		/testlist
-		/vallist
-	/Split2
-	/Split3
-```
 
 
 ## Expected Results
