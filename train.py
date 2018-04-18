@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser()
 # Model parameters
 
 parser.add_argument('--model', action= 'store', required=True,
-        help= 'Model architecture (c3d, lrcn, tsn, vgg16, resnet)')
+        help= 'Model architecture (c3d, tsn, i3d, resnet)')
 
 parser.add_argument('--inputDims', action='store', required=True, type=int,
         help = 'Input Dimensions (Number of frames to pass as input to the model)')
@@ -49,7 +49,7 @@ parser.add_argument('--dropoutRate', action='store', type=float, default=0.5,
         help = 'Value indicating proability of keeping inputs of the model\'s dropout layers.')
 
 parser.add_argument('--freeze', action='store', type=int, default=0,
-        help = 'Freeze weights during training of any layers within the model that have the option set. (default False)')
+        help = 'Freeze weights during training of any layers within the model that have the option set. (default 0)')
 
 # Optimization parameters
 
@@ -63,7 +63,7 @@ parser.add_argument('--lossType', action='store', default='full_loss',
         help = 'String defining loss type associated with chosen model.')
 
 parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
-        help = 'Which model layers to be returned by the models\' inference during testing.')
+        help = 'Which model layers to be returned by the model\'s inference during testing.')
 
 parser.add_argument('--optChoice', action='store', default='default',
         help = 'String indicating optimizer choice')
@@ -74,9 +74,6 @@ parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
 # Experiment parameters
 
 parser.add_argument('--dataset', action= 'store', required=True,
-        help= 'Dataset (UCF101, HMDB51)')
-
-parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
         help= 'Dataset (UCF101, HMDB51)')
 
 parser.add_argument('--numGpus', action= 'store', type=int, default=1,

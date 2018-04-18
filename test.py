@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser()
 # Model parameters
 
 parser.add_argument('--model', action= 'store', required=True,
-        help= 'Model architecture (c3d, lrcn, tsn, vgg16, resnet)')
+        help= 'Model architecture (c3d, i3d, tsn, resnet)')
 
 parser.add_argument('--inputDims', action='store', required=True, type=int,
         help = 'Input Dimensions (Number of frames to pass as input to the model)')
@@ -51,38 +51,16 @@ parser.add_argument('--dropoutRate', action='store', type=float, default=0.5,
 parser.add_argument('--freeze', action='store', type=int, default=0,
         help = 'Freeze weights during training of any layers within the model that have the option set. (default False)')
 
-# Optimization parameters
-
-parser.add_argument('--lr', action='store', type=float, default=0.001,
-        help = 'Learning Rate')
-
-parser.add_argument('--wd', action='store', type=float, default=0.0,
-        help = 'Weight Decay')
-
-parser.add_argument('--lossType', action='store', default='full_loss',
-        help = 'String defining loss type associated with chosen model.')
-
 parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
         help = 'Which model layers to be returned by the models\' inference during testing.')
 
-parser.add_argument('--optChoice', action='store', default='default',
-        help = 'String indicating optimizer choice')
-
-parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
-        help = 'Value of normalized gradient at which to clip.')
-
-parser.add_argument('--lrboundary', nargs='+',type=int, default=[0],
-        help = 'List of boundary epochs at which lr will be updated')
-
-parser.add_argument('--lrvalues', nargs='+',type=float, default=[1.0],
-        help = 'List of lr multiplier values, length of list must equal lrboundary')
 
 # Experiment parameters
 
 parser.add_argument('--dataset', action= 'store', required=True,
         help= 'Dataset (UCF101, HMDB51)')
 
-parser.add_argument('--loadedDataset', action= 'store', default='HMDB51',
+parser.add_argument('--loadedDataset', action= 'store', required=True,
         help= 'Dataset (UCF101, HMDB51)')
 
 parser.add_argument('--numGpus', action= 'store', type=int, default=1,
@@ -94,8 +72,8 @@ parser.add_argument('--gpuList', nargs='+',type=str, default=[],
 parser.add_argument('--train', action= 'store', type=int, default=0,
         help = 'Binary value to indicate training or evaluation instance')
 
-parser.add_argument('--load', action='store', type=int, default=0,
-        help = 'Whether you want to load a saved model to train from scratch.')
+parser.add_argument('--load', action='store', type=int, default=1,
+        help = 'Whether to use the current trained checkpoints with the same experiment_name or to test from default weights.')
 
 parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
         help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
@@ -107,10 +85,7 @@ parser.add_argument('--expName', action='store', required=True,
         help = 'Unique name of experiment being run')
 
 parser.add_argument('--numVids', action='store', required=True, type=int,
-        help = 'Number of videos to be used for training')
-
-parser.add_argument('--nEpochs', action='store', type=int, default=1,
-        help = 'Number of Epochs')
+        help = 'Number of videos to be used for testing')
 
 parser.add_argument('--split', action='store', type=int, default=1,
         help = 'Dataset split to use')
@@ -120,9 +95,6 @@ parser.add_argument('--baseDataPath', action='store', default='/z/dat',
 
 parser.add_argument('--fName', action='store', required=True,
         help = 'Which dataset list to use (trainlist, testlist, vallist)')
-
-parser.add_argument('--saveFreq', action='store', type=int, default=1,
-        help = 'Frequency in epochs to save model checkpoints')
 
 parser.add_argument('--clipLength', action='store', type=int, default=-1,
         help = 'Length of clips to cut video into, -1 indicates using the entire video as one clip')
@@ -184,10 +156,10 @@ model = models_import.create_model_object(modelName = model_name,
                                    modelAlpha = args.modelAlpha,
                                    clipLength = args.clipLength,
                                    numVids = args.numVids,
-                                   numEpochs = args.nEpochs,
+                                   numEpochs = 1,
                                    batchSize = args.batchSize,
                                    numClips = args.numClips,
-                                   numGpus = args.numGpus,
+                                   numGpus = 1,
                                    train = args.train,
                                    expName = args.expName,
                                    outputDims = args.outputDims,
@@ -210,7 +182,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :dataset:            Name of dataset being loaded
         :loaded_dataset:     Name of dataset which was used to train the current model
         :experiment_name:    Name of current experiment
-        :num_vids:           Number of videos to be used for training
+        :num_vids:           Number of videos to be used for testing
         :split:              Split of dataset being used
         :base_data_path:     Full path to root directory containing datasets
         :f_name:             Specific video directory within a chosen split of a dataset
