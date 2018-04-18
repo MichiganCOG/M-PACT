@@ -79,63 +79,75 @@ Methods to import and configure datasets correctly can be found in the section [
 
 ### Using the framework
 
-From the root directory, the training and testing is done through train_test_TFRecords_multigpu_model.py
+From the root directory, the training and testing is done through `train.py` and `test.py`.
 
 Ex. Train ResNet50+LSTM on HMDB51 using 4 GPUs
 
 ```
-python train_test_TFRecords_multigpu_model.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName example_1  --numVids 3570  --lr 0.001  --nEpochs 30  --split 1  --baseDataPath /data  --fName trainlist
+python train.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --dropoutRate 0.5  --expName example_1  --numVids 3570  --lr 0.01  --nEpochs 30  --baseDataPath /data  --fName trainlist  --optChoice adam
 ```
 
 
 The parameters to train are:
 
 ```
-python  train_test_TFRecords_multigpu_model.py \
+python  train.py \
 
---model             The model archetecture to be used (i3d, c3d, tsn, resnet)
+--model             The model archetecture to be used (i3d, c3d, tsn, resnet)   **REQUIRED**
 
 --dataset           The dataset to use for training (UCF101, HMDB51)
 
 --numGpus           Number of GPUs to train on (Not yet implemented)
 
---train             1 or 0 whether this is a training or testing run
+--train             1 or 0 whether to set up model in testing or training format (default 1)
 
 --load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
 
---size              Size of the input frame (224 for ResNet, I3D, TSN and 112 for C3D)
+--size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D) **REQUIRED**
 
---inputDims         Input dimensions (number of frames to pass into model)
+--inputDims         Input dimensions (number of frames to pass into model)  **REQUIRED**
     
---outputDims        Output dimensions(number of classes in dataset)
+--outputDims        Output dimensions (number of classes in dataset)    **REQUIRED**
 
---seqLength         Sequence length to input into lstm (50 for ResNet50 and VGG16)
+--seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)    **REQUIRED**
 
---expName           Experiment name
+--modelAlpha        Optional rsampling factor constant value resampling or initializing other resampling strategies maininly during training.
 
---numVids           Number of videos to train or test on within the split (Uses the first numVids videos in testlist/trainlist.txt)
+--inputAlpha        Resampling factor for constant value resampling of input video, used mainly for testing models.
+
+--dropoutRate      Value indicating proability of keeping inputs of the model's dropout layers. (defaulat 0.5)
+
+--freeze            Freeze weights during training of any layers within the model that have the option manually set. (default 0)
+
+--expName           Experiment name **REQUIRED**
+
+--numVids           Number of videos to train or test on within the specified split 
 
 --valNumVids    	Number of videos to be used for validation
     
---lr                Initial learning rate
+--lr                Initial learning rate (Default 0.001)
 
---wd                Weight decay value, defaults to 0.0
+--wd                Weight decay value for training layers (Defaults 0.0)
 
---nEpochs           Number of epochs to train over
+--lossType          String defining loss type associated with chosen model (multiple losses are optionally defined in model)
 
---split             Dataset split to use
+--nEpochs           Number of epochs to train over (default 1)
 
---baseDataPath      The path to where all datasets are stored (Ex. This directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)
+--split             Dataset split to use (deafult 1)
 
---fName			    Which dataset list to use (trainlist, testlist, vallist)
+--baseDataPath      The path to where all datasets are stored (Ex. For HMDB51, this directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)   **REQUIRED**
+
+--fName			    Which dataset list to use (trainlist, testlist, vallist)    **REQUIRED**
 
 --saveFreq		    Frequency in epochs to save model checkpoints (default 1 aka every epoch)
 
---valFreq		    Frequency in epochs to validate (default 3)
+--returnLayer	    Which model layers to be returned by the model's inference during testing. ('logits' during training)
 
---returnLayer	    List of strings indicating parameters within the model to be tracked during training (default ['logits'])
+--optChoice         String indication optimizer choice (Default sgd)
 
---clipLength        Length of clips to cut video into, -1 indicates using the entire video as one clip
+--gradClipValue     Value of normalized gradient at which to clip (Default 5.0)
+
+--clipLength        Length of clips to cut video into (default -1 indicates using the entire video as one clip)
 
 --videoOffset       (none or random) indicating where to begin selecting video clips assuming clipOffset is none
 
@@ -143,17 +155,23 @@ python  train_test_TFRecords_multigpu_model.py \
 
 --numClips          Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset
 
---clipOverlap       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+--clipStride        Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
 
---batchSize         Number of clips to load into the model each step.
-
---lossType          String defining loss type associated with chosen model. (full_loss or half_loss - only compute loss based off of first half of video)
+--batchSize         Number of clips to load into the model each step (default 1)
 
 --metricsDir        Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.
 
---loadedCheckpoint  Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.
+--metricsMethod     Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)
 
---optChoice         String indicating optimizer choice
+--preprocMethod     Which preprocessing method to use, allows for the use of multiple preprocessing files per model architecture
+
+--randomInit        Randomly initialize model weights, not loading from any files (deafult False)
+
+--shuffleSeed       Seed integer for random shuffle of files in load_dataset function
+
+--preprocDebugging  Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging. Errors in preprocessing setup will not show up properly otherwise (Default 0)
+
+--loadedCheckpoint  Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recently saved checkpoint.
 
 --gpuList           List of GPU IDs to be used
 
@@ -178,17 +196,21 @@ python  train_test_TFRecords_multigpu_model.py \
 
 --numGpus           Number of GPUs to train on (Not yet implemented)
 
---train             1 or 0 whether this is a training or testing run
+--train             0 or 1 whether to set up model in testing or training format (default 0)
 
---load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to train from random initialized weights
+--load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to test from default weights
 
---size              Size of the input frame (224 for ResNet50 and VGG16)
+--size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D)
 
 --inputDims         Input dimensions (number of frames to pass into model)
 
 --outputDims        Output dimensions(number of classes in dataset)
 
---seqLength         Sequence length to input into lstm (50 for ResNet50 and VGG16)
+--seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)
+
+--modelAlpha        Resampling factor constant value resampling or initializing other resampling strategies maininly during training, optional.
+
+--inputAlpha        Resampling factor for constant value resampling of input video, used mainly for testing models.
 
 --expName           Experiment name
 
