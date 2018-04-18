@@ -1,12 +1,13 @@
 # [M-PACT: Michigan Platform for Activity Classification in Tensorflow](https://arxiv.org/abs/1804.05879)
-## Authors: Eric Hofesmann, Madan Ravi Ganesh, Jason J. Corso
 
 This python framework provides modular access to common activity recognition models for the use of baseline comparisons between the current state of the art and custom models.
+<br>This README will walk you through the process of installing dependencies, downloading and formatting datasets, testing the framework, and expanding the framework to train your own models.
 
-This README will walk you through the process of installing dependencies, downloading and formatting datasets, testing the framework, and expanding the framework to train your own models.
+This repository holds the code and models for the paper <br>
+[**M-PACT: Michigan Platform for Activity Classification in Tensorflow**](https://arxiv.org/abs/1804.05879), Eric Hofesmann, Madan Ravi Ganesh, and Jason J. Corso, arXiv, April 2018.
 
-**ATTENTION**: Please cite [**the arXiv paper**](https://arxiv.org/abs/1804.05879) introducing this platform when releasing any work that used this code. 
-Link: https://arxiv.org/abs/1804.05879
+**ATTENTION**: Please cite the arXiv paper introducing this platform when releasing any work that used this code. 
+<br> Link: https://arxiv.org/abs/1804.05879
 
 
 ### Implemented Model's Classification Accuracy:
@@ -41,7 +42,7 @@ Link: https://arxiv.org/abs/1804.05879
 	* [Adding a Dataset](#adding-a-dataset)
 * [Results](#implemented-models-classification-accuracy)
 * [Version History](#version-history)
-
+* [Acknowledgements](#acknowledgements)
 
 ## Introduction and Setup
 
@@ -730,3 +731,13 @@ Initial release. Using pre generated HDF5 files, test LRCN model on UCF101 datas
 * Include validation during training
 * Add training and testing on optical flow
 
+## Acknowledgements
+Supported by the Intelligence Advanced Research Projects Activity (IARPA) via
+Department of Interior/ Interior Business Center (DOI/IBC) contract number
+D17PC00341. The U.S. Government is authorized to reproduce and distribute
+reprints for Governmental purposes notwithstanding any copyright annotation
+thereon. Disclaimer: The views and conclusions contained herein are those of
+the authors and should not be interpreted as necessarily representing the official policies or endorsements, either expressed or implied, of IARPA, DOI/IBC, or
+the U.S. Government.
+This work was also partially supported by NIST 60NANB17D191 and ARO
+W911NF-15-1-0354.
