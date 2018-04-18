@@ -6,30 +6,11 @@ This python framework provides modular access to common activity recognition mod
 
 This README will walk you through the process of installing dependencies, downloading and formatting datasets, testing the framework, and expanding the framework to train your own models.
 
-ATTENTION: Please cite [**the arXiv paper**](https://arxiv.org/abs/1804.05879) introducing this platform when releasing any work done using this code. 
+**ATTENTION**: Please cite [**the arXiv paper**](https://arxiv.org/abs/1804.05879) introducing this platform when releasing any work that used this code. 
 Link: https://arxiv.org/abs/1804.05879
 
-## Table of Contents
 
-
-
-* [Introduction and Setup](#introduction-and-setup)
-    *  [Requirements](#requirements)
-	*  [Using the Framework](#using-the-framework)
-	*  [Framework File Structure](#framework-file-structure)
-	*  [Configuring Datasets](#configuring-datasets)
-	*  [Examples of Common Uses](#examples-of-common-uses)
-* [Add Custom Components](#add-custom-components)
-	* [Adding a Model](#adding-a-model)
-	* [Adding a Dataset](#adding-a-dataset)
-* [Results](#expected-results)
-* [Version History](#version-history)
-
-
-## Introduction and Setup
-
-
-### Implemented Models:
+### Implemented Model's Classification Accuracy:
 
 |  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
 |:----------:|:------:| :----:| :----:|
@@ -43,6 +24,25 @@ Link: https://arxiv.org/abs/1804.05879
 | ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 | 
 (*) Indicates that results are shown across all three splits
 
+
+## Table of Contents
+
+
+
+* [Introduction and Setup](#introduction-and-setup)
+    *  [Requirements](#requirements)
+	*  [Configuring Datasets](#configuring-datasets)
+	*  [Using the Framework](#using-the-framework)
+	*  [Framework File Structure](#framework-file-structure)
+	*  [Examples of Common Uses](#examples-of-common-uses)
+* [Add Custom Components](#add-custom-components)
+	* [Adding a Model](#adding-a-model)
+	* [Adding a Dataset](#adding-a-dataset)
+* [Results](#implemented-models-classification-accuracy)
+* [Version History](#version-history)
+
+
+## Introduction and Setup
 
 ### Common Datasets:
 
@@ -60,13 +60,21 @@ Link: https://arxiv.org/abs/1804.05879
 * Python 2.7
 * Cuda
 * Cudnn
-* gflags
+* Gflags
 
 #### Python Dependencies:
 * Tensorflow 1.2.1
 * Numpy
 * Scikit Learn
-* h5py
+* H5py
+
+
+### Configuring Datasets
+
+In order to use this framework, the datasets will need to be downloaded and formatted correctly.  Datasets are not included and must be downloaded and converted to TFRecords format. Converting dataset videos into TFRecords binary files allows for optimized tensorflow data loading and processing.  
+
+Methods to import and configure datasets correctly can be found in the section [Adding a Dataset](#adding-a-dataset).
+
 
 
 ### Using the framework
@@ -279,16 +287,24 @@ python train_test_TFRecords_multigpu_model.py --model c3d --dataset UCF101 --loa
 
 
 ```
+`train.py` - Train a model
 
+`test.py` - Test a model
 
-train_test_TFRecords_multigpu_model.py - Main program for training and testing models
-load_dataset_tfrecords.py - Loads specified dataset using a given models preprocessing
-trainlist, testlist, vallist - Lists of videos for training testing and validation splits
+`create_model.py` - Create model and preprocessing files for your custom model, include function that need to be filled in that can be found at [Adding a Model](#adding-a-model)
+
+`load_a_video.py` - Load a video using the M-PACT input pipeline to ensure proper conversion of a dataset.
+
 
 models - Includes the model class and video preprocessing required for that model
+
 results - Saved model weights at specified checkpoints
+
 logs - Tensorboard logs
 
+scripts - Scripts to set up the platform. Ex: downloading necessary weights
+
+utils - Python programs containing functions commonly used across other modules in this platform
 
 
 
@@ -296,15 +312,6 @@ logs - Tensorboard logs
 
 
 
-
-### Configuring Datasets
-
-
-Currently integrated datasets: HMDB51, UCF101
-
-In order to use this framework, the datasets will need to be downloaded and formatted correctly.  Datasets are not included and must be downloaded and converted to TFRecords format. Converting dataset videos into TFRecords binary files allows for optimized tensorflow data loading and processing.  
-
-The currently methods to import and configure the datasets correctly are to either use the follow section [Adding a Dataset](#adding-a-dataset) to convert HMDB51 and UCF101 to tfrecords manually.
 
 
 
@@ -314,30 +321,9 @@ The currently methods to import and configure the datasets correctly are to eith
 
 #### Testing using existing models
 
-Must download the saved checkpoints for the trained models with experiment names: tfrecords_resnet_HMDB51, tfrecords_vgg16_HMDB51
-
-Test ResNet50 on HMDB51:
-```
-python train_test_TFRecords_multigpu_model.py  --model resnet  --dataset HMDB51  --train 0  --load 1  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName tfrecords_resnet_HMDB51  --numVids 1530  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName testlist
-```
-
-Test VGG16 on HMDB51:
-```
-python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset HMDB51  --train 0  --load 1  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName tfrecords_vgg16_HMDB51  --numVids 1530  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName testlist
-```
-
-
 
 #### Training models from scratch
-Train ResNet50 on HMDB51:
-```
-python train_test_TFRecords_multigpu_model.py  --model resnet  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName resnet_train  --numVids 3570  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
-```
 
-Train VGG16 on HMDB51:
-```
-python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset HMDB51  --numGpus 4  --train 1  --load 0  --size 224  --inputDims 50  --outputDims 51  --seqLength 50  --expName vgg16_train  --numVids 3570  --split 1  --baseDataPath /z/home/madantrg/Datasets  --fName trainlist  --lr 0.001 --wd 0.0  --nEpochs 30
-```
 
 
 
@@ -680,7 +666,7 @@ The install of this framework can be tested by comparing the output with these e
 ### Current Version: 3.0
 
 #### Version 3.0 (GitHub Release)
-Implemented TFRecords based data loading to replace HDF5 files for increased performance.  Training has been updated to allow models to be trained on multiple GPUs concurrently.  Parallel data loading has been incorporated using TFRecords queues to allow maximized use of available GPUs.  The tensorflow saver checkpoints have been replaced with a custom version which reads and writes models weights directly to numpy arrays.  This will allow existing model weights from other sources to be more easily imported into this framework. Currently validation is not compatible with this tfrecords framework.
+Automated the generation of models and preprocessing files as well as importing models. Provide weights and mean files available for download. Matched authors performance of most models (C3D, TSN, ResNet50+LSTM, I3D) on UCF101 and HMDB51 datasets. 
 
 #### Version 2.0
 Implemented TFRecords based data loading to replace HDF5 files for increased performance.  Training has been updated to allow models to be trained on multiple GPUs concurrently.  Parallel data loading has been incorporated using TFRecords queues to allow maximized use of available GPUs.  The tensorflow saver checkpoints have been replaced with a custom version which reads and writes models weights directly to numpy arrays.  This will allow existing model weights from other sources to be more easily imported into this framework. Currently validation is not compatible with this tfrecords framework.
