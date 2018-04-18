@@ -114,11 +114,11 @@ class C3D(Abstract_Model_Class):
 
 
             # Uncomment to use sports1m_finetuned_ucf101.model (aka c3d_Sports1M_finetune_UCF101.npy)
-            # layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
-            # layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
+            layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
+            layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             # Uncomment to use c3d_Sports1M.npy
-            layers['reshape'] = tf.reshape(layers['pool5'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
+            # layers['reshape'] = tf.reshape(layers['pool5'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             layers['dense1'] = fully_connected_layer(input_tensor=layers['reshape'],
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,
@@ -142,7 +142,8 @@ class C3D(Abstract_Model_Class):
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        return np.load('models/weights/c3d_Sports1M.npy')#_finetune_UCF101.npy')#_Sports1M.npy')
+        #return np.load('models/weights/c3d_Sports1M.npy')
+        return np.load('models/weights/c3d_Sports1M_finetune_UCF101.npy')
         # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
