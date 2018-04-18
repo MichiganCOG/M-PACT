@@ -97,7 +97,7 @@ python  train.py \
 
 --dataset           The dataset to use for training (UCF101, HMDB51)
 
---numGpus           Number of GPUs to train on (Not yet implemented)
+--numGpus           Number of GPUs to train on over a single node (default 1)
 
 --train             1 or 0 whether to set up model in testing or training format (default 1)
 
@@ -121,9 +121,7 @@ python  train.py \
 
 --expName           Experiment name **REQUIRED**
 
---numVids           Number of videos to train or test on within the specified split 
-
---valNumVids    	Number of videos to be used for validation
+--numVids           Number of videos to train on within the specified split 
     
 --lr                Initial learning rate (Default 0.001)
 
@@ -161,7 +159,7 @@ python  train.py \
 
 --metricsDir        Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.
 
---metricsMethod     Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)
+--metricsMethod     Which method to use to calculate accuracy metrics. During training only used to set up correct file structure. (avg_pooling, last_frame, svm, svm_train or extract_features)
 
 --preprocMethod     Which preprocessing method to use, allows for the use of multiple preprocessing files per model architecture
 
@@ -188,43 +186,47 @@ python  train.py \
 The parameters to test are:
 
 ```
-python  train_test_TFRecords_multigpu_model.py \
+python  test.py \
 
---model             The model archetecture to be used (ResNet50, VGG16)
+--model             The model archetecture to be used (i3d, c3d, tsn, resnet)   **REQUIRED**
 
---dataset           The dataset to use (UCF101, HMDB51)
-
---numGpus           Number of GPUs to train on (Not yet implemented)
+--dataset           The dataset to use (UCF101, HMDB51) **REQUIRED**
 
 --train             0 or 1 whether to set up model in testing or training format (default 0)
 
---load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to test from default weights
+--load              1 or 0 whether to use the current trained checkpoints with the same experiment_name or to test from default weights (default 1)
 
---size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D)
+--size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D) **REQUIRED**
 
---inputDims         Input dimensions (number of frames to pass into model)
+--inputDims         Input dimensions (number of frames to pass into model)  **REQUIRED**
 
---outputDims        Output dimensions(number of classes in dataset)
+--outputDims        Output dimensions(number of classes in dataset) **REQUIRED**
 
---seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)
+--seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)    **REQUIRED**
 
 --modelAlpha        Resampling factor constant value resampling or initializing other resampling strategies maininly during training, optional.
 
 --inputAlpha        Resampling factor for constant value resampling of input video, used mainly for testing models.
 
---expName           Experiment name
+--dropoutRate       Value indicating proability of keeping inputs of the model's dropout layers. (defaulat 0.5)
 
---numVids           Number of videos to train or test on within the split (Uses the first numVids videos in testlist/trainlist.txt)
+--freeze            Freeze weights during training of any layers within the model that have the option manually set. (default 0)
 
---split             Dataset split to use
+--expName           Experiment name **REQUIRED**
 
---baseDataPath      The path to where all datasets are stored (Ex. This directory should then contain tfrecords_HMDB51/Split1/trainlist/exampleVidName.tfrecords)
+--numVids           Number of videos to test on within the split   **REQUIRED**
 
---fName			    Which dataset list to use (trainlist, testlist, vallist)
+--split             Dataset split to use (deafult 1)
 
---loadedDataset	    Dataset that the model was trained on. This is to be used when testing a model on a different dataset than it was trained on.  
+--baseDataPath      The path to where all datasets are stored (Ex. For HMDB51, this directory should then contain tfrecords_HMDB51/Split1/testlist/exampleVidName.tfrecords)
+
+--fName			    Which dataset list to use (trainlist, testlist, vallist)    **REQUIRED**
+
+--loadedDataset	    Dataset that the model was trained on. This is to be used when testing a model on a different dataset than it was trained on.   **REQUIRED**
 
 --returnLayer	    String indicating which layer to apply 'metricsMethod' on (default ['logits'])
+
+--gpuList           List of GPU device ids to be used, must be <= 1 for testing.
 
 --clipLength        Length of clips to cut video into, -1 indicates using the entire video as one clip
 
@@ -234,17 +236,25 @@ python  train_test_TFRecords_multigpu_model.py \
 
 --numClips          Number of clips to break video into, -1 indicates breaking the video into the maximum number of clips based on clipLength, clipOverlap, and clipOffset
 
---clipOverlap       Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
+--clipStride        Number of frames that overlap between clips, 0 indicates no overlap and -1 indicates clips are randomly selected and not sequential
 
 --metricsMethod     Which method to use to calculate accuracy metrics. (avg_pooling, last_frame, svm, svm_train or extract_features)
 
---batchSize         Number of clips to load into the model each step.
+--preprocMethod     Which preprocessing method to use, allows for the use of multiple preprocessing files per model architecture
+
+--batchSize         Number of clips to load into the model each step (default 1)
 
 --metricsDir        Name of sub directory within experiment to store metrics. Unique directory names allow for parallel testing.
 
---loadedCheckpoint  Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.
+--loadedCheckpoint  Specify the step of the saved model checkpoint that will be loaded for testing. (Defaults to most recent checkpoint)
 
---gpuList           List of GPU IDs to be used
+--randomInit        Randomly initialize model weights, not loading from any files (Default 0)
+
+--avgClips          Boolean indicating whether to average predictions across clips (Default 0)
+
+--useSoftmax        Boolean indicating whether to apply softmax to the inference of the model (Default 1)
+
+--preprocDebugging  Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging. Errors in preprocessing setup will not show up properly otherwise (Default 0)
 
 --verbose           Boolean switch to display all print statements or not
 ```
