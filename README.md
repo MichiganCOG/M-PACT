@@ -20,7 +20,8 @@ Link: https://arxiv.org/abs/1804.05879
 | I3D | UCF101 |  --  |  95.60* | 
 | C3D | UCF101 |  93.66   |  82.30* | 
 | TSN | UCF101 |  85.25   |  85.50 | 
-| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 | 
+| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 |
+ 
 (*) Indicates that results are shown across all three splits
 
 
