@@ -1,17 +1,20 @@
-# M-PACT: Michigan Platform for Activity Classification in Tensorflow
+# [M-PACT: Michigan Platform for Activity Classification in Tensorflow](https://arxiv.org/abs/1804.05879)
 ## Authors: Eric Hofesmann, Madan Ravi Ganesh, Jason J. Corso
 ## Needs to be updated 
 
 This python framework provides modular access to common activity recognition models for the use of baseline comparisons between the current state of the art and custom models.
 
-This README will walk you through the process of installing dependencies, downloading and formatting the required datasets, testing the framework, and expanding the framework to your own models and datasets.
+This README will walk you through the process of installing dependencies, downloading and formatting datasets, testing the framework, and expanding the framework to train your own models.
 
+ATTENTION: Please cite [**the arXiv paper**](https://arxiv.org/abs/1804.05879) introducing this platform when releasing any work done using this code. 
+Link: https://arxiv.org/abs/1804.05879
 
 ## Table of Contents
 
 
-* [Requirements](#requirements)
+
 * [Introduction and Setup](#introduction-and-setup)
+    *  [Requirements](#requirements)
 	*  [Using the Framework](#using-the-framework)
 	*  [Framework File Structure](#framework-file-structure)
 	*  [Configuring Datasets](#configuring-datasets)
@@ -22,7 +25,34 @@ This README will walk you through the process of installing dependencies, downlo
 * [Results](#expected-results)
 * [Version History](#version-history)
 
-## Requirements
+
+## Introduction and Setup
+
+
+### Implemented Models:
+
+|  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
+|:----------:|:------:| :----:| :----:|
+| I3D | HMDB51 | -- |  74.80* | 
+| C3D | HMDB51 | 48.24 | 50.30* | 
+| TSN | HMDB51 | 51.70 |  54.40 | 
+| ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
+| I3D | UCF101 |  --  |  95.60* | 
+| C3D | UCF101 |  93.66   |  82.30* | 
+| TSN | UCF101 |  85.25   |  85.50 | 
+| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 | 
+(*) Indicates that results are shown across all three splits
+
+
+### Common Datasets:
+
+* HMDB51
+* UCF101
+* Kinetics
+* Moments in Time
+
+
+### Requirements
 
 #### Hardware and Software:
 * Nvidia Graphics Card
@@ -37,26 +67,6 @@ This README will walk you through the process of installing dependencies, downlo
 * Numpy
 * Scikit Learn
 * h5py
-
-
-## Introduction and Setup
-
-
-### Implemented Models:
-
-* I3D
-* TSN
-* C3D
-* ResNet50 + LSTM
-
-
-
-### Common Datasets:
-
-* HMDB51
-* UCF101
-* Kinetics
-* Moments in Time
 
 
 ### Using the framework
@@ -218,16 +228,15 @@ python train_test_TFRecords_multigpu_model.py --model c3d --dataset UCF101 --loa
 ### Framework File Structure
 ```
 /tf-activity-recognition-framework
-   train_test_TFRecords_multigpu_model.py  
-   load_dataset.py  
-   logger.py
-   layers_utils.py
-   utils.py
+   train.py  
+   test.py
+   create_model.py
+   load_a_video.py
 
    /models
         /model_name
-            model_class.py
-            model_preprocessing.py
+            modelname_model.py
+            default_preprocessing.py
             model_weights.npy shortcut to ../weights/model_weights.npy (Optional)
             
         /weights
@@ -235,30 +244,39 @@ python train_test_TFRecords_multigpu_model.py --model c3d --dataset UCF101 --loa
 
    /results  
         /model_name
-            /experiment_name
-	            /checkpoints
-	                checkpoint
-	                checkpoint-100.npy
-	                checkpoint-100.dat
-	            /metrics_method
-	                testing_results.npy
+            /dataset_name
+                /preprocessing_method
+                    /experiment_name
+        	            /checkpoints
+        	                checkpoint
+        	                checkpoint-100.npy
+        	                checkpoint-100.dat
+        	            /metrics_method
+        	                testing_results.npy
 
     /logs
         /model_name
             /dataset_name
-                /metrics_method
-                    /experiment_name
-                        tensorboard_log
+                /preprocessing_method
+                    /metrics_method
+                        /experiment_name
+                            tensorboard_log
 
     /scripts
+        /shell
+            download_weights.sh
+    
+    /utils
         generate_tfrecords_dataset.py
+        convert_checkpoint.py
+        checkpoint_utils.py
+        layers_utils.py
+        metrics_utils.py
+        preprocessing_utils.py
+        sys_utils.py
+        logger.py
         
-        /PBS
-	        /model_name
-	            /test
-	                pbsScript.pbs
-	            /train
-	                pbsScript.pbs
+
 
 ```
 
@@ -335,48 +353,27 @@ python train_test_TFRecords_multigpu_model.py  --model vgg16  --dataset HMDB51  
 
 ##### Step 1: Create Model Directory Structure
 
-Create the directory:
+Run the python prgoram `create_model.py`:
 ```
-/models/modelName
-
-```
-
-Add the empty file:
-```
-/models/modelName/__init__.py
+python create_model.py --modelName MyModel
 ```
 
-##### Step 2: Add Model Class
 
-Create the model file:
+##### Step 2: Add Model Functions
+
+Navigate to the model file:
 ```
-/models/modelName/modelName_model.py
+/models/mymodel/mymodel_model.py
 ```
 
-File Structure:
+Required functions to fill in:
+
+inference(): 
 ```
-import tensorflow as tf
-import numpy      as np
-
-from utils.layers_utils				   import *
-from model_preprocessing_TFRecords import preprocess   as preprocess_tfrecords
-
-
-class ModelName():
-	def __init__(self, verbose):
+    def inference(self, inputs, is_training, input_dims, output_dims, seq_length, batch_size, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
         Args:
-            :verbose: Setting verbose command
-        """
-        self.verbose=verbose
-        self.name = 'modelName'
-
-
-
-	def inference(self, inputs, is_training, input_dims, output_dims, seq_length, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
-        """
-        Args:
-            :inputs:       Input to model of shape [Frames x Height x Width x Channels]
+            :inputs:       Input to model of shape [BatchSize x Frames x Height x Width x Channels]
             :is_training:  Boolean variable indicating phase (TRAIN OR TEST)
             :input_dims:   Length of input sequence
             :output_dims:  Integer indicating total number of classes in final prediction
@@ -385,77 +382,218 @@ class ModelName():
             :dropout_rate: Value indicating proability of keep inputs
             :return_layer: String matching name of a layer in current model
             :weight_decay: Double value of weight decay
+            :batch_size:   Number of videos or clips to process at a time
 
         Return:
             :layers[return_layer]: The requested layer's output tensor
         """
 
-		# ADD MODEL HERE
+        ############################################################################
+        #                       Add MODELNAME Network Layers HERE                  #
+        ############################################################################
 
-    	return
+        if self.verbose:
+            print('Generating MODELNAME network layers')
+
+        # END IF
+
+        with tf.name_scope(scope, 'MODELNAME', [inputs]):
+            layers = {}
+
+            ########################################################################################
+            #        TODO: Add any desired layers from layers_utils to this layers dictionary      #
+            #                                                                                      #
+            #       EX: layers['conv1'] = conv3d_layer(input_tensor=inputs,                        #
+            #           filter_dims=[dim1, dim2, dim3, dim4],                                      #
+            #           name=NAME,                                                                 #
+            #           weight_decay = wd)                                                         #
+            ########################################################################################
 
 
+            ########################################################################################
+            #       TODO: Final Layer must be 'logits'                                             #
+            #                                                                                      #
+            #  EX:  layers['logits'] = [fully_connected_layer(input_tensor=layers['previous'],     #
+            #                                         out_dim=output_dims, non_linear_fn=None,     #
+            #                                         name='out', weight_decay=weight_decay)]      #
+            ########################################################################################
 
+            layers['logits'] = # TODO Every model must return a layer named 'logits'
+
+            layers['logits'] = tf.reshape(layers['logits'], [batch_size, seq_length, output_dims])
+
+        # END WITH
+
+        return [layers[x] for x in return_layer]
+```
+
+preprocess_tfrecords():
+```
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
         Args:
-            :index:       Integer indicating the index of video frame from the text file containing video lists
-            :data:        Data loaded from HDF5 files
-            :labels:      Labels for loaded data
-            :size:        List detailing values of height and width for final frames
-            :is_training: Boolean value indication phase (TRAIN OR TEST)
+            :input_data_tensor:     Data loaded from tfrecords containing either video or clips
+            :frames:                Number of frames in loaded video or clip
+            :height:                Pixel height of loaded video or clip
+            :width:                 Pixel width of loaded video or clip
+            :channel:               Number of channels in video or clip, usually 3 (RGB)
+            :input_dims:            Number of frames used in input
+            :output_dims:           Integer number of classes in current dataset
+            :seq_length:            Length of output sequence
+            :size:                  List detailing values of height and width for final frames
+            :label:                 Label for loaded data
+            :is_training:           Boolean value indication phase (TRAIN OR TEST)
+            :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
         """
-        return preprocess_tfrecords(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step)
 
+        ####################################################
+        # TODO: Add more preprcessing arguments if desired #
+        ####################################################
 
+        return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, self.input_alpha)
 
+```
+
+loss():
+```
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels, loss_type):
         """
         Args:
-            :logits: Unscaled logits returned from final layer in model
-            :labels: True labels corresponding to loaded data
+           :logits:     Unscaled logits returned from final layer in model
+           :labels:     True labels corresponding to loaded data
+           :loss_type:  Allow for multiple losses that can be selected at run time. Implemented through if statements
         """
-        labels = tf.cast(labels, tf.int64)
 
-        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
-                                                                    logits=logits)
-        return cross_entropy_loss
-
+        ####################################################################################
+        #  TODO: ADD CUSTOM LOSS HERE, DEFAULT IS CROSS ENTROPY LOSS                       #
+        #                                                                                  #
+        #   EX: labels = tf.cast(labels, tf.int64)                                         #
+        #       cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, #
+        #                                                            logits=logits)        #
+        #        return cross_entropy_loss                                                 #
+        ####################################################################################
 ```
 
-#### Step 3: Add Model Preprocessing
-Create the file model file:
+(Optional) load_default_weights():
 ```
-/models/modelName/modelName_preprocessing.py
-```
-
-File Structure:
-```
-def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining):
-
-    # ADD PREPROCESSING HERE
-
-    return input_data_tensor, labels_tensor
-```
-
-
-
-#### Step 4: Import into /models/\_\_init\_\_.py
-At the top of the \_\_init\_\_.py file add:
-
-```
-from model.name_model import ModelClass
-
+    def load_default_weights(self):
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
+    
+        ############################################################################
+        # TODO: Add default model weights to models/weights/ and import them here  #
+        #                          ( OPTIONAL )                                    #
+        #                                                                          #
+        # EX: return np.load('models/weights/model_weights.npy')                   #
+        #                                                                          #
+        ############################################################################
 ```
 
-In the main of train_test_TFRecords_multigpu_model.py add:
 
-```
-elif modelName == 'name_model':
-    model = ModelClass()
 
+#### Step 3: Add Model Preprocessing Steps
+Navigate to the preprocessing file:
 ```
+/models/mymodel/default_preprocessing.py
+```
+
+Required functions to fill in:
+
+preprocess():
+```
+def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, input_alpha=1.0):
+    """
+    Preprocessing function corresponding to the chosen model
+    Args:
+        :input_data_tensor: Raw input data
+        :frames:            Total number of frames
+        :height:            Height of frame
+        :width:             Width of frame
+        :channel:           Total number of color channels
+        :input_dims:        Number of frames to be provided as input to model
+        :output_dims:       Total number of labels
+        :seq_length:        Number of frames expected as output of model
+        :size:              Output size of preprocessed frames
+        :label:             Label of current sample
+        :istraining:        Boolean indicating training or testing phase
+
+    Return:
+        Preprocessing input data and labels tensor
+    """
+
+    # Allow for resampling of input during testing for evaluation of the model's stability over video speeds
+    input_data_tensor = tf.cast(input_data_tensor, tf.float32)
+    input_data_tensor = resample_input(input_data_tensor, frames, frames, input_alpha)
+
+    # Apply preprocessing related to individual frames (cropping, flipping, resize, etc.... )
+    input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=size[0]), input_data_tensor)
+
+
+    ##########################################################################################################################
+    #                                                                                                                        #
+    # TODO: Add any video related preprocessing (looping, resampling, etc.... Options found in utils/preprocessing_utils.py) #
+    #                                                                                                                        #
+    ##########################################################################################################################
+
+
+    return input_data_tensor
+```
+
+preprocess_for_train():
+```
+def preprocess_for_train(image, output_height, output_width, resize_side):
+    """Preprocesses the given image for training.
+    Args:
+    image: A `Tensor` representing an image of arbitrary size.
+    output_height: The height of the image after preprocessing.
+    output_width: The width of the image after preprocessing.
+    resize_side: The smallest side of the image for aspect-preserving resizing.
+    Returns:
+    A preprocessed image.
+    """
+
+    ############################################################################
+    #             TODO: Add preprocessing done during training phase           #
+    #         Preprocessing option found in utils/preprocessing_utils.py       #
+    #                                                                          #
+    #  EX:    image = aspect_preserving_resize(image, resize_side)             #
+    #         image = central_crop([image], output_height, output_width)[0]    #
+    #         image.set_shape([output_height, output_width, 3])                #
+    #         image = tf.to_float(image)                                       #
+    #         return image                                                     #
+    ############################################################################
+```
+
+preprocess_for_eval():
+```
+def preprocess_for_eval(image, output_height, output_width, resize_side):
+    """Preprocesses the given image for evaluation.
+    Args:
+    image: A `Tensor` representing an image of arbitrary size.
+    output_height: The height of the image after preprocessing.
+    output_width: The width of the image after preprocessing.
+    resize_side: The smallest side of the image for aspect-preserving resizing.
+    Returns:
+    A preprocessed image.
+    """
+
+    ############################################################################
+    #             TODO: Add preprocessing done during training phase           #
+    #         Preprocessing option found in utils/preprocessing_utils.py       #
+    #                                                                          #
+    #  EX:    image = aspect_preserving_resize(image, resize_side)             #
+    #         image = central_crop([image], output_height, output_width)[0]    #
+    #         image.set_shape([output_height, output_width, 3])                #
+    #         image = tf.to_float(image)                                       #
+    #         return image                                                     #
+    ############################################################################
+```
+
+
+
+
 
 
 ### Adding a dataset
@@ -520,17 +658,17 @@ The TFRecords for each dataset must be stored in a specific file structure, HMDB
 ### Accuracies of Models
 The install of this framework can be tested by comparing the output with these expected testing results of the various models trained on the datasets.
 
-|  Model Architecture  |      Dataset      |  Accepted Accuracy |  Framework Testing Accuracy |
-|----------|:----------:|:------:| :----:| :----:|
-| I3D | HMDB51 |  --   |  60.92% | 
-| I3D | UCF101 |  --   |  88.95% | 
-| C3D | HMDB51 |  --   |  49.41% | 
-| C3D | UCF101 |  --   |  78.35% | 
-| TSN | HMDB51 |  --   |  44.12% | 
-| TSN | UCF101 |  --   |  77.40% | 
-| ResNet50 + LSTM |   HMDB51   |  43.90%  |  45.36% |
-| ResNet50 + LSTM |   UCF101   |  --  |  78.91% | 
-
+|  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
+|:----------:|:------:| :----:| :----:|
+| I3D | HMDB51 | -- |  74.80* | 
+| C3D | HMDB51 | 48.24 | 50.30* | 
+| TSN | HMDB51 | 51.70 |  54.40 | 
+| ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
+| I3D | UCF101 |  --  |  95.60* | 
+| C3D | UCF101 |  93.66   |  82.30* | 
+| TSN | UCF101 |  85.25   |  85.50 | 
+| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 | 
+(*) Indicates that results are shown across all three splits
 
 
 
@@ -539,7 +677,10 @@ The install of this framework can be tested by comparing the output with these e
 ## Version History
 
 
-### Current Version: 2.0
+### Current Version: 3.0
+
+#### Version 3.0 (GitHub Release)
+Implemented TFRecords based data loading to replace HDF5 files for increased performance.  Training has been updated to allow models to be trained on multiple GPUs concurrently.  Parallel data loading has been incorporated using TFRecords queues to allow maximized use of available GPUs.  The tensorflow saver checkpoints have been replaced with a custom version which reads and writes models weights directly to numpy arrays.  This will allow existing model weights from other sources to be more easily imported into this framework. Currently validation is not compatible with this tfrecords framework.
 
 #### Version 2.0
 Implemented TFRecords based data loading to replace HDF5 files for increased performance.  Training has been updated to allow models to be trained on multiple GPUs concurrently.  Parallel data loading has been incorporated using TFRecords queues to allow maximized use of available GPUs.  The tensorflow saver checkpoints have been replaced with a custom version which reads and writes models weights directly to numpy arrays.  This will allow existing model weights from other sources to be more easily imported into this framework. Currently validation is not compatible with this tfrecords framework.
@@ -549,8 +690,6 @@ Initial release. Using pre generated HDF5 files, test LRCN model on UCF101 datas
 
 ### Future features:
 
-* Update validation to include tfrecords compatibility
-* Implement TSN, C3D, and ARTNet
-* Add training and testing on optical flow for the current datasets
-* Implement Kinetics Database
-* Expand documentation
+* Include validation during training
+* Add training and testing on optical flow
+
