@@ -304,7 +304,7 @@ class I3D(Abstract_Model_Class):
 
             #### END OF MIXED_5c ####
 
-            layers['192'] = avg_pool3d_layer(layers['191'], filter_dims=[1,2,7,7,1], stride_dims=[1,1,1,1,1], padding='VALID', name='RGB/inception_i3d/avg_pooling')
+            layers['192'] = tf.expand_dims(tf.reduce_mean(avg_pool3d_layer(layers['191'], filter_dims=[1,2,7,7,1], stride_dims=[1,1,1,1,1], padding='VALID', name='RGB/inception_i3d/avg_pooling'), axis=1), 1)
 
             layers['193'] = dropout(layers['192'], rate=dropout_rate, training=is_training)
 
@@ -340,23 +340,6 @@ class I3D(Abstract_Model_Class):
         """
         return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
-
-    """ Function to return loss calculated on all the outputs of a given network """
-    def full_loss(self, logits, labels):
-        """
-        Args:
-            :logits: Unscaled logits returned from final layer in model
-            :labels: True labels corresponding to loaded data
-
-        Return:
-            Cross entropy loss value
-        """
-
-        labels = tf.cast(labels, tf.int64)
-
-        cross_entropy_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
-                                                                  logits=logits)
-        return cross_entropy_loss
 
     """ Function to return loss calculated on given network """
     def loss(self, logits, labels, loss_type='full_loss'):

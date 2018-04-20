@@ -95,11 +95,33 @@ def random_crop_clip(clip, crop_height, crop_width):
 
     offset_height = tf.random_uniform([], 0, tf.cast(original_shape[1] - crop_height, tf.float32))
     offset_width = tf.random_uniform([], 0, tf.cast(original_shape[2] - crop_width, tf.float32))
-
     clip = tf.map_fn(lambda img: crop(img, offset_height, offset_width, crop_height, crop_width), clip)
     cropped_shape = tf.stack([original_shape[0], crop_height, crop_width, original_shape[3]])
     return tf.reshape(clip, cropped_shape)
 
+def central_crop_clip(clip, crop_height, crop_width):
+    """Crops the given clip height and width to the provided sizes using random offsets.
+    Args:
+    clip: a tensorflow variable clip of shape [frames, height, width, channels].
+    offset_height: a scalar tensor indicating the height offset.
+    offset_width: a scalar tensor indicating the width offset.
+    crop_height: the height of the cropped image.
+    crop_width: the width of the cropped image.
+    Returns:
+    the cropped clip.
+    """
+    original_shape = tf.shape(clip)
+
+    image_height = original_shape[1]
+    image_width  = original_shape[2]
+
+    offset_height = (image_height - crop_height) / 2
+    offset_width = (image_width - crop_width) / 2
+
+    clip = tf.map_fn(lambda img: crop(img, offset_height, offset_width, crop_height, crop_width), clip)
+    cropped_shape = tf.stack([original_shape[0], crop_height, crop_width, original_shape[3]])
+
+    return tf.reshape(clip, cropped_shape)
 
 def crop(image, offset_height, offset_width, crop_height, crop_width):
     """Crops the given image using the provided offsets and sizes.
