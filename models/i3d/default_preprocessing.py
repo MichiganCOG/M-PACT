@@ -29,12 +29,7 @@ def preprocess_for_train(image,
     A preprocessed image.
   """
   image = aspect_preserving_resize(image, resize_side_min)
-  image = random_crop([image], output_height, output_width)[0]
-  #image = tf.random_crop(image, size=[output_height, output_width, 3])
 
-  image.set_shape([output_height, output_width, 3])
-
-  image = tf.image.random_flip_left_right(image)
   image = tf.to_float(image)
   image = (image/255.) * 2. - 1.
 
@@ -51,9 +46,6 @@ def preprocess_for_eval(image, output_height, output_width, resize_side):
     A preprocessed image.
   """
   image = aspect_preserving_resize(image, resize_side)
-  image = central_crop([image], output_height, output_width)[0]
-
-  image.set_shape([output_height, output_width, 3])
 
   image = tf.to_float(image)
   image = (image/255.) * 2. - 1.
@@ -83,7 +75,7 @@ def preprocess_image(image, output_height, output_width, is_training=False,
   """
   if is_training:
     return preprocess_for_train(image, output_height, output_width,
-                               resize_side_min, resize_side_max)
+                                resize_side_min, resize_side_max)
 
   else:
     return preprocess_for_eval(image, output_height, output_width,
@@ -120,6 +112,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     else:
         footprint   = 250
         sample_dims = input_dims 
+
     #Training: input_dims == 64
     #Testing:  input_dims == 79
 
@@ -139,7 +132,19 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     input_data_tensor = resample_input(input_data_tensor, sample_dims, footprint, 1.0)
     input_data_tensor = tf.cast(input_data_tensor, tf.float32)
 
+    # Randomly flip entire video or not
+    crop_type = tf.random_uniform(dtype=tf.float32, minval=0, maxval=1, shape=np.asarray([1]))[0]
+
     # Preprocess data
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
+
+    if istraining:
+        input_data_tensor = tf.cond(tf.greater_equal(crop_type, 0.2), lambda: random_crop_clip(input_data_tensor, size[0], size[1]), lambda: central_crop_clip(input_data_tensor, size[0], size[1]))
+        input_data_tensor = random_flip_left_right_clip(input_data_tensor)
+
+    else:
+        input_data_tensor = central_crop_clip(input_data_tensor, size[0], size[1])
+
+    # END IF
 
     return input_data_tensor
