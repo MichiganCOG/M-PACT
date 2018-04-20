@@ -11,6 +11,7 @@ from models.models_abstract      import Abstract_Model_Class
 from utils.layers_utils          import *
 
 from default_preprocessing         import preprocess
+from tf_version_HMDB51_preprocessing import preprocess as tf_HMDB51_preprocess
 
 class C3D(Abstract_Model_Class):
 
@@ -112,13 +113,11 @@ class C3D(Abstract_Model_Class):
                                                  filter_dims=[2,2,2], stride_dims=[2,2,2],
                                                  name='pool5')
 
+            if self.load_weights == 'Sports1M_finetune_UCF101':
+                # Uncomment to use sports1m_finetuned_ucf101.model (aka c3d_Sports1M_finetune_UCF101.npy)
+                layers['pool5'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
 
-            # Uncomment to use sports1m_finetuned_ucf101.model (aka c3d_Sports1M_finetune_UCF101.npy)
-            layers['transpose'] = tf.transpose(layers['pool5'], perm=[0,1,4,2,3], name='transpose')
-            layers['reshape'] = tf.reshape(layers['transpose'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
-
-            # Uncomment to use c3d_Sports1M.npy
-            # layers['reshape'] = tf.reshape(layers['pool5'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
+            layers['reshape'] = tf.reshape(layers['pool5'], shape=[tf.shape(inputs)[0], 8192], name='reshape')
 
             layers['dense1'] = fully_connected_layer(input_tensor=layers['reshape'],
                                                      out_dim=4096, non_linear_fn=tf.nn.relu,
@@ -142,9 +141,14 @@ class C3D(Abstract_Model_Class):
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-        #return np.load('models/weights/c3d_Sports1M.npy')
-        return np.load('models/weights/c3d_Sports1M_finetune_UCF101.npy')
-        # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
+        if self.load_weights == 'Sports1M_finetune_UCF101':
+            return np.load('models/weights/c3d_Sports1M_finetune_UCF101.npy')
+
+        else:
+            return np.load('models/weights/c3d_Sports1M.npy')
+            # REMOVE pool5 TRANSPOSE FOR SPORTS1M!!!
+
+        # END IF
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
         """
@@ -162,7 +166,13 @@ class C3D(Abstract_Model_Class):
             :is_training:           Boolean value indication phase (TRAIN OR TEST)
             :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
         """
-        return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+        if self.preproc_method == 'tf_version_HMDB51':
+            return tf_HMDB51_preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+
+        else:
+            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+
+        # END IF
 
 
     """ Function to return loss calculated on given network """

@@ -54,6 +54,8 @@ parser.add_argument('--freeze', action='store', type=int, default=0,
 parser.add_argument('--returnLayer', nargs='+',type=str, default=['logits'],
         help = 'Which model layers to be returned by the models\' inference during testing.')
 
+parser.add_argument('--loadWeights', action='store', type=str, default='default',
+        help = 'String which can be used to specify the default weights to load.')
 
 # Experiment parameters
 
@@ -167,6 +169,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    preprocMethod = args.preprocMethod,
                                    dropoutRate = args.dropoutRate,
                                    freeze = args.freeze,
+                                   loadWeights = args.loadWeights,
                                    verbose = args.verbose)
 
 

@@ -51,6 +51,9 @@ parser.add_argument('--dropoutRate', action='store', type=float, default=0.5,
 parser.add_argument('--freeze', action='store', type=int, default=0,
         help = 'Freeze weights during training of any layers within the model that have the option set. (default 0)')
 
+parser.add_argument('--loadWeights', action='store', type=str, default='default',
+        help = 'String which can be used to specify the default weights to load.')
+
 # Optimization parameters
 
 parser.add_argument('--lr', action='store', type=float, default=0.001,
@@ -183,6 +186,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    preprocMethod = args.preprocMethod,
                                    dropoutRate = args.dropoutRate,
                                    freeze = args.freeze,
+                                   loadWeights = args.loadWeights,
                                    verbose = args.verbose)
 
 

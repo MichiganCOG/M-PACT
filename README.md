@@ -6,7 +6,7 @@ This python framework provides modular access to common activity recognition mod
 This repository holds the code and models for the paper <br>
 [**M-PACT: Michigan Platform for Activity Classification in Tensorflow**](https://arxiv.org/abs/1804.05879), Eric Hofesmann, Madan Ravi Ganesh, and Jason J. Corso, arXiv, April 2018.
 
-**ATTENTION**: Please cite the arXiv paper introducing this platform when releasing any work that used this code. 
+**ATTENTION**: Please cite the arXiv paper introducing this platform when releasing any work that used this code.
 <br> Link: https://arxiv.org/abs/1804.05879
 
 
@@ -14,15 +14,15 @@ This repository holds the code and models for the paper <br>
 
 |  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
 |:----------:|:------:| :----:| :----:|
-| I3D | HMDB51 | -- |  74.80* | 
-| C3D | HMDB51 | 48.24 | 50.30* | 
-| TSN | HMDB51 | 51.70 |  54.40 | 
+| I3D | HMDB51 | -- |  74.80* |
+| C3D | HMDB51 | 48.24 | 50.30* |
+| TSN | HMDB51 | 51.70 |  54.40 |
 | ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
 |||||
-| I3D | UCF101 |  --  |  95.60* | 
-| C3D | UCF101 |  93.66   |  82.30* | 
-| TSN | UCF101 |  85.25   |  85.50 | 
-| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 | 
+| I3D | UCF101 |  --  |  95.60* |
+| C3D | UCF101 |  93.66   |  82.30* |
+| TSN | UCF101 |  85.25   |  85.50 |
+| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 |
 
 (*) Indicates that results are shown across all three splits
 
@@ -104,7 +104,7 @@ python  train.py \
 --size              Size of the input frame into network, sets both height and width (224 for ResNet, I3D, TSN and 112 for C3D) **REQUIRED**
 
 --inputDims         Input dimensions (number of frames to pass into model)  **REQUIRED**
-    
+
 --outputDims        Output dimensions (number of classes in dataset)    **REQUIRED**
 
 --seqLength         Sequence length when output from model (50 for ResNet50, 250 for TSN, 1 for I3D and C3D)    **REQUIRED**
@@ -129,8 +129,8 @@ python  train.py \
 
 --freeze            Freeze weights during training of any layers within the model that have the option manually set. (default 0)
 
---numVids           Number of videos to train on within the specified split 
-    
+--numVids           Number of videos to train on within the specified split
+
 --lr                Initial learning rate (Default 0.001)
 
 --wd                Weight decay value for training layers (Defaults 0.0)
@@ -182,6 +182,8 @@ python  train.py \
 --lrboundary        List of boundary epochs at which lr will be updated
 
 --lrvalues          List of lr multiplier values, length of list must equal lrboundary
+
+--loadWeights       String which can be used to specify the default weights to load.
 
 --verbose           Boolean switch to display all print statements or not
 ```
@@ -260,6 +262,8 @@ python  test.py \
 
 --preprocDebugging  Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging. Errors in preprocessing setup will not show up properly otherwise (Default 0)
 
+--loadWeights       String which can be used to specify the default weights to load.
+
 --verbose           Boolean switch to display all print statements or not
 ```
 
@@ -282,7 +286,7 @@ python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --in
             modelname_model.py
             default_preprocessing.py
             model_weights.npy shortcut to ../weights/model_weights.npy (Optional)
-            
+
         /weights
             model_weights.npy
 
@@ -309,7 +313,7 @@ python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --in
     /scripts
         /shell
             download_weights.sh
-    
+
     /utils
         generate_tfrecords_dataset.py
         convert_checkpoint.py
@@ -319,7 +323,7 @@ python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --in
         preprocessing_utils.py
         sys_utils.py
         logger.py
-        
+
 
 
 ```
@@ -390,7 +394,7 @@ Navigate to the model file:
 
 Required functions to fill in:
 
-inference(): 
+inference():
 ```
     def inference(self, inputs, is_training, input_dims, output_dims, seq_length, batch_size, scope, dropout_rate = 0.5, return_layer=['logits'], weight_decay=0.0):
         """
@@ -503,7 +507,7 @@ loss():
         """
         return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
         """
-    
+
         ############################################################################
         # TODO: Add default model weights to models/weights/ and import them here  #
         #                          ( OPTIONAL )                                    #
@@ -697,15 +701,15 @@ The install of this framework can be tested by comparing the output with these e
 
 |  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
 |:----------:|:------:| :----:| :----:|
-| I3D | HMDB51 | -- |  74.80* | 
-| C3D | HMDB51 | 48.24 | 50.30* | 
-| TSN | HMDB51 | 51.70 |  54.40 | 
+| I3D | HMDB51 | -- |  74.80* |
+| C3D | HMDB51 | 48.24 | 50.30* |
+| TSN | HMDB51 | 51.70 |  54.40 |
 | ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
-| I3D | UCF101 |  --  |  95.60* | 
-| C3D | UCF101 |  93.66   |  82.30* | 
-| TSN | UCF101 |  85.25   |  85.50 | 
+| I3D | UCF101 |  --  |  95.60* |
+| C3D | UCF101 |  93.66   |  82.30* |
+| TSN | UCF101 |  85.25   |  85.50 |
 | ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 |
- 
+
 (*) Indicates that results are shown across all three splits
 
 
@@ -718,7 +722,7 @@ The install of this framework can be tested by comparing the output with these e
 ### Current Version: 3.0
 
 #### Version 3.0 (GitHub Release)
-Automated the generation of models and preprocessing files as well as importing models. Provide weights and mean files available for download. Matched authors performance of most models (C3D, TSN, ResNet50+LSTM, I3D) on UCF101 and HMDB51 datasets. 
+Automated the generation of models and preprocessing files as well as importing models. Provide weights and mean files available for download. Matched authors performance of most models (C3D, TSN, ResNet50+LSTM, I3D) on UCF101 and HMDB51 datasets.
 
 #### Version 2.0
 Implemented TFRecords based data loading to replace HDF5 files for increased performance.  Training has been updated to allow models to be trained on multiple GPUs concurrently.  Parallel data loading has been incorporated using TFRecords queues to allow maximized use of available GPUs.  The tensorflow saver checkpoints have been replaced with a custom version which reads and writes models weights directly to numpy arrays.  This will allow existing model weights from other sources to be more easily imported into this framework. Currently validation is not compatible with this tfrecords framework.

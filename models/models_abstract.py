@@ -4,7 +4,7 @@ ABC = abc.ABCMeta('ABC', (object,), {'__slots__': ()})
 # Abstract Class that is used when generating models.
 class Abstract_Model_Class(ABC):
 
-    def __init__(self, modelName, inputDims, outputDims, expName, numVids, preprocMethod='default', clipLength=-1, numEpochs=1, batchSize=1, numClips=-1, numGpus=1, train=0, modelAlpha=1, inputAlpha=1, dropoutRate=0.5, freeze=0, verbose=1):
+    def __init__(self, modelName, inputDims, outputDims, expName, numVids, loadWeights='default', preprocMethod='default', clipLength=-1, numEpochs=1, batchSize=1, numClips=-1, numGpus=1, train=0, modelAlpha=1, inputAlpha=1, dropoutRate=0.5, freeze=0, verbose=1):
 
         self.preproc_method = preprocMethod
         self.input_dims = inputDims
@@ -17,6 +17,7 @@ class Abstract_Model_Class(ABC):
         self.num_clips = numClips
         self.num_gpus = numGpus
         self.dropout_rate = dropoutRate
+        self.load_weights = loadWeights
         self.freeze = freeze
 
         if train == 1.0:
