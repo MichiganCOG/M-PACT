@@ -139,7 +139,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     input_data_tensor = tf.map_fn(lambda img: preprocess_image(img, size[0], size[1], is_training=istraining, resize_side_min=_RESIZE_SIDE_MIN), input_data_tensor)
 
     if istraining:
-        input_data_tensor = tf.cond(tf.greater_equal(crop_type, 0.2), lambda: random_crop_clip(input_data_tensor, size[0], size[1]), lambda: central_crop_clip(input_data_tensor, size[0], size[1]))
+        input_data_tensor = tf.cond(tf.greater_equal(crop_type, 0.5), lambda: random_crop_clip(input_data_tensor, size[0], size[1]), lambda: central_crop_clip(input_data_tensor, size[0], size[1]))
         input_data_tensor = random_flip_left_right_clip(input_data_tensor)
 
     else:
