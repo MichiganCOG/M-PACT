@@ -247,7 +247,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         number_of_videos = tf.Variable(num_vids, name='number_of_videos', trainable=False)
         video_step       = tf.Variable(1.0, name='video_step', trainable=False)
 
-	# TF session setup
+	    # TF session setup
         config  = tf.ConfigProto(allow_soft_placement=True)
         sess    = tf.Session(config=config)
         init    = tf.global_variables_initializer()
