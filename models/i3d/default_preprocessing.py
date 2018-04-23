@@ -2,9 +2,9 @@ import tensorflow as tf
 import numpy as np
 from utils.preprocessing_utils import *
 
-_R_MEAN = 123.68 
-_G_MEAN = 116.78 
-_B_MEAN = 103.94 
+_R_MEAN = 123.68
+_G_MEAN = 116.78
+_B_MEAN = 103.94
 
 _RESIZE_SIDE_MIN = 256
 _RESIZE_SIDE_MAX = 512
@@ -98,7 +98,7 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         :size:              Output size of preprocessed frames
         :label:             Label of current sample
         :istraining:        Boolean indicating training or testing phase
-        :input_alpha:       Alpha value to resample input_data_tensor (independent of model)  
+        :input_alpha:       Alpha value to resample input_data_tensor (independent of model)
 
     Return:
         Preprocessing input data and labels tensor
@@ -107,22 +107,22 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
     # Setup different temporal footprints for training and testing phase
     if istraining:
         footprint   = input_dims
-        sample_dims = input_dims 
+        sample_dims = input_dims
 
     else:
         footprint   = 250
-        sample_dims = input_dims 
+        sample_dims = input_dims
 
     #Training: input_dims == 64
     #Testing:  input_dims == 79
 
     # END IF
-    
+
 
     # Ensure that sufficient frames exist in input to extract 250 frames (assuming a 5 sec temporal footprint)
     temporal_offset   = tf.cond(tf.greater(frames, footprint), lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=frames - footprint + 1, shape=np.asarray([1]))[0], lambda: tf.random_uniform(dtype=tf.int32, minval=0, maxval=1, shape=np.asarray([1]))[0])
 
-    input_data_tensor = tf.cond(tf.less(frames, footprint), 
+    input_data_tensor = tf.cond(tf.less(frames, footprint),
                                 lambda: loop_video_with_offset(input_data_tensor, input_data_tensor, frames, frames, height, width, channel, footprint),
                                 lambda: input_data_tensor[temporal_offset:temporal_offset + footprint, :, :, :])
 

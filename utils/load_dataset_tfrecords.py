@@ -121,7 +121,7 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
     input_data_tensor = input_data_tensor[...,::-1]
 
     # Reduction in fps to 25 for HMDB51 dataset
-    if 'HMDB51' in dataset:
+    if ('HMDB51' in dataset) or ('MIT' in dataset):
         input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
 
     # END IF
