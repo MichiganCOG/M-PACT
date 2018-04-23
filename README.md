@@ -14,12 +14,12 @@ This repository holds the code and models for the paper <br>
 
 |  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
 |:----------:|:------:| :----:| :----:|
-| I3D | HMDB51 | 66.01 |  74.80* |
+| I3D | HMDB51 | 68.10 |  74.80* |
 | C3D | HMDB51 | 48.24 | 50.30* |
 | TSN | HMDB51 | 51.70 |  54.40 |
 | ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
 |||||
-| I3D | UCF101 |  --  |  95.60* |
+| I3D | UCF101 |  92.55  |  95.60* |
 | C3D | UCF101 |  93.66   |  82.30* |
 | TSN | UCF101 |  85.25   |  85.50 |
 | ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 |
