@@ -181,7 +181,7 @@ class TSN(Abstract_Model_Class):
         if self.load_weights == 'pretrained_HMDB51':
             return np.load('models/weights/tsn_pretrained_HMDB51_reordered.npy')
 
-        elif self.load_weights == 'pretrained_UCF101'
+        elif self.load_weights == 'pretrained_UCF101':
             return np.load('models/weights/tsn_pretrained_UCF101_reordered.npy')
 
         else:
