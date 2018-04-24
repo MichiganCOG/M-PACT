@@ -43,6 +43,8 @@ This repository holds the code and models for the paper <br>
 * [Results](#implemented-models-classification-accuracy)
 * [Version History](#version-history)
 * [Acknowledgements](#acknowledgements)
+* [Code Acknowledgements](#code-acknowledgements)
+* [References](#references)
 
 ## Introduction and Setup
 
@@ -712,9 +714,45 @@ The install of this framework can be tested by comparing the output with these e
 
 (*) Indicates that results are shown across all three splits
 
+### Command to Execute Model Training and Testing
 
+#### ResNet50 + LSTM Training (HMDB51)
+```
+python train.py --model resnet --inputDims 50 --outputDims 51 --dataset HMDB51 --load 0 --fName trainlist --seqLength 50 --size 224 --baseDataPath /z/dat --train 1 --numGpus 4 --expName resnet_half_loss_HMDB51 --numVids 3570 --split 1 --wd 0.0 --lr 0.001 --nEpochs 30 --saveFreq 1 --dropoutRate 0.5 --freeze 1 --lossType half_loss
+```
+#### ResNet50 + LSTM Testing (HMDB51)
+```
+python test.py --model resnet --dataset HMDB51 --loadedDataset HMDB51 --train 0 --load 1 --inputDims 50 --outputDims 51 --seqLength 50 --size 224 --expName resnet_half_loss_HMDB51 --numVids 1530 --split 1 --baseDataPath /z/dat --fName testlist --freeze 1
+```
+#### ResNet50 + LSTM Training (UCF101)
+```
+python train.py --model resnet --inputDims 50 --outputDims 101 --dataset UCF101 --load 0 --fName trainlist --seqLength 50 --size 224 --baseDataPath /z/dat --train 1 --numGpus 4 --expName resnet_half_loss_UCF101 --numVids 9537 --split 1 --wd 0.0 --lr 0.001 --nEpochs 11 --saveFreq 1 --dropoutRate 0.5 --freeze 1 --lossType half_loss
 
+```
+#### ResNet50 + LSTM Testing (UCF101)
+```
+python test.py --model resnet --dataset UCF101 --loadedDataset UCF101 --train 0 --load 1 --inputDims 50 --outputDims 101 --seqLength 50 --size 224 --expName resnet_half_loss_UCF101 --numVids 3783 --split 1 --baseDataPath /z/dat --metricsMethod last_frame --fName testlist --freeze 1
+```
 
+#### I3D Training (HMDB51)
+```
+python train.py --model i3d --inputDims 64 --outputDims 51 --dataset HMDB51 --load 0 --expName i3d_HMDB51 --numVids 3570 --fName trainlist --seqLength 1 --size 224 --numGpus 4 --train 1 --split 1 --wd 0.0 --lr 0.01 --nEpochs 30 --baseDataPath /z/dat --saveFreq 1 --dropoutRate 0.5 --gradClipValue 100.0 --optChoice adam --batchSize 16
+```
+#### I3D Testing (HMDB51)
+```
+python test.py --model i3d --numGpus 1 --dataset HMDB51 --loadedDataset HMDB51 --train 0 --load 1 --inputDims 250 --outputDims 51 --seqLength 1 --size 224  --expName i3d_0_5_crop_0_5_HMDB51 --numVids 1530 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1 --loadedCheckpoint 837 --metricsDir checkpoint_837
+```
+* Currently best performing checkpoint - **837**
+
+#### I3D Training (UCF101)
+```
+python train.py --model i3d --inputDims 64 --outputDims 101 --dataset UCF101 --load 0 --expName i3d_UCF101 --numVids 9537 --fName trainlist --seqLength 1 --size 224 --numGpus 4 --train 1 --split 1 --wd 0.0 --lr 0.01 --nEpochs 11 --baseDataPath /z/dat --saveFreq 1 --dropoutRate 0.5 --gradClipValue 100.0 --optChoice adam --batchSize 10 
+```
+#### I3D Testing (UCF101)
+```
+python test.py --model i3d --numGpus 1 --dataset UCF101 --loadedDataset UCF101 --train 0 --load 1 --inputDims 250 --outputDims 101 --seqLength 1 --size 224 --expName i3d_UCF101 --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1 --loadedCheckpoint 2146 --metricsDir checkpoint_2146
+```
+* Currently best performing checkpoint - **2146**
 
 ## Version History
 
@@ -745,3 +783,19 @@ the authors and should not be interpreted as necessarily representing the offici
 the U.S. Government.
 This work was also partially supported by NIST 60NANB17D191 and ARO
 W911NF-15-1-0354.
+
+## Code Acknowledgements
+We would like to thank the following contributors for helping shape our platform and their invaluable input in achieving current levels of performance,
+- [A. J. Piergiovanni](https://github.com/piergiaj)
+
+
+## References
+[1] S. Ji, W. Xu, M. Yang, K. Yu, [*3d convolutional neural networks for human action recognition*](https://arxiv.org/pdf/1412.0767), TPAMI 2013
+
+[2] J. Carreira, A. Zisserman, [*Quo vadis, action recognition? a new model and the kinetics dataset*](http://openaccess.thecvf.com/content_cvpr_2017/papers/Carreira_Quo_Vadis_Action_CVPR_2017_paper.pdf), CVPR 2017
+
+[3] L. Wang, Y. Xiong, Z. Wang, Y. Qiao, D. Lin, X. Tang, L. Van Gool, [*Temporal segment networks: Towards good practices for deep action recognition*](https://arxiv.org/pdf/1608.00859), ECCV 2016
+
+[4] J. Donahue, L. Anne Hendricks, S. Guadarrama, M. Rohrbach, S. Venugopalan, K. Saenko, T. Darrell, [*Long-term recurrent convolutional networks for visual recognition and description*](http://openaccess.thecvf.com/content_cvpr_2015/papers/Donahue_Long-Term_Recurrent_Convolutional_2015_CVPR_paper.pdf), CVPR 2015
+
+[5] K. He, X. Zhang, S. Ren, J. Sun, [*Deep residual learning for image recognition*](http://openaccess.thecvf.com/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf), CVPR 2016.
