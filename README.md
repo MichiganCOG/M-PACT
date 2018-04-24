@@ -14,18 +14,17 @@ This repository holds the code and models for the paper <br>
 
 |  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
 |:----------:|:------:| :----:| :----:|
-| I3D | HMDB51 | 68.10 |  74.80* |
-| C3D | HMDB51 | 48.24 | 50.30* |
-| TSN | HMDB51 | 51.70 |  54.40 |
-| ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
+| I3D | HMDB51 | [68.10](#i3d-training-hmdb51) |  74.80* |
+| C3D | HMDB51 | [51.90](#c3d-training-hmdb51) | 50.30* |
+| TSN | HMDB51 | [51.70](#tsn-training-hmdb51) |  54.40 |
+| ResNet50 + LSTM |   HMDB51   | [43.86](#resnet50-lstm-training-hmdb51) |  43.90  |
 |||||
-| I3D | UCF101 |  92.55  |  95.60* |
-| C3D | UCF101 |  93.66   |  82.30* |
-| TSN | UCF101 |  85.25   |  85.50 |
-| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 |
+| I3D | UCF101 |  [92.55](#i3d-training-ucf101)  |  95.60* |
+| C3D | UCF101 |  [93.66](#c3d-fine-tuning-ucf101)   |  82.30* |
+| TSN | UCF101 |  [85.25](#tsn-training-ucf101)   |  85.50 |
+| ResNet50 + LSTM |   UCF101   |  [80.20](#resnet50-lstm-training-ucf101)  |  84.30 |
 
 (*) Indicates that results are shown across all three splits
-
 
 ## Table of Contents
 
@@ -40,7 +39,7 @@ This repository holds the code and models for the paper <br>
 * [Add Custom Components](#add-custom-components)
 	* [Adding a Model](#adding-a-model)
 	* [Adding a Dataset](#adding-a-dataset)
-* [Results](#implemented-models-classification-accuracy)
+* [Results](#expected-results)
 * [Version History](#version-history)
 * [Acknowledgements](#acknowledgements)
 * [Code Acknowledgements](#code-acknowledgements)
@@ -703,14 +702,15 @@ The install of this framework can be tested by comparing the output with these e
 
 |  Model Architecture  |      Dataset (Split 1)      |  M-PACT Accuracy (%)  |  Original Authors Accuracy (%) |  
 |:----------:|:------:| :----:| :----:|
-| I3D | HMDB51 | -- |  74.80* |
-| C3D | HMDB51 | 48.24 | 50.30* |
-| TSN | HMDB51 | 51.70 |  54.40 |
-| ResNet50 + LSTM |   HMDB51   | 43.86 |  43.90  |
-| I3D | UCF101 |  --  |  95.60* |
-| C3D | UCF101 |  93.66   |  82.30* |
-| TSN | UCF101 |  85.25   |  85.50 |
-| ResNet50 + LSTM |   UCF101   |  80.20  |  84.30 |
+| I3D | HMDB51 | [68.10](#i3d-training-hmdb51) |  74.80* |
+| C3D | HMDB51 | [51.90](#c3d-training-hmdb51) | 50.30* |
+| TSN | HMDB51 | [51.70](#tsn-training-hmdb51) |  54.40 |
+| ResNet50 + LSTM |   HMDB51   | [43.86](#resnet50-lstm-training-hmdb51) |  43.90  |
+|||||
+| I3D | UCF101 |  [92.55](#i3d-training-ucf101)  |  95.60* |
+| C3D | UCF101 |  [93.66](#c3d-fine-tuning-ucf101)   |  82.30* |
+| TSN | UCF101 |  [85.25](#tsn-training-ucf101)   |  85.50 |
+| ResNet50 + LSTM |   UCF101   |  [80.20](#resnet50-lstm-training-ucf101)  |  84.30 |
 
 (*) Indicates that results are shown across all three splits
 
@@ -754,6 +754,58 @@ python test.py --model i3d --numGpus 1 --dataset UCF101 --loadedDataset UCF101 -
 ```
 * Currently best performing checkpoint - **2146**
 
+
+#### C3D Training (HMDB51)
+```
+python train.py --model c3d --numGpus 4 --dataset HMDB51 --load 0 --inputDims 16 --outputDims 51 --seqLength 1 --size 112  --expName c3d_HMDB51 --numClips 5 --clipLength 16 --clipOffset random --numVids 3570 --split 1 --wd 0.0005 --lr 0.0001 --nEpochs 41 --baseDataPath /z/dat --fName trainlist --saveFreq 1 --verbose 1 --batchSize 10
+```
+#### C3D Testing (HMDB51)
+```
+python test.py --model c3d --dataset HMDB51 --loadedDataset HMDB51 --load 1 --inputDims 16 --outputDims 51 --seqLength 1 --size 112  --expName c3d_HMDB51 --numClips 1 --clipLength 16 --clipOffset random --numVids 1530 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1
+```
+#### C3D Training (UCF101)
+(NOTE: Results not shown)
+```
+python train.py --model c3d --numGpus 4 --dataset UCF101 --load 0 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_sports1m_UCF101 --numClips 5 --clipLength 16 --clipOffset random --numVids 9537 --split 1 --wd 0.0005 --lr 0.0001 --nEpochs 10 --baseDataPath /z/dat --fName trainlist --saveFreq 1 --verbose 1 --batchSize 10 
+
+```
+#### C3D Testing (UCF101)
+(NOTE: Results not shown)
+```
+python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_sports1m_UCF101 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1
+```
+#### C3D Fine-tuning (UCF101) 
+(NOTE: Best results are shown, 93.55% when fine-tuning on the model "C3D UCF101 split1" at [https://github.com/hx173149/C3D-tensorflow](https://github.com/hx173149/C3D-tensorflow))
+```
+python train.py --model c3d --numGpus 4 --dataset UCF101 --train 1 --load 0 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_finetune_UCF101 --numClips 5 --clipLength 16 --clipOffset random --numVids 9537 --split 1 --wd 0.0005 --lr 0.0001 --nEpochs 10 --baseDataPath /z/dat --fName trainlist --saveFreq 1 --verbose 1 --batchSize 10 --loadWeights Sports1M_finetune_UCF101
+
+```
+#### C3D Fine-tuned Testing (UCF101) 
+(NOTE: Best results are shown, 93.55% when fine-tuning on the model "C3D UCF101 split1" at [https://github.com/hx173149/C3D-tensorflow](https://github.com/hx173149/C3D-tensorflow))
+```
+python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_finetune_UCF101 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1
+```
+#### TSN Training (HMDB51) 
+```
+python train.py --model tsn --dataset HMDB51 --loadedDataset HMDB51 --numGpus 4 --load 0 --inputDims 3 --outputDims 51 --batchSize 56 --seqLength 3 --size 224  --expName tsn_HMDB51 --numVids 3570 --lr 0.001 --wd 0.0005 --nEpochs 40 --split 1 --baseDataPath /z/dat --fName trainlist --gradClipVal 20 --optChoice momentum
+```
+#### TSN Testing (HMDB51) (NOTE: Results do not use our trained model. Uses weights from the original author.)
+```
+python test.py --model tsn --dataset HMDB51 --loadedDataset HMDB51 --load 1 --inputDims 250 --outputDims 51 --seqLength 250 --size 224  --expName tsn_HMDB51 --numVids 1530 --split 1 --baseDataPath /z/dat --fName testlist
+```
+
+#### TSN Training (UCF101)
+```
+python train.py --model tsn --dataset UCF101 --loadedDataset UCF101 --numGpus 4 --load 0 --inputDims 3 --outputDims 101 --batchSize 56 --seqLength 3 --size 224  --expName tsn_UCF101 --numVids 9537 --lr 0.001 --wd 0.0005 --nEpochs 80 --split 1 --baseDataPath /z/dat --fName trainlist --gradClipVal 20 --optChoice momentum
+```
+#### TSN Testing (UCF101) (NOTE: Results do not use our trained model. Uses weights from the original author.)
+```
+python test.py --model tsn --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 250 --outputDims 101 --seqLength 250 --size 224  --expName tsn_UCF101 --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist
+```
+
+
+
+
 ## Version History
 
 
@@ -790,7 +842,7 @@ We would like to thank the following contributors for helping shape our platform
 
 
 ## References
-[1] S. Ji, W. Xu, M. Yang, K. Yu, [*3d convolutional neural networks for human action recognition*](https://arxiv.org/pdf/1412.0767), TPAMI 2013
+[1] D. Tran, L. Bourdev, R. Fergus, L. Torresani, M. Paluri, [*Learning Spatiotemporal Features with 3D Convolutional Networks*](https://arxiv.org/pdf/1412.0767), ICCV 2015
 
 [2] J. Carreira, A. Zisserman, [*Quo vadis, action recognition? a new model and the kinetics dataset*](http://openaccess.thecvf.com/content_cvpr_2017/papers/Carreira_Quo_Vadis_Action_CVPR_2017_paper.pdf), CVPR 2017
 
