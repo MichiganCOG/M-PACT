@@ -791,7 +791,7 @@ python train.py --model tsn --dataset HMDB51 --loadedDataset HMDB51 --numGpus 4 
 ```
 #### TSN Testing (HMDB51) (NOTE: Results do not use our trained model. Uses weights from the original author.)
 ```
-python test.py --model tsn --dataset HMDB51 --loadedDataset HMDB51 --load 1 --inputDims 250 --outputDims 51 --seqLength 250 --size 224  --expName tsn_HMDB51 --numVids 1530 --split 1 --baseDataPath /z/dat --fName testlist
+python test.py --model tsn --dataset HMDB51 --loadedDataset HMDB51 --load 1 --inputDims 250 --outputDims 51 --seqLength 250 --size 224  --expName tsn_HMDB51 --numVids 1530 --split 1 --baseDataPath /z/dat --fName testlist --loadWeights pretrained_HMDB51
 ```
 
 #### TSN Training (UCF101)
@@ -800,7 +800,7 @@ python train.py --model tsn --dataset UCF101 --loadedDataset UCF101 --numGpus 4 
 ```
 #### TSN Testing (UCF101) (NOTE: Results do not use our trained model. Uses weights from the original author.)
 ```
-python test.py --model tsn --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 250 --outputDims 101 --seqLength 250 --size 224  --expName tsn_UCF101 --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist
+python test.py --model tsn --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 250 --outputDims 101 --seqLength 250 --size 224  --expName tsn_UCF101 --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist  --loadWeights pretrained_UCF101
 ```
 
 
