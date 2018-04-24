@@ -174,12 +174,20 @@ class TSN(Abstract_Model_Class):
 
 
     def load_default_weights(self):
-       """
-       return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
-       """
+        """
+        return: Numpy dictionary containing the names and values of the weight tensors used to initialize this model
+        """
 
-       return np.load('models/weights/tsn_BNInception_ImageNet_pretrained.npy')#tsn_pretrained_UCF101_reordered.npy')#bn_inception_rgb_init.npy')
+        if self.load_weights == 'pretrained_HMDB51':
+            return np.load('models/weights/tsn_pretrained_HMDB51_reordered.npy')
 
+        elif self.load_weights == 'pretrained_UCF101'
+            return np.load('models/weights/tsn_pretrained_UCF101_reordered.npy')
+
+        else:
+            return np.load('models/weights/tsn_BNInception_ImageNet_pretrained.npy')
+
+        # END IF
 
 
     def preprocess_tfrecords(self, input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step):
