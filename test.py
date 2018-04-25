@@ -140,6 +140,9 @@ parser.add_argument('--preprocDebugging', action='store', type=int, default=0,
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
 
+parser.add_argument('--topk', action='store', type=int, default=3,
+        help = 'Integer indication top k predictions made (Default 3)')
+
 
 args = parser.parse_args()
 
@@ -173,7 +176,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    verbose = args.verbose)
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_stride, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips, use_softmax, preproc_debugging):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_stride, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips, use_softmax, preproc_debugging, topk):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -321,7 +324,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, preproc_method, dataset, metrics_dir, verbose=verbose)
+        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, preproc_method, dataset, metrics_dir, verbose=verbose, topk=topk)
 
         # Variables get randomly initialized into tf graph
         sess.run(init)
@@ -427,7 +430,8 @@ if __name__=="__main__":
                 random_init       = args.randomInit,
                 avg_clips         = args.avgClips,
                 use_softmax       = args.useSoftmax,
-                preproc_debugging = args.preprocDebugging)
+                preproc_debugging = args.preprocDebugging,
+                topk              = args.topk)
 
     # END IF
 

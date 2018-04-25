@@ -26,7 +26,7 @@ class Metrics():
         :_svm_classify:
     """
 
-    def __init__(self, output_dims, seq_length, logger, method, is_training, model_name, exp_name, preproc_method, dataset, metrics_dir='default', verbose=1, load_svm=False):
+    def __init__(self, output_dims, seq_length, logger, method, is_training, model_name, exp_name, preproc_method, dataset, metrics_dir='default', verbose=1, load_svm=False, topk=3):
         """
         Args:
             :output_dims:        Output dimensions of the model, used to verify the shape of predictions
@@ -40,22 +40,23 @@ class Metrics():
             :verbose:            Setting verbose command
             :load_svm:           Boolean indication whether to load saved svm testlist features or to extract them. Intended for debugging.
         """
-        self.output_dims=output_dims
-        self.seq_length=seq_length
-        self.verbose=verbose
-        self.model_name = model_name
-        self.exp_name = exp_name
-        self.preproc_method = preproc_method
-        self.dataset = dataset
-        self.correct_predictions=0
-        self.total_predictions=0
-        self.predictions_array=[]
-        self.logger=logger
-        self.method=method
-        self.step=0
-        self.is_training = is_training
-        self.file_name_dict = {}
-        self.metrics_dir = metrics_dir
+        self.output_dims         = output_dims
+        self.seq_length          = seq_length
+        self.verbose             = verbose
+        self.model_name          = model_name
+        self.exp_name            = exp_name
+        self.preproc_method      = preproc_method
+        self.dataset             = dataset
+        self.correct_predictions = 0
+        self.total_predictions   = 0
+        self.predictions_array   = []
+        self.logger              = logger
+        self.method              = method
+        self.step                = 0
+        self.is_training         = is_training
+        self.file_name_dict      = {}
+        self.metrics_dir         = metrics_dir
+        self.topk                = topk
 
         if self.is_training:
             self.log_name = 'train'
@@ -78,6 +79,7 @@ class Metrics():
         # Debugging, load saved train and test features for an svm without regenerating the features
         if load_svm:
             self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'r')
+
         else:
             self.save_file = h5py.File(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'), 'w')
 
@@ -139,6 +141,12 @@ class Metrics():
                 predictions = predictions[-1]
             prediction = predictions.argmax()
 
+        elif self.method == 'topk':
+            if len(predictions.shape) >= 2:
+                predictions = np.mean(predictions, 0)
+            prediction_index = np.argsort(predictions)
+            prediction = prediction_index[-self.topk:]  
+
         elif 'svm' in self.method:
             prediction = -1
 
@@ -151,9 +159,18 @@ class Metrics():
 
         # END IF
 
-        if prediction == label:
-            self.correct_predictions += 1
+        if not('topk' in self.method):
+            if prediction == label:
+                self.correct_predictions += 1
 
+            # END IF
+
+        else:
+            if label in prediction:
+                self.correct_predictions += 1
+
+            # END IF
+    
         # END IF
 
         self.total_predictions += 1
@@ -166,7 +183,14 @@ class Metrics():
 
         # END IF
 
-        self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method), current_accuracy, step=self.step)
+        if not('topk' in self.method):
+            self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method), current_accuracy, step=self.step)
+
+        else:
+            self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method+'_'+str(self.topk)), current_accuracy, step=self.step)
+
+        # END IF
+
         return current_accuracy
 
 
@@ -185,6 +209,9 @@ class Metrics():
 
         elif self.method == 'last_frame':
             accuracy = self._last_frame_classify()
+        
+        elif self.method == 'topk':
+            accuracy = self._topk_classify()
 
         elif self.method == 'svm':
             accuracy = self._svm_classify()
@@ -206,7 +233,15 @@ class Metrics():
             print "Error: Invalid classification method ", self.method
             exit()
 
-        self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method), accuracy, step=self.step)
+        # END IF
+
+        if not ('topk' in self.method):
+            self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method), accuracy, step=self.step)
+            
+        else:
+            self.logger.add_scalar_value(os.path.join(self.log_name, 'acc_'+self.method+'_'+str(self.topk)), accuracy, step=self.step)
+            
+        # END IF
 
         return accuracy
 
@@ -353,6 +388,80 @@ class Metrics():
 
         return current_accuracy
 
+    def _topk_classify(self):
+        """
+        Default topk classification average pooling the outputs of all frames
+        Args:
+
+        Return:
+            :current_accuracy: The current classification accuracy of all videos
+                               passed through this object accross multiple calls of this method
+        """
+        self.clear_all()
+
+        model_output = []
+        labels       = []
+        names        = []
+
+        # Load the saved model testing outputs storing each video as a new index in model_output and appending the outputs to that index
+        for vid_name in self.save_file.keys():
+            labels.append(self.save_file[vid_name]['Label'].value)
+            temp_data = []
+
+            for clip in self.save_file[vid_name]['Data'].keys():
+                temp_data.append(self.save_file[vid_name]['Data'][clip].value)
+
+            # END FOR
+
+            mean_feature = np.array(temp_data)
+            model_output_dimensions = len(mean_feature.shape)
+
+            if model_output_dimensions > 2:
+                mean_feature = np.mean(mean_feature, axis=tuple(range(1,model_output_dimensions-1)) )   # Average everything except the dimensions for the number of clips and the outputs
+
+            # END IF
+
+            # Average the outputs for the clips
+            mean_feature = np.mean(mean_feature, 0)
+            model_output.append(mean_feature)
+            names.append(vid_name)
+
+        # END FOR
+
+        model_output = np.array(model_output)
+
+        # For each video, average the predictions within clips and frames therein then take the argmax prediction and compare it to the ground truth sabel
+        for index in range(len(model_output)):
+            prediction_index = np.argsort(model_output[index])
+            prediction       = prediction_index[-self.topk:] 
+
+            label = labels[index]
+            name = names[index]
+
+            if self.verbose:
+                print "vidName: ",name
+                print "label:  ", label
+                print "prediction: ", prediction
+
+            # END IF
+
+            self.predictions_array.append((prediction, label, name))
+            self.total_predictions += 1
+
+            if int(label) in prediction:
+                self.correct_predictions += 1
+
+            # END IF
+
+            current_accuracy = self.correct_predictions / float(self.total_predictions)
+
+        # END FOR
+
+        self.save_file.close()
+
+        os.remove(os.path.join('results', self.model_name, self.dataset, self.preproc_method, self.exp_name, self.metrics_dir,'temp'+self.method+'.hdf5'))
+
+        return current_accuracy
 
     def _svm_classify(self):
         """
