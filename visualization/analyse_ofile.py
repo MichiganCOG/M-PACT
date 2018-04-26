@@ -1,16 +1,32 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
+import csv
 import itertools
 
+import numpy             as np
+import matplotlib.pyplot as plt
+
+from sklearn.metrics import confusion_matrix
+
+# Global variables
+ofile        = open('/z/home/madantrg/tf-activity-recognition-framework/scripts/PBS/i3d/test/MIT_Mini/TFRecords_1gpu_I3D_Train_MIT_Mini_Test_MIT_Mini_Avg_Pooling_250.o82119').readlines()
+#ofile        = open('/z/home/madantrg/tf-activity-recognition-framework/scripts/PBS/c3d/test/MIT_Mini/TFRecords_1gpu_C3D_Train_MIT_Mini_Test_MIT_Mini.o82125').readlines()
+#ofile        = open('/z/home/madantrg/tf-activity-recognition-framework/scripts/PBS/tsn/test/MIT_Mini/TFRecords_1gpu_TSN_Train_MIT_Mini_Test_MIT_Mini.o82124').readlines()
+
+lfile        = open('/z/dat/Moments_in_Time_Mini/moments_categories.txt').readlines()
 
 def plot_confusion_matrix(true_labels, pred_labels, 
                           classes, normalize=False,
                           title='Confusion matrix',
                           cmap=plt.cm.Blues):
-    """
-    This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
+    """ Plots confusion matrix
+    Args:
+        true_labels: List of true labels 
+        pred_labels: List of predicted labels
+        classes:     List of class names
+        normalize:   Boolean indicating normalization of confusion matrix values
+        title:       Title of confusion matrix plot
+        cmap:        Matplotlib color map
+    Returns:
+        Nothing 
     """
 
     cm = confusion_matrix(true_labels, pred_labels)
@@ -39,6 +55,16 @@ def plot_confusion_matrix(true_labels, pred_labels,
 
 
 def plot_classwise_recog_acc(true_labels, pred_labels, output_dims, class_labels, delta=50):
+    """ Plots classwise recognition accuracy across the entire dataset
+    Args:
+        true_labels:  List of true labels 
+        pred_labels:  List of predicted labels
+        class_labels: List of class names
+        output_dims:  Number of output dimensions 
+        delta:        Integer indicating number of classes to display in a figure
+    Returns:
+        Nothing 
+    """
 
     pred_dict  = {}
     total_dict = {}
@@ -90,6 +116,16 @@ def plot_classwise_recog_acc(true_labels, pred_labels, output_dims, class_labels
     # END FOR
 
 def print_alt_class(true_labels, pred_labels, class_labels, output_dims, k=3):
+    """ Print topk alternative class predictions for every dataset 
+    Args:
+        true_labels:  List of true labels 
+        pred_labels:  List of predicted labels
+        class_labels: List of class names
+        output_dims:  Number of output dimensions 
+        k:            Number of alternative class predictions to display 
+    Returns:
+        Nothing 
+    """
 
     cm = confusion_matrix(true_labels, pred_labels)
 
@@ -105,13 +141,55 @@ def print_alt_class(true_labels, pred_labels, class_labels, output_dims, k=3):
         print "############################################" 
 
         print "\n"
+
+def alt_class(true_labels, pred_labels, class_labels, output_dims, k=3):
+    """ Generate CSV file containing topk alternative class predictions for the entire dataset
+    Args:
+        true_labels:  List of true labels 
+        pred_labels:  List of predicted labels
+        class_labels: List of class names
+        output_dims:  Number of output dimensions 
+        k:            Number of alternative class predictions to display 
+    Returns:
+        Nothing 
+    """
+
+    cm = confusion_matrix(true_labels, pred_labels)
+
+    with open('family_labels.csv','wb') as family_file:
+        wr = csv.writer(family_file)
+
+        for item in range(output_dims):
+            val_not_class   = cm[item, :] 
+            index_not_class = np.argsort(val_not_class)
+  
+            op_alt_classes = []
+            op_alt_classes = index_not_class[-k:]
+            op_alt_classes = [word for word in op_alt_classes if word!=item]
+
+            if item in index_not_class[-k:]:
+                op_alt_classes.insert(0, index_not_class[-k-1])
+
+            # END IF
+            
+            op_alt_class_names = []
+
+            for X in op_alt_classes:
+                op_alt_class_names.append(class_labels[X])       
+
+            # END FOR
+
+            op_alt_classes = op_alt_class_names + op_alt_classes
+
+            # END FOR
+            
+            wr.writerow(op_alt_classes)
+
+    # END WITH
         
 
 if __name__=='__main__':
 
-    #ofile        = open('/z/home/madantrg/tf-activity-recognition-framework/scripts/PBS/c3d/test/MIT_Mini/TFRecords_1gpu_C3D_Train_MIT_Mini_Test_MIT_Mini.o82125').readlines()
-    ofile        = open('/z/home/madantrg/tf-activity-recognition-framework/scripts/PBS/i3d/test/MIT_Mini/TFRecords_1gpu_I3D_Train_MIT_Mini_Test_MIT_Mini_Avg_Pooling_250.o82119').readlines()
-    lfile        = open('/z/dat/Moments_in_Time_Mini/moments_categories.txt').readlines()
 
     output_dims  = 200
     class_labels = []
@@ -152,10 +230,13 @@ if __name__=='__main__':
 
     # Analysis plots
     # 1. Classwise recognition accuracy
-    plot_classwise_recog_acc(true_labels, pred_labels, output_dims, class_labels, 50)
+    #plot_classwise_recog_acc(true_labels, pred_labels, output_dims, class_labels, 50)
 
     # 2. Confusion matrix
     #plot_confusion_matrix(true_labels, pred_labels, class_labels, normalize=True, title='Normalized confusion matrix')
    
     # 3. Print top-k alternative class predictions apart from true class
     #print_alt_class(true_labels, pred_labels, class_labels, output_dims, 5)
+
+    # 4. Generate simple family classes
+    family_file = alt_class(true_labels, pred_labels, class_labels, output_dims, 5)
