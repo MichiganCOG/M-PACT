@@ -518,7 +518,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
             time_pre_train = time.time()
 
-            ######################################### Running TF training session block ##################################
+            ######################################### Running TF training session block ##################################  
             _, loss_train, predictions, gs, labels, vid_names, l_r, track_vars = sess.run([train_op, tower_losses,
                                                                        tower_slogits, global_step,
                                                                        labels_tensor, names_tensor,
