@@ -746,7 +746,7 @@ python test.py --model i3d --numGpus 1 --dataset HMDB51 --loadedDataset HMDB51 -
 
 #### I3D Training (UCF101)
 ```
-python train.py --model i3d --inputDims 64 --outputDims 101 --dataset UCF101 --load 0 --expName i3d_UCF101 --numVids 9537 --fName trainlist --seqLength 1 --size 224 --numGpus 4 --train 1 --split 1 --wd 0.0 --lr 0.01 --nEpochs 11 --baseDataPath /z/dat --saveFreq 1 --dropoutRate 0.5 --gradClipValue 100.0 --optChoice adam --batchSize 10 
+python train.py --model i3d --inputDims 64 --outputDims 101 --dataset UCF101 --load 0 --expName i3d_UCF101 --numVids 9537 --fName trainlist --seqLength 1 --size 224 --numGpus 4 --train 1 --split 1 --wd 0.0 --lr 0.01 --nEpochs 11 --baseDataPath /z/dat --saveFreq 1 --dropoutRate 0.5 --gradClipValue 100.0 --optChoice adam --batchSize 10
 ```
 #### I3D Testing (UCF101)
 ```
@@ -766,7 +766,7 @@ python test.py --model c3d --dataset HMDB51 --loadedDataset HMDB51 --load 1 --in
 #### C3D Training (UCF101)
 (NOTE: Results not shown)
 ```
-python train.py --model c3d --numGpus 4 --dataset UCF101 --load 0 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_sports1m_UCF101 --numClips 5 --clipLength 16 --clipOffset random --numVids 9537 --split 1 --wd 0.0005 --lr 0.0001 --nEpochs 10 --baseDataPath /z/dat --fName trainlist --saveFreq 1 --verbose 1 --batchSize 10 
+python train.py --model c3d --numGpus 4 --dataset UCF101 --load 0 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_sports1m_UCF101 --numClips 5 --clipLength 16 --clipOffset random --numVids 9537 --split 1 --wd 0.0005 --lr 0.0001 --nEpochs 10 --baseDataPath /z/dat --fName trainlist --saveFreq 1 --verbose 1 --batchSize 10
 
 ```
 #### C3D Testing (UCF101)
@@ -774,18 +774,18 @@ python train.py --model c3d --numGpus 4 --dataset UCF101 --load 0 --inputDims 16
 ```
 python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_sports1m_UCF101 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1
 ```
-#### C3D Fine-tuning (UCF101) 
+#### C3D Fine-tuning (UCF101)
 (NOTE: Best results are shown, 93.55% when fine-tuning on the model "C3D UCF101 split1" at [https://github.com/hx173149/C3D-tensorflow](https://github.com/hx173149/C3D-tensorflow))
 ```
 python train.py --model c3d --numGpus 4 --dataset UCF101 --train 1 --load 0 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_finetune_UCF101 --numClips 5 --clipLength 16 --clipOffset random --numVids 9537 --split 1 --wd 0.0005 --lr 0.0001 --nEpochs 10 --baseDataPath /z/dat --fName trainlist --saveFreq 1 --verbose 1 --batchSize 10 --loadWeights Sports1M_finetune_UCF101
 
 ```
-#### C3D Fine-tuned Testing (UCF101) 
+#### C3D Fine-tuned Testing (UCF101)
 (NOTE: Best results are shown, 93.55% when fine-tuning on the model "C3D UCF101 split1" at [https://github.com/hx173149/C3D-tensorflow](https://github.com/hx173149/C3D-tensorflow))
 ```
 python test.py --model c3d --dataset UCF101 --loadedDataset UCF101 --load 1 --inputDims 16 --outputDims 101 --seqLength 1 --size 112  --expName c3d_finetune_UCF101 --numClips 1 --clipLength 16 --clipOffset random --numVids 3783 --split 1 --baseDataPath /z/dat --fName testlist --verbose 1
 ```
-#### TSN Training (HMDB51) 
+#### TSN Training (HMDB51)
 ```
 python train.py --model tsn --dataset HMDB51 --loadedDataset HMDB51 --numGpus 4 --load 0 --inputDims 3 --outputDims 51 --batchSize 56 --seqLength 3 --size 224  --expName tsn_HMDB51 --numVids 3570 --lr 0.001 --wd 0.0005 --nEpochs 40 --split 1 --baseDataPath /z/dat --fName trainlist --gradClipVal 20 --optChoice momentum
 ```
@@ -838,6 +838,8 @@ W911NF-15-1-0354.
 
 ## Code Acknowledgements
 We would like to thank the following contributors for helping shape our platform and their invaluable input in achieving current levels of performance,
+- Kyle Min
+- Nadha Gafoor
 - [A. J. Piergiovanni](https://github.com/piergiaj)
 
 
