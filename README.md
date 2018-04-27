@@ -4,7 +4,7 @@ This python framework provides modular access to common activity recognition mod
 <br>This README will walk you through the process of installing dependencies, downloading and formatting datasets, testing the framework, and expanding the framework to train your own models.
 
 This repository holds the code and models for the paper <br>
-[**M-PACT: Michigan Platform for Activity Classification in Tensorflow**](https://arxiv.org/abs/1804.05879), Eric Hofesmann, Madan Ravi Ganesh, and Jason J. Corso, arXiv, April 2018.
+[**M-PACT: Michigan Platform for Activity Classification in Tensorflow**](https://arxiv.org/abs/1804.05879), [Eric Hofesmann](https://github.com/ehofesmann), [Madan Ravi Ganesh](https://github.com/zeonzir), and [Jason J. Corso](http://web.eecs.umich.edu/~jjcorso/), arXiv, April 2018.
 
 **ATTENTION**: Please cite the arXiv paper introducing this platform when releasing any work that used this code.
 <br> Link: https://arxiv.org/abs/1804.05879
