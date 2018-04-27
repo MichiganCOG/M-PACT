@@ -838,7 +838,7 @@ W911NF-15-1-0354.
 
 ## Code Acknowledgements
 We would like to thank the following contributors for helping shape our platform and their invaluable input in achieving current levels of performance,
-- Kyle Min
+- [Kyle Min](https://sites.google.com/umich.edu/kylemin/home)
 - Nadha Gafoor
 - [A. J. Piergiovanni](https://github.com/piergiaj)
 
