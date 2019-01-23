@@ -102,7 +102,6 @@ def conv3d_layer(input_tensor,
     Return:
         :conv_out:      Output of the convolutional layer
     """
-
     input_dims = input_tensor.get_shape().as_list()
 
     # Ensure parameters match required shapes

@@ -12,6 +12,7 @@ from models.models_abstract import Abstract_Model_Class
 from utils.layers_utils     import *
 
 from default_preprocessing import preprocess
+from block_preprocessing   import preprocess as block_preprocess
 
 class I3D(Abstract_Model_Class):
 
@@ -338,7 +339,11 @@ class I3D(Abstract_Model_Class):
             :is_training:           Boolean value indication phase (TRAIN OR TEST)
             :video_step:            Tensorflow variable indicating the total number of videos (not clips) that have been loaded
         """
-        return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+        if self.preproc_method == "block":
+            return block_preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
+
+        else:
+            return preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, self.input_alpha)
 
 
     """ Function to return loss calculated on given network """
