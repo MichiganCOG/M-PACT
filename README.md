@@ -86,6 +86,9 @@ From the root directory, the training and testing is done through `train.py` and
 Implemented models can be used if the weights have been acquired.
 Download weights and mean files by running the script `sh scripts/shell/download_weights.sh`.
 
+NOTE: The download links may not work for users in China. Alternative downloads can be found here: http://academictorrents.com/details/dcea7fa53925b31215bd8437d2f0805253d6b00f
+and https://app.nihaocloud.com/d/fb0c387c9a644f86b257/
+
 Ex. Train ResNet50+LSTM on HMDB51 using 4 GPUs
 
 ```
