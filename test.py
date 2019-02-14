@@ -1,6 +1,7 @@
 # Basic imports
 import os
 import time
+import sys
 import argparse
 import tensorflow      as tf
 import numpy           as np
@@ -21,22 +22,35 @@ from Queue                        import Queue
 from utils.logger                 import Logger
 from random                       import shuffle
 from utils.load_dataset_tfrecords import load_dataset
+from utils.argument_utils         import read_json, assign_args
 
 
 parser = argparse.ArgumentParser()
 
-# Model parameters
+# Argument loading
+
+parser.add_argument('--argsFile', action= 'store', type=str, default='none',
+        help= 'The name of the file that contains a model\'s arguments. Also requires --model.')
 
 parser.add_argument('--model', action= 'store', required=True,
-        help= 'Model architecture (c3d, i3d, tsn, resnet)')
+        help= 'Model architecture (c3d, tsn, i3d, resnet)')
 
-parser.add_argument('--inputDims', action='store', required=True, type=int,
+args_init = parser.parse_known_args()[0]
+model_name = args_init.model
+args_file = args_init.argsFile
+args_json = read_json(model_name, args_file)
+json_keys = args_json.keys()
+
+
+# Model parameters
+
+parser.add_argument('--inputDims', action='store', required='inputDims' not in json_keys, type=int,
         help = 'Input Dimensions (Number of frames to pass as input to the model)')
 
-parser.add_argument('--outputDims', action='store', required=True, type=int,
+parser.add_argument('--outputDims', action='store', required='outputDims' not in json_keys, type=int,
         help = 'Output Dimensions (Number of classes in dataset)')
 
-parser.add_argument('--seqLength', action='store', required=True, type=int,
+parser.add_argument('--seqLength', action='store', required='seqLength' not in json_keys, type=int,
         help = 'Number of output frames expected from model')
 
 parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
@@ -59,11 +73,14 @@ parser.add_argument('--loadWeights', action='store', type=str, default='default'
 
 # Experiment parameters
 
-parser.add_argument('--dataset', action= 'store', required=True,
+parser.add_argument('--dataset', action= 'store', required='dataset' not in json_keys,
         help= 'Dataset (UCF101, HMDB51)')
 
-parser.add_argument('--loadedDataset', action= 'store', required=True,
+parser.add_argument('--loadedDataset', action= 'store', required='loadedDataset' not in json_keys,
         help= 'Dataset (UCF101, HMDB51)')
+
+parser.add_argument('--loadedPreproc', action= 'store', type=str, default='null',
+        help= 'The preprocessing of the weights to be loaded.')
 
 parser.add_argument('--numGpus', action= 'store', type=int, default=1,
         help = 'Number of Gpus used for calculation')
@@ -80,13 +97,13 @@ parser.add_argument('--load', action='store', type=int, default=1,
 parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
         help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
 
-parser.add_argument('--size', action='store', required=True, type=int,
+parser.add_argument('--size', action='store', required='size' not in json_keys, type=int,
         help = 'Input frame size')
 
-parser.add_argument('--expName', action='store', required=True,
+parser.add_argument('--expName', action='store', required='expName' not in json_keys,
         help = 'Unique name of experiment being run')
 
-parser.add_argument('--numVids', action='store', required=True, type=int,
+parser.add_argument('--numVids', action='store', required='numVids' not in json_keys, type=int,
         help = 'Number of videos to be used for testing')
 
 parser.add_argument('--split', action='store', type=int, default=1,
@@ -95,7 +112,7 @@ parser.add_argument('--split', action='store', type=int, default=1,
 parser.add_argument('--baseDataPath', action='store', default='/z/dat',
         help = 'Path to datasets')
 
-parser.add_argument('--fName', action='store', required=True,
+parser.add_argument('--fName', action='store', required='fName' not in json_keys,
         help = 'Which dataset list to use (trainlist, testlist, vallist)')
 
 parser.add_argument('--clipLength', action='store', type=int, default=-1,
@@ -143,8 +160,17 @@ parser.add_argument('--verbose', action='store', type=int, default=1,
 parser.add_argument('--topk', action='store', type=int, default=3,
         help = 'Integer indication top k predictions made (Default 3)')
 
+parser.add_argument('--save', action='store', type=int, default=1,
+        help = 'Boolean indicating whether to save any metrics, logs, or results. Used for testing if the code runs.')
+
+parser.add_argument('--reverse', action='store', type=int, default=0,
+        help = 'Boolean indicating whether reverse videos and classify them as a new action class. 0 all videos are forward, 1 randomly reversed videos, 2 all videos are reversed')
+
 
 args = parser.parse_args()
+
+args = assign_args(args, args_json, sys.argv)
+
 
 if args.verbose:
     print "Setup of current experiments"
@@ -154,7 +180,12 @@ if args.verbose:
 
 # END IF
 
+loaded_preproc = args.loadedPreproc
+if loaded_preproc=='null':
+    loaded_preproc = args.preprocMethod
+
 model_name = args.model
+save_bool = args.save
 
 model = models_import.create_model_object(modelName = model_name,
                                    inputAlpha = args.inputAlpha,
@@ -176,7 +207,7 @@ model = models_import.create_model_object(modelName = model_name,
                                    verbose = args.verbose)
 
 
-def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_stride, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, random_init, avg_clips, use_softmax, preproc_debugging, topk):
+def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_dataset, experiment_name, num_vids, split, base_data_path, f_name, load_model, return_layer, clip_length, video_offset, clip_offset, num_clips, clip_stride, metrics_method, batch_size, metrics_dir, loaded_checkpoint, verbose, gpu_list, preproc_method, loaded_preproc, random_init, avg_clips, use_softmax, preproc_debugging, reverse, topk):
     """
     Function used to test the performance and analyse a chosen model
     Args:
@@ -206,6 +237,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         :verbose:            Boolean to indicate if all print statement should be procesed or not
         :gpu_list:           List of GPU IDs to be used
         :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
+        :loaded_preproc:     Name of preproc method which was used to train the current model
         :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
         :avg_clips:          Binary boolean indicating whether to average predictions across clips
         :use_softmax:        Binary boolean indicating whether to apply softmax to the inference of the model
@@ -226,7 +258,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
         # Load pre-trained/saved model
         if load_model:
             try:
-                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name, loaded_checkpoint, preproc_method)
+                ckpt, gs_init, learning_rate_init = load_checkpoint(model.name, loaded_dataset, experiment_name, loaded_checkpoint, loaded_preproc)
                 if verbose:
                     print 'A better checkpoint is found. The global_step value is: ' + str(gs_init)
 
@@ -262,7 +294,7 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         # Setting up tensors for models
         # input_data_tensor - [batchSize, inputDims, height, width, channels]
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging, 0, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, 1, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging, 0, verbose, reverse=reverse)
 
         ######### GPU list check block ####################
 
@@ -303,28 +335,29 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
 
         ############################################################################################################################################
 
+        if save_bool:
+            ######################### Logger Setup block ######################################
 
-        ######################### Logger Setup block ######################################
+            # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
+            log_name    = ("exp_test_%s_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
+                                                   dataset, preproc_method, experiment_name, metrics_method))
 
-        # Logger setup (Name format: Date, month, hour, minute and second, with a prefix of exp_test)
-        log_name    = ("exp_test_%s_%s_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                               dataset, preproc_method, experiment_name, metrics_method))
+            curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
+            make_dir(os.path.join('results',model.name))
+            make_dir(os.path.join('results',model.name, dataset))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
 
-        curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
-        make_dir(os.path.join('results',model.name))
-        make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, preproc_method))
-        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
-        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
-
-        ###################################################################################
+            ###################################################################################
 
         # TF session setup
         #sess    = tf.Session()
         init    = (tf.global_variables_initializer(), tf.local_variables_initializer())
         coord   = tf.train.Coordinator()
         threads = queue_runner_impl.start_queue_runners(sess=sess, coord=coord)
-        metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, preproc_method, dataset, metrics_dir, verbose=verbose, topk=topk)
+        if save_bool:
+            metrics = Metrics( output_dims, seq_length, curr_logger, metrics_method, istraining, model.name, experiment_name, preproc_method, dataset, metrics_dir, verbose=verbose, topk=topk)
 
         # Variables get randomly initialized into tf graph
         sess.run(init)
@@ -375,7 +408,9 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
                     break
 
                 count += 1
-                metrics.log_prediction(labels[batch_idx][0], output_predictions[batch_idx], vid_name, count)
+                
+                if save_bool:
+                    metrics.log_prediction(labels[batch_idx][0], output_predictions[batch_idx], vid_name, count)
 
             # END IF
 
@@ -388,15 +423,17 @@ def test(model, input_dims, output_dims, seq_length, size, dataset, loaded_datas
     coord.request_stop()
     coord.join(threads)
 
-    total_accuracy = metrics.total_classification()
-    total_pred = metrics.get_predictions_array()
 
-    if verbose:
-        print "Total accuracy : ", total_accuracy
-        print total_pred
+    if save_bool:
+        total_accuracy = metrics.total_classification()
+        total_pred = metrics.get_predictions_array()
 
-    # Save results in numpy format
-    np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
+        if verbose:
+            print "Total accuracy : ", total_accuracy
+            print total_pred
+
+        # Save results in numpy format
+        np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'test_predictions_'+dataset+"_"+metrics_method+'.npy'), np.array(total_pred))
 
 
 if __name__=="__main__":
@@ -427,10 +464,12 @@ if __name__=="__main__":
                 verbose           = args.verbose,
                 gpu_list          = args.gpuList,
                 preproc_method    = args.preprocMethod,
+                loaded_preproc    = loaded_preproc,
                 random_init       = args.randomInit,
                 avg_clips         = args.avgClips,
                 use_softmax       = args.useSoftmax,
                 preproc_debugging = args.preprocDebugging,
+                reverse           = args.reverse,
                 topk              = args.topk)
 
     # END IF

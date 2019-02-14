@@ -3,9 +3,9 @@ import os
 import numpy      as np
 import tensorflow as tf
 from tensorflow.python.training import queue_runner
+import utils.preprocessing_utils as preproc_utils
 
-
-def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging=0, shuffle_seed=0, verbose=True):
+def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging=0, shuffle_seed=0, verbose=True, reverse=0):
     """
     Function load dataset, setup queue and read data into queue
     Args:
@@ -59,9 +59,10 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
 
         # Initialize queue that will contain multiple clips of the format [[clip_frame_count, height, width, channels], [labels_copied_seqLength], [name_of_video]]
         clip_q = tf.FIFOQueue(num_gpus*batch_size*thread_count, dtypes=[tf.float32, tf.int32, tf.string, tf.float32, tf.float32], shapes=[[input_dims, size[0], size[1], 3],[seq_length],[],[],[]])
+        
 
         # Attempts to load num_gpus*batch_size number of clips into queue, if there exist too many clips in a video then this function blocks until the clips are dequeued
-        enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step))
+        enqueue_op = clip_q.enqueue_many(_load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step, reverse=reverse))
 
         # Initialize the queuerunner and add it to the collection, this becomes initialized in train_test_TFRecords_multigpu_model.py after the Session is begun
         qr = tf.train.QueueRunner(clip_q, [enqueue_op]*num_gpus*thread_count)
@@ -82,7 +83,7 @@ def load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_lengt
     return input_data_tensor, labels_tensor, names_tensor
 
 
-def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step):
+def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, tfrecord_file_queue, video_step, reverse=0):
     """
     Function to load a single video and preprocess its' frames
     Args:
@@ -125,6 +126,16 @@ def _load_video(model, output_dims, input_dims, seq_length, size, base_data_path
         input_data_tensor, frames, indices = _reduce_fps(input_data_tensor, frames)
 
     # END IF
+
+    if reverse!=0:
+        if reverse==1:
+            rand_reverse = tf.random_uniform([1], minval=0, maxval=2, dtype=tf.int32)[0]
+        else:
+            rand_reverse = 1
+
+        input_data_tensor = tf.cond(tf.equal(rand_reverse,0), lambda: input_data_tensor, lambda: input_data_tensor[::-1,...])
+        label = tf.cond(tf.equal(rand_reverse,0), lambda: label, lambda: label+(output_dims/2))
+
 
     # If clip_length == -1 then the entire video is to be used as a single clip
     if clip_length <= 0:
@@ -254,10 +265,10 @@ def _extract_clips(video, frames, num_clips, clip_offset, clip_length, video_off
                             lambda: 1,
                             lambda: (frames-video_start-clip_length) / (clip_length - clip_stride) + 1)
 
+            clip_begin = tf.range(0, number_of_clips*(clip_length-clip_stride), delta=clip_length-clip_stride)[:number_of_clips]
 
-            clip_begin = tf.range(0, number_of_clips*(clip_length-clip_stride), delta=clip_length-clip_stride)[:num_clips]
+            rs = tf.reshape(clip_begin, [number_of_clips,1,1,1])
 
-            rs = tf.reshape(clip_begin, [num_clips,1,1,1])
             video = tf.to_int32(video)
             clips = tf.map_fn(lambda clip_start: video[clip_start[0][0][0]:clip_start[0][0][0]+clip_length], rs)
 

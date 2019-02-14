@@ -1,0 +1,1 @@
+{"save": 0, "dataset": "HMDB51", "inputDims": 60, "outputDims": 51, "seqLength": 20, "expName": "test", "size": 224, "fName": "trainlist", "numVids": 3570, "batchSize": 2, "gradClipVal": 20, "optChoice": "momentum"}

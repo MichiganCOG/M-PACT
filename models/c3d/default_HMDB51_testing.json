@@ -1,0 +1,1 @@
+{"save": 1, "dataset": "HMDB51", "inputDims": 16, "outputDims": 51, "seqLength": 1, "expName": "c3d_HMDB51", "clipLength": 16, "clipOffset": "random", "size": 112, "fName": "testlist", "numVids": 1530, "numClips": 1, "loadedDataset": "HMDB51"}

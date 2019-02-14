@@ -61,6 +61,23 @@ def preprocess_image(image, output_height, output_width, is_training=False,
     # END IF
 
 
+def extract_segments(input_data_tensor, num_segs, snippet_length, segment_length):
+    """
+    If the input data tensor has more frames than we need, then split the clip into num_segments and extract snippet_length number of frames from each segment
+    Args:
+    """
+
+    input_data_tensor_temp = []
+
+    # For each segment the video is split into, randomly extract 'snippet_length' number of sequential frames within that segment
+    for seg in range(num_segs):
+        random_extract_index = tf.random_uniform(dtype=tf.int32, minval=seg * segment_length, maxval= (seg+1)*segment_length - snippet_length, shape=np.asarray([1]))[0]
+        input_data_tensor_temp.append(tf.gather(input_data_tensor, tf.range(random_extract_index, random_extract_index+snippet_length)))
+
+    # END FOR
+
+    input_data_tensor = tf.concat(input_data_tensor_temp, axis=0)
+    return input_data_tensor
 
 def preprocess(input_data_tensor, frames, height, width, channel, input_dims, output_dims, seq_length, size, label, istraining, video_step, num_segs = 3, input_alpha=1.0):
     """
@@ -105,16 +122,10 @@ def preprocess(input_data_tensor, frames, height, width, channel, input_dims, ou
         frames = tf.shape(input_data_tensor)[0]
         segment_length = frames/num_segs
 
-        input_data_tensor_temp = []
+        input_data_tensor = tf.cond(tf.equal(segment_length, snippet_length),
+                                    lambda: input_data_tensor[:snippet_length*num_segs],
+                                    lambda: extract_segments(input_data_tensor, num_segs, snippet_length, segment_length))
 
-        # For each segment the video is split into, randomly extract 'snippet_length' number of sequential frames within that segment
-        for seg in range(num_segs):
-            random_extract_index = tf.random_uniform(dtype=tf.int32, minval=seg * segment_length, maxval= (seg+1)*segment_length - snippet_length, shape=np.asarray([1]))[0]
-            input_data_tensor_temp.append(tf.gather(input_data_tensor, tf.range(random_extract_index, random_extract_index+snippet_length)))
-
-        # END FOR
-
-        input_data_tensor = tf.concat(input_data_tensor_temp, axis=0)
 
         input_data_tensor = tf.map_fn(lambda img: resize(img, 256, 340), input_data_tensor)
 

@@ -1,6 +1,7 @@
 # Basic imports
 import os
 import time
+import sys
 import argparse
 import tensorflow      as tf
 import numpy           as np
@@ -21,22 +22,33 @@ from Queue                        import Queue
 from utils.logger                 import Logger
 from random                       import shuffle
 from utils.load_dataset_tfrecords import load_dataset
-
+from utils.argument_utils         import read_json, assign_args
 
 parser = argparse.ArgumentParser()
 
-# Model parameters
+# Argument loading
+
+parser.add_argument('--argsFile', action= 'store', type=str, default='none',
+        help= 'The name of the file that contains a model\'s arguments. Also requires --model.')
 
 parser.add_argument('--model', action= 'store', required=True,
         help= 'Model architecture (c3d, tsn, i3d, resnet)')
 
-parser.add_argument('--inputDims', action='store', required=True, type=int,
+args_init = parser.parse_known_args()[0]
+model_name = args_init.model
+args_file = args_init.argsFile
+args_json = read_json(model_name, args_file)
+json_keys = args_json.keys()
+
+# Model parameters
+
+parser.add_argument('--inputDims', action='store', required='inputDims' not in json_keys, type=int,
         help = 'Input Dimensions (Number of frames to pass as input to the model)')
 
-parser.add_argument('--outputDims', action='store', required=True, type=int,
+parser.add_argument('--outputDims', action='store', required='outputDims' not in json_keys, type=int,
         help = 'Output Dimensions (Number of classes in dataset)')
 
-parser.add_argument('--seqLength', action='store', required=True, type=int,
+parser.add_argument('--seqLength', action='store', required='seqLength' not in json_keys, type=int,
         help = 'Number of output frames expected from model')
 
 parser.add_argument('--modelAlpha', action='store', type=float, default=1.,
@@ -76,7 +88,7 @@ parser.add_argument('--gradClipValue', action='store', type=float, default=5.0,
 
 # Experiment parameters
 
-parser.add_argument('--dataset', action= 'store', required=True,
+parser.add_argument('--dataset', action= 'store', required='dataset' not in json_keys,
         help= 'Dataset (UCF101, HMDB51)')
 
 parser.add_argument('--numGpus', action= 'store', type=int, default=1,
@@ -94,13 +106,13 @@ parser.add_argument('--load', action='store', type=int, default=0,
 parser.add_argument('--loadedCheckpoint', action='store', type=int, default=-1,
         help = 'Specify the step of the saved model checkpoint that will be loaded for testing. Defaults to most recent checkpoint.')
 
-parser.add_argument('--size', action='store', required=True, type=int,
+parser.add_argument('--size', action='store', required='size' not in json_keys, type=int,
         help = 'Input frame size')
 
-parser.add_argument('--expName', action='store', required=True,
+parser.add_argument('--expName', action='store', required='expName' not in json_keys,
         help = 'Unique name of experiment being run')
 
-parser.add_argument('--numVids', action='store', required=True, type=int,
+parser.add_argument('--numVids', action='store', required='numVids' not in json_keys, type=int,
         help = 'Number of videos to be used for training')
 
 parser.add_argument('--nEpochs', action='store', type=int, default=1,
@@ -112,7 +124,7 @@ parser.add_argument('--split', action='store', type=int, default=1,
 parser.add_argument('--baseDataPath', action='store', default='/z/dat',
         help = 'Path to datasets')
 
-parser.add_argument('--fName', action='store', required=True,
+parser.add_argument('--fName', action='store', required='fName' not in json_keys,
         help = 'Which dataset list to use (trainlist, testlist, vallist)')
 
 parser.add_argument('--saveFreq', action='store', type=int, default=1,
@@ -157,8 +169,16 @@ parser.add_argument('--preprocDebugging', action='store', type=int, default=0,
 parser.add_argument('--verbose', action='store', type=int, default=1,
         help = 'Boolean switch to display all print statements or not')
 
+parser.add_argument('--save', action='store', type=int, default=1,
+        help = 'Boolean indicating whether to save results, metrics, and logs. Used to test code.')
+
+parser.add_argument('--reverse', action='store', type=int, default=0,
+        help = 'Boolean indicating whether reverse videos and classify them as a new action class. 0 all videos are forward, 1 randomly reversed videos, 2 all videos are reversed')
+
 
 args = parser.parse_args()
+
+args = assign_args(args, args_json, sys.argv)
 
 if args.verbose:
     print "Setup of current experiments"
@@ -168,8 +188,7 @@ if args.verbose:
 
 # END IF
 
-model_name = args.model
-
+save_bool = args.save
 model = models_import.create_model_object(modelName = model_name,
                                    inputAlpha = args.inputAlpha,
                                    modelAlpha = args.modelAlpha,
@@ -234,7 +253,7 @@ def _average_gradients(tower_grads):
     # END FOR
     return average_grads
 
-def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_stride, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed, preproc_debugging):
+def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, experiment_name, load_model, num_vids, n_epochs, split, base_data_path, f_name, learning_rate_init, wd, save_freq, clip_length, video_offset, clip_offset, num_clips, clip_stride, batch_size, loss_type, metrics_dir, loaded_checkpoint, verbose, opt_choice, gpu_list, grad_clip_value, preproc_method, random_init, shuffle_seed, preproc_debugging, reverse):
     """
     Training function used to train or fine-tune a chosen model
     Args:
@@ -273,6 +292,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         :preproc_method:     The preprocessing method to use, default, cvr, rr, sr, or any other custom preprocessing
         :random_init:        Randomly initialize model weights, not loading from any files (deafult False)
         :preproc_debugging:  Boolean indicating whether to load videos and clips in a queue or to load them directly for debugging (Default 0)
+        :reverse:            Boolean indicating whether reverse videos and classify them as a new action class.
 
     Returns:
         Does not return anything
@@ -315,7 +335,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
         reuse_variables    = None
 
         # TF session setup
-        config  = tf.ConfigProto(allow_soft_placement=True)
+        config  = tf.ConfigProto(allow_soft_placement=True) #, gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8))
         sess    = tf.Session(config=config)
         init    = tf.global_variables_initializer()
 
@@ -330,7 +350,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         # Setup tensors for models
         # input_data_tensor - [batchSize, inputDims, height, width, channels]
-        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging, shuffle_seed, verbose)
+        input_data_tensor, labels_tensor, names_tensor = load_dataset(model, num_gpus, batch_size, output_dims, input_dims, seq_length, size, data_path, dataset, istraining, clip_length, video_offset, clip_offset, num_clips, clip_stride, video_step, preproc_debugging, shuffle_seed, verbose, reverse=reverse)
 
         ############### TO DO: FIX THIS ASAP ########################
         if ((batch_size == 1) and (num_clips==1)):
@@ -432,22 +452,24 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
         ############################################################################################################################################
 
+        if save_bool:
+            ######################### Logger Setup block ######################################
 
-        ######################### Logger Setup block ######################################
+            # Logging setup initialization (Naming format: Date, month, hour, minute, second)
+            log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
+                                                               dataset,
+                                                               experiment_name))
+            make_dir('results')
+            make_dir(os.path.join('results',model.name))
+            make_dir(os.path.join('results',model.name, dataset))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
+            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, 'checkpoints'))
+            curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
 
-        # Logging setup initialization (Naming format: Date, month, hour, minute, second)
-        log_name     = ("exp_train_%s_%s_%s" % ( time.strftime("%d_%m_%H_%M_%S"),
-                                                           dataset,
-                                                           experiment_name))
-        make_dir('results')
-        make_dir(os.path.join('results',model.name))
-        make_dir(os.path.join('results',model.name, dataset))
-        make_dir(os.path.join('results',model.name, dataset, preproc_method))
-        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name))
-        make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, 'checkpoints'))
-        curr_logger = Logger(os.path.join('logs', model.name, dataset, preproc_method, metrics_dir, log_name))
-
-        ####################################################################################
+            ####################################################################################
+        
+        # END IF
 
         init    = tf.global_variables_initializer()
         coord   = tf.train.Coordinator()
@@ -504,10 +526,11 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                 epoch_acc   = 0
 
                 if epoch_count % save_freq == 0 and tot_count > 0:
-                    if verbose:
-                        print "Saving..."
+                    if save_bool:
+                        if verbose:
+                            print "Saving..."
 
-                    save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, l_r, global_step.eval(session=sess))
+                        save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, l_r, global_step.eval(session=sess))
 
                 # END IF
 
@@ -525,7 +548,7 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
                                                                        learning_rate, model.get_track_variables()])
 
             ################################################################################################################
-
+            
             if verbose:
                 print vid_names
 
@@ -607,38 +630,45 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
             if verbose:
                 print 'train_time: ', time_post_train-time_pre_train
                 print 'step, loss: ', gs, loss_train
+                print 'labels: ', labels
 
             # END IF
+            
+            if save_bool:
+                curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
+                curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
+                curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
-            curr_logger.add_scalar_value('train/train_time',time_post_train - time_pre_train, step=gs)
-            curr_logger.add_scalar_value('train/loss',      float(np.mean(loss_train)), step=gs)
-            curr_logger.add_scalar_value('train/epoch_acc', epoch_acc/float(batch_count), step=gs)
 
+                for layer in range(len(params_array)):
+                    for p in range(len(params_array[layer])):
+                        curr_logger.add_scalar_value('tracked_training_variables/'+str(track_vars.keys()[layer]+'_'+str(p)), float(params_array[layer][p]), step=gs)
 
-            for layer in range(len(params_array)):
-                for p in range(len(params_array[layer])):
-                    curr_logger.add_scalar_value('tracked_training_variables/'+str(track_vars.keys()[layer]+'_'+str(p)), float(params_array[layer][p]), step=gs)
+                    # END FOR
 
                 # END FOR
 
-            # END FOR
+	        total_params.append(params_array)
 
-	    total_params.append(params_array)
+                curr_logger.add_scalar_value('tracked_training_variables/learning_rate', float(l_r), step=gs)
 
-            curr_logger.add_scalar_value('tracked_training_variables/learning_rate', float(l_r), step=gs)
+            # END IF
 
         # END WHILE
 
         #########################################################################################################################################################
+        
+        if save_bool:
+            if verbose:
+                print "Saving..."
 
-        if verbose:
-            print "Saving..."
+            # END IF
+
+            save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, l_r, gs)
+            coord.request_stop()
+            coord.join(threads)
 
         # END IF
-
-        save_checkpoint(sess, model.name, dataset, experiment_name, preproc_method, l_r, gs)
-        coord.request_stop()
-        coord.join(threads)
 
         if verbose:
             print "Tot train time: ", tot_train_time
@@ -646,20 +676,24 @@ def train(model, input_dims, output_dims, seq_length, size, num_gpus, dataset, e
 
     # END WITH
 
-    # Save tracked parameterization variables as a numpy file
-	if len(total_params) != 0:
-	    total_params = np.array(total_params).flatten()
-            make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
+    
+        if save_bool: 
+            # Save tracked parameterization variables as a numpy file
+	    if len(total_params) != 0:
+	        total_params = np.array(total_params).flatten()
+                make_dir(os.path.join('results',model.name, dataset, preproc_method, experiment_name, metrics_dir))
 
-	    if os.path.isfile(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
+	        if os.path.isfile(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy')):
 
-	        loaded_params = np.load(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
-		total_params = np.concatenate([loaded_params, total_params])
+	            loaded_params = np.load(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'))
+	    	    total_params = np.concatenate([loaded_params, total_params])
+
+                # END IF
+
+	        np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
 
             # END IF
-
-	    np.save(os.path.join('results', model.name, dataset, preproc_method, experiment_name, metrics_dir, 'train_params_'+dataset+'.npy'), total_params)
-
+        
         # END IF
 
 if __name__=="__main__":
@@ -697,6 +731,7 @@ if __name__=="__main__":
                 preproc_method      = args.preprocMethod,
                 random_init         = args.randomInit,
                 shuffle_seed        = args.shuffleSeed,
-                preproc_debugging   = args.preprocDebugging)
+                preproc_debugging   = args.preprocDebugging,
+                reverse             = args.reverse)
 
     # END IF
