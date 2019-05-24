@@ -2,7 +2,6 @@ import argparse
 import tensorflow as tf
 import numpy as np
 import os
-from utils import make_dir
 import cv2
 
 # Definition of arguments used in functions defined within this file
